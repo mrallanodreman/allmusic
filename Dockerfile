@@ -19,9 +19,9 @@ COPY backend/ ./backend/
 # Copiar frontend
 COPY frontend/ ./frontend/
 
-# Volumen para datos persistentes (downloads, users, playlists, artist uploads)
-VOLUME /data
-ENV ALLMUSIC_DATA_DIR=/data
+# Railway no soporta VOLUME; usar Railway Volumes si se necesita persistencia
+RUN mkdir -p /app/data
+ENV ALLMUSIC_DATA_DIR=/app/data
 
 EXPOSE 2426
 
