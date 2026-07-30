@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllMusic PRO — Portal Artistas</title>
+<meta name="description" content="Gestiona tu perfil artístico en AllMusic PRO. Sube tu música, organiza tus álbumes y comparte archivos con productores.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/allmusic/favicon.ico" type="image/x-icon">
+<style>
+  :root {
+    --bg:     #0a0a14;
+    --bg2:    #10101e;
+    --bg3:    #181828;
+    --accent: #667eea;
+    --accent2:#764ba2;
+    --green:  #4ade80;
+    --red:    #f87171;
+    --text:   #e0e0f0;
+    --muted:  #7a8aaa;
+    --border: rgba(102,126,234,0.15);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* ── AUTH SCREEN ── */
+  #authScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+    background: linear-gradient(135deg, #0a0a14 0%, #12102a 100%);
+  }
+  .auth-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 18px; padding: 36px 32px; width: 100%; max-width: 420px;
+  }
+  .auth-logo { text-align: center; margin-bottom: 28px; }
+  .auth-logo h1 { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .auth-logo p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .auth-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .auth-subtitle { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+  .auth-switch a { color: var(--accent); text-decoration: none; font-weight: 700; cursor: pointer; }
+  .auth-switch a:hover { text-decoration: underline; }
+  .auth-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .field input, .field select {
+    width: 100%; padding: 11px 14px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 14px; outline: none; transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+  .btn-primary {
+    width: 100%; padding: 13px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: opacity .2s; margin-top: 4px;
+  }
+  .btn-primary:hover { opacity: .88; }
+  .btn-primary:disabled { opacity: .5; cursor: default; }
+  .auth-err { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+  /* ── DASHBOARD ── */
+  #dashboard { display: none; min-height: 100vh; }
+
+  /* Header */
+  .dash-header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 60px; position: sticky; top: 0; z-index: 100;
+  }
+  .dash-header-logo { font-size: 16px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; flex-shrink: 0; }
+  .dash-artist-name { font-size: 14px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-sm { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all .2s; }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger-sm { border-color: rgba(248,113,113,0.3); color: var(--red); }
+  .btn-danger-sm:hover { background: rgba(248,113,113,0.1); border-color: var(--red); }
+
+  /* Hero banner */
+  .artist-hero {
+    height: 200px; background: linear-gradient(135deg, #1a1a2e, #16213e);
+    background-size: cover; background-position: center; position: relative; overflow: hidden;
+  }
+  .artist-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg2) 0%, transparent 60%); }
+  .hero-upload-btn {
+    position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px;
+    border-radius: 8px; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px);
+  }
+  .artist-avatar-wrap { position: absolute; bottom: -36px; left: 24px; z-index: 2; }
+  .artist-avatar {
+    width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--bg2);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: #fff; cursor: pointer; overflow: hidden; flex-shrink: 0;
+  }
+  .artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Nav tabs */
+  .dash-nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 4px; margin-top: 40px; }
+  .dash-tab {
+    padding: 14px 16px; font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s;
+  }
+  .dash-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Content panels */
+  .dash-content { padding: 24px; max-width: 800px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .card-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card-row .field { flex: 1; min-width: 180px; }
+  .field textarea {
+    width: 100%; padding: 11px 14px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 14px; resize: vertical; min-height: 80px;
+    outline: none; transition: border-color .2s; font-family: inherit;
+  }
+  .field textarea:focus { border-color: var(--accent); }
+  .save-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn-save { padding: 10px 24px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+  .btn-save:hover { opacity: .88; }
+  .btn-save:disabled { opacity: .5; cursor: default; }
+
+  /* Album list */
+  .album-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .album-item {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .album-cover { width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .album-info { flex: 1; min-width: 0; }
+  .album-title { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album-year { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .album-desc { font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* File upload */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 14px; padding: 36px 20px;
+    text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 16px;
+  }
+  .drop-zone.drag-over { border-color: var(--accent); background: rgba(102,126,234,0.06); }
+  .drop-zone p { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .drop-zone .drop-icon { font-size: 32px; }
+  .drop-btn { margin-top: 12px; padding: 8px 20px; background: rgba(102,126,234,0.15); border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* File list */
+  .file-list { display: flex; flex-direction: column; gap: 8px; }
+  .file-item {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .file-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .file-icon.audio { background: rgba(74,222,128,0.12); }
+  .file-icon.zip   { background: rgba(102,126,234,0.12); }
+  .file-icon.other { background: rgba(122,138,170,0.12); }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-copy { padding: 5px 12px; background: rgba(102,126,234,0.12); border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; }
+  .btn-del { padding: 5px 10px; background: transparent; border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; color: var(--red); font-size: 14px; cursor: pointer; }
+
+  /* Upload progress */
+  .upload-progress { display: none; margin-top: 12px; }
+  .prog-bar-wrap { background: var(--bg3); border-radius: 4px; height: 4px; overflow: hidden; }
+  .prog-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width .3s; }
+  .prog-label { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 20px; border-radius: 10px; font-size: 13px; z-index: 9999;
+    opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+  #toast.ok   { border-color: rgba(74,222,128,0.4); color: var(--green); }
+  #toast.err  { border-color: rgba(248,113,113,0.4); color: var(--red); }
+
+  @media (max-width: 600px) {
+    .auth-box { padding: 28px 20px; }
+    .dash-content { padding: 16px; }
+    .card-row .field { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ AUTH SCREEN ══════════ -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>🎵 AllMusic PRO</h1>
+      <p>Portal exclusivo para artistas</p>
+    </div>
+    <div id="authErr" class="auth-err"></div>
+
+    <!-- REGISTER (vista principal) -->
+    <div id="registerForm">
+      <p class="auth-title">Crea tu cuenta gratis</p>
+      <p class="auth-subtitle">Sin verificación ni códigos — entras directo a tu panel.</p>
+      <div class="field"><label>Nombre artístico</label><input type="text" id="regName" placeholder="Tu nombre o proyecto musical"></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
+      <div class="field"><label>Contraseña <span style="color:var(--muted);font-weight:400;">(mínimo 6 caracteres)</span></label><input type="password" id="regPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="field">
+        <label>Género musical <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <select id="regGenre">
+          <option value="">Selecciona un género...</option>
+          <option>Pop</option><option>Rock</option><option>Hip-Hop / Trap</option>
+          <option>R&B / Soul</option><option>Reggaeton</option><option>Salsa / Tropical</option>
+          <option>Electronic / EDM</option><option>Indie</option><option>Cumbia</option>
+          <option>Jazz</option><option>Clásica</option><option>Folk / Acústico</option>
+          <option>Metal</option><option>Reggae</option><option>Otro</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Crear cuenta y entrar →</button>
+      <p class="auth-switch">¿Ya tienes cuenta? <a onclick="showAuthTab('login')">Inicia sesión aquí</a></p>
+    </div>
+
+    <!-- LOGIN (vista secundaria) -->
+    <div id="loginForm" style="display:none">
+      <p class="auth-title">Bienvenido de nuevo</p>
+      <p class="auth-subtitle">Accede a tu panel de artista.</p>
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-primary" onclick="doLogin()">Entrar al panel</button>
+      <p class="auth-switch">¿No tienes cuenta? <a onclick="showAuthTab('register')">Regístrate gratis</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="dashboard">
+  <div class="dash-header">
+    <span class="dash-header-logo">AllMusic PRO</span>
+    <span class="dash-artist-name" id="headerArtistName">—</span>
+    <a href="/allmusic/" style="color:var(--muted);font-size:12px;text-decoration:none;margin-right:4px;">← App</a>
+    <button class="btn-sm btn-danger-sm" onclick="doLogout()">Salir</button>
+  </div>
+
+  <!-- Hero -->
+  <div class="artist-hero" id="artistHero">
+    <div class="artist-hero-overlay"></div>
+    <label class="hero-upload-btn" title="Cambiar imagen de fondo">
+      📷 Cambiar portada
+      <input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadHeader(this)">
+    </label>
+    <div class="artist-avatar-wrap">
+      <label class="artist-avatar" id="artistAvatar" title="Cambiar foto">
+        <span id="avatarInitial">A</span>
+        <input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">
+      </label>
+    </div>
+  </div>
+
+  <!-- Nav tabs -->
+  <div class="dash-nav">
+    <div class="dash-tab active" onclick="showPanel('perfil')">Perfil</div>
+    <div class="dash-tab" onclick="showPanel('albumes')">Álbumes</div>
+    <div class="dash-tab" onclick="showPanel('archivos')">Archivos</div>
+  </div>
+
+  <!-- ─── PERFIL ─── -->
+  <div class="dash-content">
+    <div id="panelPerfil" class="panel active">
+      <div class="card">
+        <h3>Información del artista</h3>
+        <div class="card-row">
+          <div class="field"><label>Nombre artístico</label><input type="text" id="pName" placeholder="Tu nombre artístico"></div>
+          <div class="field">
+            <label>Género</label>
+            <select id="pGenre">
+              <option value="">Selecciona...</option>
+              <option>Pop</option><option>Rock</option><option>Hip-Hop / Trap</option>
+              <option>R&B / Soul</option><option>Reggaeton</option><option>Salsa / Tropical</option>
+              <option>Electronic / EDM</option><option>Indie</option><option>Cumbia</option>
+              <option>Jazz</option><option>Clásica</option><option>Folk / Acústico</option>
+              <option>Metal</option><option>Reggae</option><option>Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Biografía</label><textarea id="pBio" placeholder="Cuéntale al mundo tu historia..."></textarea></div>
+      </div>
+      <div class="card">
+        <h3>Redes sociales</h3>
+        <div class="card-row">
+          <div class="field"><label>Instagram</label><input type="text" id="pIg" placeholder="@tuusuario"></div>
+          <div class="field"><label>Spotify</label><input type="text" id="pSpotify" placeholder="URL de tu perfil"></div>
+          <div class="field"><label>YouTube</label><input type="text" id="pYt" placeholder="URL de tu canal"></div>
+        </div>
+      </div>
+      <div class="save-bar">
+        <button class="btn-save" id="btnSavePerfil" onclick="saveProfile()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <!-- ─── ÁLBUMES ─── -->
+    <div id="panelAlbumes" class="panel">
+      <div class="card">
+        <h3>Agregar álbum</h3>
+        <div class="card-row">
+          <div class="field" style="flex:2"><label>Título del álbum</label><input type="text" id="albTitle" placeholder="Nombre del álbum o EP"></div>
+          <div class="field" style="flex:1"><label>Año</label><input type="number" id="albYear" placeholder="2026" min="1900" max="2099"></div>
+        </div>
+        <div class="field"><label>Descripción (opcional)</label><textarea id="albDesc" placeholder="Notas sobre el álbum..." style="min-height:60px"></textarea></div>
+        <div class="save-bar"><button class="btn-save" onclick="addAlbum()">Agregar álbum</button></div>
+      </div>
+      <div id="albumList" class="album-list"></div>
+    </div>
+
+    <!-- ─── ARCHIVOS ─── -->
+    <div id="panelArchivos" class="panel">
+      <div class="card">
+        <h3>Subir archivos</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Sube demos, mixes, stems o archivos ZIP para compartir con productores. Formatos: MP3, WAV, FLAC, OGG, AAC, M4A, WMA, ZIP, RAR, PDF · Máximo 200 MB.</p>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="drop-icon">🎵</div>
+          <p>Arrastra archivos aquí o haz clic para seleccionar</p>
+          <div class="drop-btn">Seleccionar archivo</div>
+          <input type="file" id="fileInput" style="display:none" accept=".mp3,.wav,.flac,.ogg,.aac,.m4a,.wma,.zip,.rar,.pdf" onchange="uploadFile(this.files[0])">
+        </div>
+        <div class="upload-progress" id="uploadProgress">
+          <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
+          <div class="prog-label" id="progLabel">Subiendo...</div>
+        </div>
+      </div>
+      <div id="fileList" class="file-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '/allmusic/artists';
+let _token   = localStorage.getItem('am_artist_token') || '';
+let _artist  = null;
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 2800);
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function fileIcon(ext) {
+  const audio = ['.mp3','.wav','.flac','.ogg','.aac','.m4a','.wma'];
+  if (audio.includes(ext)) return { icon: '🎵', cls: 'audio' };
+  if (['.zip','.rar'].includes(ext)) return { icon: '📦', cls: 'zip' };
+  return { icon: '📄', cls: 'other' };
+}
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${_token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  const json = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data: json };
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+function showAuthTab(tab) {
+  document.getElementById('loginForm').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('authErr').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authErr');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  if (!email || !pwd) { showAuthError('Completa todos los campos'); return; }
+
+  const btn = document.querySelector('#loginForm .btn-primary');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+
+  const r = await fetch(API + '/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pwd })
+  });
+  const data = await r.json().catch(() => ({}));
+  btn.disabled = false; btn.textContent = 'Entrar al panel';
+
+  if (!r.ok) { showAuthError(data.error || 'Error al iniciar sesión'); return; }
+  _token = data.token;
+  localStorage.setItem('am_artist_token', _token);
+  loadDashboard(data.artist);
+}
+
+async function doRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pwd   = document.getElementById('regPwd').value;
+  const genre = document.getElementById('regGenre').value;
+  if (!name || !email || !pwd) { showAuthError('Nombre, email y contraseña son obligatorios'); return; }
+
+  const btn = document.querySelector('#registerForm .btn-primary');
+  btn.disabled = true; btn.textContent = 'Creando cuenta...';
+
+  const r = await fetch(API + '/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ artist_name: name, email, password: pwd, genre })
+  });
+  const data = await r.json().catch(() => ({}));
+  btn.disabled = false; btn.textContent = 'Crear cuenta gratuita';
+
+  if (!r.ok) { showAuthError(data.error || 'Error al registrarse'); return; }
+  _token = data.token;
+  localStorage.setItem('am_artist_token', _token);
+  loadDashboard(data.artist);
+}
+
+function doLogout() {
+  localStorage.removeItem('am_artist_token');
+  _token = ''; _artist = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function loadDashboard(artist) {
+  _artist = artist;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display  = '';
+
+  // Header
+  document.getElementById('headerArtistName').textContent = artist.artist_name;
+
+  // Hero
+  if (artist.header_image) {
+    document.getElementById('artistHero').style.backgroundImage = `url(${artist.header_image})`;
+  }
+
+  // Avatar
+  const av = document.getElementById('artistAvatar');
+  if (artist.avatar) {
+    av.innerHTML = `<img src="${artist.avatar}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
+  } else {
+    document.getElementById('avatarInitial').textContent = artist.artist_name[0].toUpperCase();
+  }
+
+  // Perfil form
+  document.getElementById('pName').value    = artist.artist_name || '';
+  document.getElementById('pBio').value     = artist.bio || '';
+  document.getElementById('pGenre').value   = artist.genre || '';
+  document.getElementById('pIg').value      = (artist.social || {}).instagram || '';
+  document.getElementById('pSpotify').value = (artist.social || {}).spotify || '';
+  document.getElementById('pYt').value      = (artist.social || {}).youtube || '';
+
+  renderAlbums(artist.albums || []);
+  renderFiles(artist.files || []);
+}
+
+async function tryAutoLogin() {
+  if (!_token) return;
+  const r = await fetch(API + '/profile', { headers: { 'Authorization': `Bearer ${_token}` } });
+  if (!r.ok) { localStorage.removeItem('am_artist_token'); _token = ''; return; }
+  const artist = await r.json();
+  loadDashboard(artist);
+}
+
+// ── PANEL NAVIGATION ───────────────────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel' + id.charAt(0).toUpperCase() + id.slice(1)).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── PROFILE SAVE ───────────────────────────────────────────────────────────
+async function saveProfile() {
+  const btn = document.getElementById('btnSavePerfil');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const payload = {
+    artist_name: document.getElementById('pName').value.trim(),
+    bio:         document.getElementById('pBio').value.trim(),
+    genre:       document.getElementById('pGenre').value,
+    social: {
+      instagram: document.getElementById('pIg').value.trim(),
+      spotify:   document.getElementById('pSpotify').value.trim(),
+      youtube:   document.getElementById('pYt').value.trim(),
+    }
+  };
+  const r = await fetch(API + '/profile', {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await r.json().catch(() => ({}));
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (!r.ok) { toast(data.error || 'Error al guardar', 'err'); return; }
+  _artist = data.artist;
+  document.getElementById('headerArtistName').textContent = _artist.artist_name;
+  toast('Perfil guardado ✓', 'ok');
+}
+
+// ── HEADER / AVATAR UPLOAD ─────────────────────────────────────────────────
+async function uploadWithForm(url, file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(API + url, { method: 'POST', headers: { 'Authorization': `Bearer ${_token}` }, body: fd });
+  return r.json().catch(() => ({}));
+}
+
+async function uploadHeader(input) {
+  if (!input.files[0]) return;
+  const data = await uploadWithForm('/profile/header', input.files[0]);
+  if (data.ok) {
+    document.getElementById('artistHero').style.backgroundImage = `url(${data.url}?t=${Date.now()})`;
+    toast('Portada actualizada ✓', 'ok');
+  } else {
+    toast(data.error || 'Error al subir imagen', 'err');
+  }
+}
+
+async function uploadAvatar(input) {
+  if (!input.files[0]) return;
+  const data = await uploadWithForm('/profile/avatar', input.files[0]);
+  if (data.ok) {
+    const av = document.getElementById('artistAvatar');
+    av.innerHTML = `<img src="${data.url}?t=${Date.now()}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
+    toast('Foto actualizada ✓', 'ok');
+  } else {
+    toast(data.error || 'Error al subir imagen', 'err');
+  }
+}
+
+// ── ALBUMS ─────────────────────────────────────────────────────────────────
+function renderAlbums(albums) {
+  const el = document.getElementById('albumList');
+  if (!albums.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">💿</div><p>Aún no tienes álbumes. ¡Agrega el primero!</p></div>';
+    return;
+  }
+  el.innerHTML = albums.map(a => `
+    <div class="album-item">
+      <div class="album-cover">💿</div>
+      <div class="album-info">
+        <div class="album-title">${esc(a.title)}</div>
+        <div class="album-year">${a.year || ''}</div>
+        ${a.description ? `<div class="album-desc">${esc(a.description)}</div>` : ''}
+      </div>
+      <button class="btn-sm btn-danger-sm" onclick="deleteAlbum('${a.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function addAlbum() {
+  const title = document.getElementById('albTitle').value.trim();
+  const year  = parseInt(document.getElementById('albYear').value) || new Date().getFullYear();
+  const desc  = document.getElementById('albDesc').value.trim();
+  if (!title) { toast('Ingresa el título del álbum', 'err'); return; }
+
+  const r = await fetch(API + '/profile/albums', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, year, description: desc })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(data.error || 'Error', 'err'); return; }
+
+  _artist.albums = [...(_artist.albums || []), data.album];
+  renderAlbums(_artist.albums);
+  document.getElementById('albTitle').value = '';
+  document.getElementById('albDesc').value  = '';
+  toast('Álbum agregado ✓', 'ok');
+}
+
+async function deleteAlbum(id) {
+  if (!confirm('¿Eliminar este álbum?')) return;
+  const r = await fetch(API + `/profile/albums/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${_token}` }
+  });
+  if (!r.ok) { toast('Error al eliminar', 'err'); return; }
+  _artist.albums = (_artist.albums || []).filter(a => a.id !== id);
+  renderAlbums(_artist.albums);
+  toast('Álbum eliminado', 'ok');
+}
+
+// ── FILES ──────────────────────────────────────────────────────────────────
+function renderFiles(files) {
+  const el = document.getElementById('fileList');
+  if (!files.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📂</div><p>Tu carpeta está vacía. Sube demos o archivos para compartir.</p></div>';
+    return;
+  }
+  el.innerHTML = files.map(f => {
+    const { icon, cls } = fileIcon(f.ext || '');
+    const shareUrl = location.origin + f.url;
+    return `
+      <div class="file-item">
+        <div class="file-icon ${cls}">${icon}</div>
+        <div class="file-info">
+          <div class="file-name">${esc(f.name)}</div>
+          <div class="file-meta">${fmtSize(f.size)} · ${f.uploaded_at ? f.uploaded_at.slice(0,10) : ''}</div>
+        </div>
+        <div class="file-actions">
+          <button class="btn-copy" onclick="copyLink('${shareUrl}')">📋 Link</button>
+          <button class="btn-del" onclick="deleteFile('${esc(f.name)}')">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  const prog  = document.getElementById('uploadProgress');
+  const bar   = document.getElementById('progBar');
+  const label = document.getElementById('progLabel');
+  prog.style.display = '';
+  bar.style.width = '0%';
+  label.textContent = `Subiendo ${file.name}...`;
+
+  // Simulate progress visually
+  let p = 0;
+  const iv = setInterval(() => { p = Math.min(p + 5, 85); bar.style.width = p + '%'; }, 200);
+
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(API + '/profile/files', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${_token}` },
+    body: fd
+  });
+  const data = await r.json().catch(() => ({}));
+
+  clearInterval(iv);
+  bar.style.width = '100%';
+
+  setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 1000);
+  document.getElementById('fileInput').value = '';
+
+  if (!r.ok) { toast(data.error || 'Error al subir archivo', 'err'); return; }
+  _artist.files = [...(_artist.files || []).filter(f => f.name !== data.file.name), data.file];
+  renderFiles(_artist.files);
+  toast(`${file.name} subido ✓`, 'ok');
+}
+
+async function deleteFile(name) {
+  if (!confirm(`¿Eliminar "${name}"?`)) return;
+  const r = await fetch(API + `/profile/files/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${_token}` }
+  });
+  if (!r.ok) { toast('Error al eliminar', 'err'); return; }
+  _artist.files = (_artist.files || []).filter(f => f.name !== name);
+  renderFiles(_artist.files);
+  toast('Archivo eliminado', 'ok');
+}
+
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(() => toast('Link copiado ✓', 'ok')).catch(() => {
+    prompt('Copia este link:', url);
+  });
+}
+
+// ── DRAG & DROP ────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', e => { dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+});
+
+// ── ESC ────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+tryAutoLogin();
+</script>
+</body>
+</html>
