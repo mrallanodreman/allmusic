@@ -198,6 +198,8 @@ class AllMusicServer:
                         else:
                             return {'success': False, 'error': f'Estado desconocido: {status}'}
                     else:
+                        if res.status in (429, 403):
+                            return {'success': False, 'error': 'Límite de conversiones diarias agotado. Intenta más tarde.'}
                         return {'success': False, 'error': f'HTTP {res.status}'}
                 except json.JSONDecodeError:
                     if attempt == max_retries - 1:
@@ -271,6 +273,7 @@ class AllMusicServer:
                 '-f', 'bestaudio[ext=m4a]/bestaudio/best',
                 '--get-url', '--no-warnings', '--no-update',
                 '--no-cookies',
+                '--extractor-args', 'youtube:player_client=web_embedded,tv,android',
                 url
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
@@ -373,7 +376,7 @@ def stream(video_id):
             if result.get('success'):
                 music_server.cache[video_id] = result
             else:
-                return jsonify({'error': result.get("error", "Error desconocido")}), 400
+                return jsonify({'success': False, 'error': result.get("error", "Error desconocido")}), 502
 
         mp3_url = music_server.cache[video_id].get('link')
         if not mp3_url:

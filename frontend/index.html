@@ -1754,21 +1754,25 @@ audio.addEventListener('playing',()=>{
 });
 audio.addEventListener('error',()=>{
     const m=audio.error;
-    const code=m?`MediaError ${m.code}`:'sin detalle';
+    const code=m?m.code:0;
     const names=['','NETWORK_ERR','DECODE_ERR','SRC_ERR','MEDIA_ERR'];
-    if(m&&m.code===4){
-        // MEDIA_ENDED/seek falló → posible truncamiento del stream. Reintentar.
-        console.warn('⚠️ Audio error:',code);
+    const label=names[code]||('code '+code);
+    console.warn('⚠️ Audio error:',label,m&&m.message);
+    if(code===2){
+        // NETWORK_ERR: se cayó la conexión del stream. Un intento de retry con Range/reconnect.
         if(!audio.dataset.retrying){
             audio.dataset.retrying='1';
-            setBadge('⚠️ Error de conexión — reintentando...',false);
-            setTimeout(()=>{audio.load();audio.play().catch(()=>{});delete audio.dataset.retrying;},500);
+            setBadge('⚠️ Conexión caída — reintentando...',false);
+            setTimeout(()=>{audio.load();audio.play().catch(()=>{});delete audio.dataset.retrying;},600);
             return;
         }
+        setBadge('⚠️ No se pudo conectar ('+label+')',false);
+        showToast('Se cortó la conexión del stream. Inténtalo de nuevo.',3500);
+        return;
     }
-    console.warn('⚠️ Audio error:',code,names[m&&m.code||0]);
-    setBadge('⚠️ Error al reproducir ('+code+')',false);
-    showToast('No se pudo reproducir. Revisa tu conexión e inténtalo de nuevo.',4000);
+    // code 3/4 (DECODE/SRC) u otros: el formato/no disponible → NO reintentar en bucle.
+    setBadge('⚠️ No disponible ('+label+')',false);
+    showToast('Este tema no se pudo reproducir. Prueba otra canción.',4000);
 });
 function restoreBadge(){
     if(paused){setBadge('<svg class="icon icon-muted" width="12" height="12" aria-hidden="true"><use href="#ic-pause"/></svg> Pausado',false);}
