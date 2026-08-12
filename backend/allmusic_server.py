@@ -285,24 +285,26 @@ class AllMusicServer:
                         'Referer': 'https://www.youtube.com/',
                         'Origin': 'https://www.youtube.com',
                     }
+                    client_range = request.headers.get('Range')
+                    if client_range:
+                        headers['Range'] = client_range
                     response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
                     if response.status_code in [200, 206]:
-                        def generate():
-                            try:
-                                for chunk in response.iter_content(chunk_size=65536):
-                                    if chunk:
-                                        yield chunk
-                            except Exception as e:
-                                logger.error(f"❌ Error streaming yt-dlp: {str(e)}")
+                        out_headers = {
+                            'Content-Type': response.headers.get('Content-Type', 'audio/mp4'),
+                            'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
+                            'Cache-Control': 'no-cache',
+                            'Access-Control-Allow-Origin': '*',
+                        }
+                        if response.status_code == 206 and response.headers.get('Content-Range'):
+                            out_headers['Content-Range'] = response.headers['Content-Range']
+                        if response.headers.get('Content-Length'):
+                            out_headers['Content-Length'] = response.headers['Content-Length']
                         return Response(
-                            generate(),
-                            mimetype='audio/mp4',
-                            headers={
-                                'Content-Type': 'audio/mp4',
-                                'Accept-Ranges': 'bytes',
-                                'Cache-Control': 'no-cache',
-                                'Access-Control-Allow-Origin': '*'
-                            }
+                            response.raw,
+                            status=response.status_code,
+                            headers=out_headers,
+                            direct_passthrough=True,
                         )
             logger.warning(f"⚠️ yt-dlp falló para {video_id}, usando fallback RapidAPI")
             return None
