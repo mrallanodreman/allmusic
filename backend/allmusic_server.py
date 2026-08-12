@@ -216,36 +216,50 @@ class AllMusicServer:
                 pass
 
     def stream_via_rapidapi(self, mp3_url):
-        """Streaming directo desde URL de RapidAPI"""
+        """Streaming directo desde URL de RapidAPI.
+
+        Se reenvía el header Range del cliente para permitir seek/resume en
+        streams largos, y se omite el read-timeout para que un stream que se
+        esticle (throttling de YouTube/CDN) no se trunque silenciosamente: el
+        generador simplemente deja de recibir datos hasta que el origen vuelve
+        a enviarlos, en lugar de abortar a los 10s.
+        """
         try:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'audio/mpeg,audio/*,*/*',
                 'Accept-Encoding': 'identity',
-                'Range': 'bytes=0-'
             }
-            response = requests.get(mp3_url, headers=headers, stream=True, timeout=10)
-            if response.status_code in [200, 206]:
-                def generate():
-                    try:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            if chunk:
-                                yield chunk
-                    except Exception as e:
-                        logger.error(f"❌ Error durante streaming: {str(e)}")
-                return Response(
-                    generate(),
-                    mimetype='audio/mpeg',
-                    headers={
-                        'Content-Type': 'audio/mpeg',
-                        'Accept-Ranges': 'bytes',
-                        'Cache-Control': 'no-cache',
-                        'Access-Control-Allow-Origin': '*'
-                    }
-                )
-            return None
+            rng = request.headers.get('Range')
+            if rng:
+                headers['Range'] = rng
+
+            response = requests.get(mp3_url, headers=headers, stream=True, timeout=(10, None))
+            if response.status_code not in (200, 206):
+                logger.warning(f"⚠️ RapidAPI stream status {response.status_code} para {mp3_url}")
+                return None
+
+            out_headers = {
+                'Cache-Control': 'no-cache',
+                'Access-Control-Allow-Origin': '*',
+                'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
+            }
+            ctype = response.headers.get('Content-Type', 'audio/mpeg')
+            out_headers['Content-Type'] = ctype if ctype.startswith('audio/') else 'audio/mpeg'
+            if response.status_code == 206 and response.headers.get('Content-Range'):
+                out_headers['Content-Range'] = response.headers['Content-Range']
+            if response.headers.get('Content-Length'):
+                out_headers['Content-Length'] = response.headers['Content-Length']
+            # No se reenvía Content-Disposition: attachment (rompería la reproducción inline en <audio>).
+
+            return Response(
+                response.raw,
+                status=response.status_code,
+                headers=out_headers,
+                direct_passthrough=True,
+            )
         except Exception as e:
-            logger.error(f"❌ Error en stream: {str(e)}")
+            logger.error(f"❌ Error en stream rapidapi: {str(e)}")
             return None
 
     def stream_via_ytdlp(self, video_id):
@@ -271,7 +285,7 @@ class AllMusicServer:
                         'Referer': 'https://www.youtube.com/',
                         'Origin': 'https://www.youtube.com',
                     }
-                    response = requests.get(audio_url, headers=headers, stream=True, timeout=30)
+                    response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
                     if response.status_code in [200, 206]:
                         def generate():
                             try:
@@ -361,13 +375,24 @@ def stream(video_id):
 
         mp3_url = music_server.cache[video_id].get('link')
         if not mp3_url:
-            return jsonify({'error': 'No hay URL'}), 400
+            return jsonify({'success': False, 'error': 'No hay URL de audio'}), 502
 
-        # Proxy streaming
         stream_resp = music_server.stream_via_rapidapi(mp3_url)
         if stream_resp:
             return stream_resp
-        return redirect(mp3_url)
+
+        # El link cacheado puede haber expirado (las URLs de RapidAPI caducan).
+        # Renovarlo y reintentar una vez antes de rendirse.
+        logger.warning(f"⚠️ Link caducado/expirado para {video_id}; renovando vía RapidAPI")
+        music_server.cache.pop(video_id, None)
+        result = music_server.convert_to_mp3(video_id)
+        if result.get('success') and result.get('link'):
+            music_server.cache[video_id] = result
+            stream_resp = music_server.stream_via_rapidapi(result['link'])
+            if stream_resp:
+                return stream_resp
+
+        return jsonify({'success': False, 'error': 'No se pudo iniciar el stream. Inténtalo de nuevo.'}), 502
     except Exception as e:
         logger.error(f"❌ Error en /stream: {str(e)}")
         return jsonify({'error': str(e)}), 500

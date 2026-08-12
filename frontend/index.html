@@ -1743,11 +1743,37 @@ audio.addEventListener('ended',()=>{
         playResult(searchResults[n]);
     }
 });
-audio.addEventListener('error',()=>{
-    const err = audio.error ? audio.error.message : 'Error desconocido';
-    console.warn('⚠️ Audio error:', err);
-    setBadge('⚠️ Error al reproducir',false);
+let stallWarned=false;
+audio.addEventListener('waiting',()=>{
+    if(audio.readyState<=1){
+        if(!stallWarned){setBadge('<svg class="icon icon-muted" width="12" height="12" aria-hidden="true"><use href="#ic-clock"/></svg> Conectando...',false);stallWarned=true;}
+    }
 });
+audio.addEventListener('playing',()=>{
+    if(stallWarned){restoreBadge();stallWarned=false;}
+});
+audio.addEventListener('error',()=>{
+    const m=audio.error;
+    const code=m?`MediaError ${m.code}`:'sin detalle';
+    const names=['','NETWORK_ERR','DECODE_ERR','SRC_ERR','MEDIA_ERR'];
+    if(m&&m.code===4){
+        // MEDIA_ENDED/seek falló → posible truncamiento del stream. Reintentar.
+        console.warn('⚠️ Audio error:',code);
+        if(!audio.dataset.retrying){
+            audio.dataset.retrying='1';
+            setBadge('⚠️ Error de conexión — reintentando...',false);
+            setTimeout(()=>{audio.load();audio.play().catch(()=>{});delete audio.dataset.retrying;},500);
+            return;
+        }
+    }
+    console.warn('⚠️ Audio error:',code,names[m&&m.code||0]);
+    setBadge('⚠️ Error al reproducir ('+code+')',false);
+    showToast('No se pudo reproducir. Revisa tu conexión e inténtalo de nuevo.',4000);
+});
+function restoreBadge(){
+    if(paused){setBadge('<svg class="icon icon-muted" width="12" height="12" aria-hidden="true"><use href="#ic-pause"/></svg> Pausado',false);}
+    else if(audio.readyState>=2){setBadge('<svg class="icon icon-accent" width="12" height="12" aria-hidden="true"><use href="#ic-play-fill"/></svg> Reproduciendo',true);}
+}
 
 function togglePlay(){audio.paused?audio.play():audio.pause();}
 function seekTo(v){if(audio.duration)audio.currentTime=(v/100)*audio.duration;}
@@ -1866,6 +1892,11 @@ function setInfo(title,artist,thumb,album,year,dur,genre,extra){
 function setBadge(t,show){
     const b=document.getElementById('trackBadge');
     b.innerHTML=t;b.style.display=show===false&&!t?'none':'inline-block';
+}
+function showToast(msg,ms){
+    setBadge(msg,false);
+    clearTimeout(setBadge._to);
+    setBadge._to=setTimeout(()=>{setBadge('','—');},ms||2200);
 }
 function fmtTime(s){const m=Math.floor(s/60),sc=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');}
 function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}

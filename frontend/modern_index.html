@@ -919,6 +919,23 @@ function dlCurrent(){
     } else {alert('Busca una canción para poder descargarla.');}
 }
 
+audio.addEventListener('error',()=>{
+    const m=audio.error;
+    const code=m?`MediaError ${m.code}`:'sin detalle';
+    if(m&&m.code===4){
+        console.warn('⚠️ Audio error:',code);
+        if(!audio.dataset.retrying){
+            audio.dataset.retrying='1';
+            setBadge('⚠️ Error de conexión — reintentando...',false);
+            setTimeout(()=>{audio.load();audio.play().catch(()=>{});delete audio.dataset.retrying;},500);
+            return;
+        }
+    }
+    console.warn('⚠️ Audio error:',code);
+    setBadge('⚠️ Error al reproducir ('+code+')',false);
+    alert('No se pudo reproducir. Revisa tu conexión e inténtalo de nuevo.');
+});
+
 // ── Display ──
 function setInfo(title,artist,thumb,album,year,dur,genre,extra){
     document.getElementById('trackTitle').textContent=title||'Sin título';
