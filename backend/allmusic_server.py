@@ -270,7 +270,7 @@ class AllMusicServer:
             url = f"https://www.youtube.com/watch?v={video_id}"
             cmd = [
                 'yt-dlp',
-                '-f', 'bestaudio[ext=m4a]/bestaudio/best',
+                '-f', 'bestaudio[ext=m4a]/bestaudio',
                 '--get-url', '--no-warnings', '--no-update',
                 '--no-cookies',
                 '--extractor-args', 'youtube:player_client=web_embedded,tv,android',
