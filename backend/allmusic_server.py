@@ -497,6 +497,235 @@ def status():
     })
 
 
+# ── CANCIONES DINÁMICAS (SEO) ─────────────────────────────────────────────────
+# Página por canción "/allmusic/cancion/<artista>/<titulo>": busca en YouTube,
+# muestra la letra (Lyrics.ovh) y reproduce con el link directo del CDN.
+# Debe definirse ANTES del catch-all /<path:filename>.
+
+LYRICS_CACHE_DIR = os.path.join(DATA_DIR, 'lyrics_cache')
+os.makedirs(LYRICS_CACHE_DIR, exist_ok=True)
+SONG_PAGE_TTL = 7 * 24 * 3600  # 7 días para páginas populares
+
+
+def _lyrics_from_cache(artist, title):
+    key = re.sub(r'[^a-z0-9]+', '_', (artist + '-' + title).lower()).strip('_')
+    path = os.path.join(LYRICS_CACHE_DIR, key + '.json')
+    if os.path.exists(path):
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+            age = time.time() - data.get('ts', 0)
+            if age < SONG_PAGE_TTL:
+                return data.get('lyrics')
+        except Exception:
+            pass
+    return None
+
+
+def _lyrics_to_cache(artist, title, lyrics):
+    key = re.sub(r'[^a-z0-9]+', '_', (artist + '-' + title).lower()).strip('_')
+    path = os.path.join(LYRICS_CACHE_DIR, key + '.json')
+    try:
+        with open(path, 'w') as f:
+            json.dump({'artist': artist, 'title': title, 'lyrics': lyrics, 'ts': time.time()}, f)
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo cachear letra: {e}")
+
+
+def _fetch_lyrics(artist, title):
+    cached = _lyrics_from_cache(artist, title)
+    if cached:
+        return cached
+    try:
+        url = f"https://api.lyrics.ovh/v1/{quote(artist)}/{quote(title)}"
+        r = requests.get(url, timeout=20, headers={'User-Agent': 'Mozilla/5.0'})
+        if r.status_code == 200:
+            lyrics = r.json().get('lyrics', '')
+            if lyrics:
+                _lyrics_to_cache(artist, title, lyrics)
+                return lyrics
+    except Exception as e:
+        logger.warning(f"⚠️ Error Lyrics.ovh {artist} - {title}: {e}")
+    return None
+
+
+def _song_meta_from_slug(artist_slug, title_slug):
+    """Convierte slugs url a nombres legibles."""
+    artist = re.sub(r'[-_]+', ' ', artist_slug).strip().title()
+    title = re.sub(r'[-_]+', ' ', title_slug).strip().title()
+    return artist, title
+
+
+def _search_best_video(artist, title):
+    """Busca la canción y evita videos de 'letra'/'lyrics' como reproductor."""
+    query = f"{artist} {title}"
+    try:
+        results = music_server.search_youtube(query, max_results=10)
+    except Exception as e:
+        logger.warning(f"⚠️ Búsqueda falló: {e}")
+        return None
+    if not results:
+        return None
+    # Priorizar un video que no sea "letra/lyrics/audio/version" para reproducir,
+    # pero si solo hay letras, usar el primero.
+    bad = re.compile(r'\(?(letra|lyrics?|official audio|audio oficial|cover)\)?', re.I)
+    for r in results:
+        if not bad.search(r.get('title', '')):
+            return r
+    return results[0]
+
+
+def _song_page_html(artist, title, video, lyrics):
+    canon = f"https://edgemarketing.art/allmusic/cancion/{quote(artist.lower().replace(' ', '-'))}/{quote(title.lower().replace(' ', '-'))}"
+    page_title = f"{artist} - {title} (Letra) | AllMusic"
+    desc = f"Escucha gratis {artist} - {title} en AllMusic. Letra completa y reproductor sin registro. 🎧"
+    thumb = video.get('thumbnail', '')
+    video_id = video['id']
+    uploader = video.get('uploader', 'YouTube')
+
+    # Letra en <pre> escapada (o aviso si no hay).
+    if lyrics:
+        import html as _html
+        lyrics_block = f"<pre id=\"lyrics\">{_html.escape(lyrics)}</pre>"
+        lyrics_meta = f"{len(lyrics.split())} palabras de letra"
+    else:
+        lyrics_block = '<p class="no-lyrics">No encontramos la letra completa para esta canción. Escúchala gratis en el reproductor de abajo. 🎵</p>'
+        lyrics_meta = "Letra no disponible, pero sí la canción"
+
+    related = []
+    try:
+        related = music_server.search_youtube(f"{artist} música", max_results=5)
+    except Exception:
+        related = []
+    related_links = ''
+    for r in related[:5]:
+        rel_slug = (quote(r['title'].replace(' ', '-')[:60].lower())) if r.get('title') else ''
+        related_links += f'<li><a href="/allmusic/cancion/{quote(artist.lower().replace(" ", "-"))}/{rel_slug}">🎵 {_html.escape(r["title"])}</a></li>'
+    if not related_links:
+        related_links = '<li>No hay sugerencias.</li>'
+
+    return f'''<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{page_title}</title>
+<meta name="description" content="{desc}">
+<link rel="canonical" href="{canon}">
+<meta property="og:type" content="music.song">
+<meta property="og:title" content="{artist} - {title}">
+<meta property="og:description" content="{desc}">
+<meta property="og:image" content="{thumb}">
+<meta property="og:url" content="{canon}">
+<meta name="robots" content="index,follow">
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "MusicRecording",
+  "name": "{title}",
+  "byArtist": {{"@type": "MusicGroup", "name": "{artist}"}},
+  "inAlbum": {{"@type": "MusicAlbum", "name": "{artist} - {title}"}},
+  "url": "{canon}",
+  "audio": {{"@type": "AudioObject", "contentUrl": "{canon}"}},
+  "isFamilyFriendly": true
+}}
+</script>
+<style>
+  *{{margin:0;box-sizing:border-box}}
+  body{{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0f1117;color:#e6e6e6;min-height:100vh;line-height:1.5}}
+  .wrap{{max-width:760px;margin:0 auto;padding:24px 16px 80px}}
+  header{{display:flex;align-items:center;gap:12px;margin-bottom:20px}}
+  header .logo{{font-size:20px;font-weight:800;color:#fff;text-decoration:none}}
+  header .logo span{{color:#ff4d6d}}
+  h1{{font-size:26px;margin-bottom:6px;color:#fff}}
+  .sub{{color:#9aa0aa;font-size:14px;margin-bottom:20px}}
+  .card{{background:#1a1e27;border-radius:14px;padding:20px;margin-bottom:20px}}
+  .player{{display:flex;flex-direction:column;gap:14px}}
+  .btn{{background:#ff4d6d;color:#fff;border:0;padding:14px 22px;border-radius:30px;font-size:16px;font-weight:700;cursor:pointer}}
+  .btn:disabled{{opacity:.5;cursor:wait}}
+  .meta{{color:#b8bcc4;font-size:13px}}
+  #lyrics{{white-space:pre-wrap;font-family:inherit;font-size:15px;color:#e6e6e6;line-height:1.7;max-height:600px;overflow:auto}}
+  .no-lyrics{{color:#9aa0aa}}
+  .rel{{list-style:none;padding:0}}
+  .rel a{{color:#8ecbff;text-decoration:none;display:block;padding:8px 0;border-bottom:1px solid #252a35}}
+  footer{{margin-top:30px;color:#777;font-size:12px;text-align:center}}
+  footer a{{color:#8ecbff;text-decoration:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/allmusic/">🎧 All<span>Music</span></a>
+  </header>
+  <h1>{artist} - {title}</h1>
+  <div class="sub">🎶 {lyrics_meta} · Escúchala gratis, sin registro · <a href="/allmusic/dmca.html" style="color:#8ecbff">DMCA</a></div>
+
+  <div class="card">
+    <div class="player">
+      <button id="playBtn" class="btn" onclick="playSong()">▶ Reproducir gratis</button>
+      <div class="meta" id="status">Listo para reproducir · {uploader}</div>
+      <div id="playerErr" style="color:#ff6b6b;font-size:13px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:18px;margin-bottom:12px;color:#fff">📜 Letra</h2>
+    {lyrics_block}
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:18px;margin-bottom:12px;color:#fff">🎧 Más de {artist}</h2>
+    <ul class="rel">{related_links}</ul>
+  </div>
+
+  <footer>
+    <p><a href="/allmusic/">Inicio</a> · <a href="/allmusic/terminos.html">Términos</a> · <a href="/allmusic/privacidad.html">Privacidad</a> · <a href="/allmusic/dmca.html">DMCA</a></p>
+    <p>AllMusic © {datetime.date.today().year} · Reproduce música de YouTube sin registro</p>
+  </footer>
+</div>
+
+<audio id="audio"></audio>
+<script>
+  const VIDEO_ID={json.dumps(video_id)};
+  async function playSong(){{
+    const btn=document.getElementById('playBtn');
+    const status=document.getElementById('status');
+    const err=document.getElementById('playerErr');
+    btn.disabled=true;btn.textContent='⏳ Cargando...';err.textContent='';
+    try{{
+      const c=await (await fetch('/allmusic/convert/'+VIDEO_ID)).json();
+      if(c&&c.success&&c.link){{
+        const a=document.getElementById('audio');
+        a.src=c.link;a.play();
+        status.textContent='▶ Reproduciendo · {uploader}';
+      }}else{{
+        throw new Error(c&&c.error||'No se pudo obtener el audio');
+      }}
+    }}catch(e){{
+      err.textContent='⚠️ '+e.message+' · Inténtalo de nuevo.';
+      status.textContent='Error al reproducir';
+    }}finally{{
+      btn.disabled=false;btn.textContent='▶ Reproducir gratis';
+    }}
+  }}
+</script>
+</body>
+</html>'''
+
+
+@app.route('/cancion/<artist_slug>/<title_slug>')
+def cancion(artist_slug, title_slug):
+    artist, title = _song_meta_from_slug(artist_slug, title_slug)
+    if not artist or not title:
+        return redirect('/allmusic/')
+    video = _search_best_video(artist, title)
+    if not video:
+        return redirect('/allmusic/')
+    lyrics = _fetch_lyrics(artist, title)
+    html = _song_page_html(artist, title, video, lyrics)
+    return Response(html, mimetype='text/html')
+
+
 # ── FRONTEND ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
