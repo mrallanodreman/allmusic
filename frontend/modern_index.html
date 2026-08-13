@@ -415,7 +415,8 @@
             .ctrl-btn.play-main{width:54px;height:54px;font-size:20px;}
             body{height:auto;overflow:auto;}
         }
-    </style>
+    .icon{display:inline-block;vertical-align:-0.2em;flex-shrink:0}
+</style>
 </head>
 <body>
 <div class="app">
@@ -423,10 +424,10 @@
     <!-- ══ LEFT PANEL ══ -->
     <div class="left-panel">
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('history')">🕒 Historial</button>
-            <button class="tab-btn"        onclick="switchTab('search')">🔍 Buscar</button>
-            <button class="tab-btn"        onclick="switchTab('playlists')">🎵 Playlists</button>
-            <button class="tab-btn"        onclick="switchTab('config')">⚙ Config</button>
+            <button class="tab-btn active" onclick="switchTab('history')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> Historial</button>
+            <button class="tab-btn"        onclick="switchTab('search')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg> Buscar</button>
+            <button class="tab-btn"        onclick="switchTab('playlists')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg> Playlists</button>
+            <button class="tab-btn"        onclick="switchTab('config')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18"/></svg> Config</button>
         </div>
 
         <!-- Historial -->
@@ -434,8 +435,8 @@
             <!-- Panel SUPERIOR: Escuchadas -->
             <div class="hist-section">
                 <div class="hist-header">
-                    <span>📻 Escuchadas</span>
-                    <button onclick="clearPlayed()" title="Borrar historial">✕ Borrar</button>
+                    <span><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="1.6"/><circle cx="8" cy="14.5" r="2.2"/><path d="M13 13h5M13 16h3"/><path d="m7 9 3.5-5.5"/></svg> Escuchadas</span>
+                    <button onclick="clearPlayed()" title="Borrar historial"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="5.5" y2="18.5"/></svg> Borrar</button>
                 </div>
                 <div class="track-list" id="playedList"><div class="empty">Aún no has escuchado canciones</div></div>
             </div>
@@ -443,8 +444,8 @@
             <!-- Panel INFERIOR: Descargadas -->
             <div class="hist-section">
                 <div class="hist-header">
-                    <span>⬇ Descargadas</span>
-                    <button onclick="clearDownloaded()" title="Borrar lista">✕ Borrar</button>
+                    <span><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg> Descargadas</span>
+                    <button onclick="clearDownloaded()" title="Borrar lista"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="5.5" y2="18.5"/></svg> Borrar</button>
                 </div>
                 <div class="track-list" id="downloadedList"><div class="empty">Aún no has descargado canciones</div></div>
             </div>
@@ -454,7 +455,7 @@
         <div class="tab-pane" id="pane-search">
             <div class="filter-row">
                 <input type="text" id="searchInput" placeholder="Buscar en YouTube…" onkeypress="if(event.key==='Enter')doSearch()">
-                <button class="icon-btn" onclick="doSearch()">🔍</button>
+                <button class="icon-btn" onclick="doSearch()"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg></button>
             </div>
             <div class="spinner" id="srchSpinner"></div>
             <div class="track-list" id="srchList"></div>
@@ -512,14 +513,14 @@
                 <div class="upload-cta-title">Sube tu música</div>
                 <div class="upload-cta-sub">Tus archivos. Una biblioteca. En todos lados — incluso offline.</div>
             </div>
-            <a class="upload-cta-btn" href="artistas.html">🎤 Subir música</a>
+            <a class="upload-cta-btn" href="artistas.html"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="17.5" x2="12" y2="21"/><line x1="8.5" y1="21" x2="15.5" y2="21"/></svg> Subir música</a>
         </div>
 
         <div class="art-wrap">
             <div class="art-outer" id="artOuter">
                 <img id="artImg" src="" alt="" style="display:none"
                      onerror="this.style.display='none';document.getElementById('artPh').style.display='flex'">
-                <div class="art-no-cover" id="artPh">🎵</div>
+                <div class="art-no-cover" id="artPh"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg></div>
             </div>
             <div class="art-dot"></div>
         </div>
@@ -528,8 +529,8 @@
         <div class="track-artist-main" id="trackArtist">Your files. One library. Everywhere.</div>
 
         <div class="track-meta">
-            <span>💿 Álbum: <b id="metaAlbum">—</b></span>
-            <span>📅 Año: <b id="metaYear">—</b> &nbsp;|&nbsp; 🎸 Género: <b id="metaGenre">—</b></span>
+            <span><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/></svg> Álbum: <b id="metaAlbum">—</b></span>
+            <span><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="1.6"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg> Año: <b id="metaYear">—</b> &nbsp;|&nbsp; <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg> Género: <b id="metaGenre">—</b></span>
             <span>⏱ Duración: <b id="metaDur">—</b></span>
         </div>
 
@@ -541,11 +542,11 @@
             <button class="ctrl-btn play-main" id="playBtn"  onclick="togglePlay()">▶</button>
             <button class="ctrl-btn" onclick="skipFwd()"     title="+10s" style="font-size:15px;">⏩</button>
             <button class="ctrl-btn" onclick="playNext()"    title="Siguiente">⏭</button>
-            <button class="ctrl-btn" onclick="dlCurrent()"   title="Descargar" style="font-size:16px;">⬇</button>
+            <button class="ctrl-btn" onclick="dlCurrent()"   title="Descargar" style="font-size:16px;"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg></button>
             <button class="ctrl-btn" onclick="openAddToPlaylist()" title="Añadir a playlist" style="font-size:22px;">≡</button>
         </div>
 
-        <button class="radio-toggle" id="radioToggleBtn" onclick="toggleRadioMode()">📻 Radio: OFF</button>
+        <button class="radio-toggle" id="radioToggleBtn" onclick="toggleRadioMode()"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="1.6"/><circle cx="8" cy="14.5" r="2.2"/><path d="M13 13h5M13 16h3"/><path d="m7 9 3.5-5.5"/></svg> Radio: OFF</button>
 
         <div class="prog-section">
             <div class="prog-bar-wrap">
@@ -559,7 +560,7 @@
         </div>
 
         <div class="vol-section">
-            <span class="vol-label">🔊 Volumen</span>
+            <span class="vol-label"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg> Volumen</span>
             <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="80"
                    oninput="audio.volume=this.value/100">
         </div>
@@ -569,7 +570,7 @@
 <!-- Add to Playlist Modal -->
 <div class="modal-overlay" id="plModal">
     <div class="modal-box">
-        <div class="modal-title">➕ Añadir a playlist</div>
+        <div class="modal-title"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Añadir a playlist</div>
         <div class="modal-track" id="modalTrackName"></div>
         <div class="modal-new-row">
             <input type="text" id="modalNewPl" placeholder="Crear nueva playlist…" onkeypress="if(event.key==='Enter')modalCreateAndAdd()">
@@ -629,7 +630,7 @@ function renderHistory(){
             <div class="track-card" onclick="playFromHistory(${i})">
                 <div class="track-thumb">
                     <img src="${esc(it.thumb||'')}" onerror="this.style.display='none'" style="${it.thumb?'':'display:none'}">
-                    <span style="${it.thumb?'display:none':''}">🎵</span>
+                    <span style="${it.thumb?'display:none':''}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg></span>
                 </div>
                 <div class="track-info">
                     <div class="t-title">${esc(it.title)}</div>
@@ -645,14 +646,14 @@ function renderHistory(){
             <div class="track-card">
                 <div class="track-thumb">
                     <img src="${esc(it.thumb||'')}" onerror="this.style.display='none'" style="${it.thumb?'':'display:none'}">
-                    <span style="${it.thumb?'display:none':''}">⬇</span>
+                    <span style="${it.thumb?'display:none':''}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg></span>
                 </div>
                 <div class="track-info">
                     <div class="t-title">${esc(it.title)}</div>
                     <div class="t-artist">${esc(it.artist||'')}</div>
                     <div class="t-album">${new Date(it.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
-                <span style="font-size:18px;color:#5a8a5a;flex-shrink:0;">✅</span>
+                <span style="font-size:18px;color:#5a8a5a;flex-shrink:0;"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-6.5"/></svg></span>
             </div>`).join('');
     }
 }
@@ -737,14 +738,14 @@ function renderPlaylists(){
     }
     el.innerHTML=playlists.map(pl=>`
         <div class="pl-card" onclick="openPl(${pl.id})">
-            <div class="pl-icon">🎵</div>
+            <div class="pl-icon"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg></div>
             <div class="pl-info">
                 <div class="pl-name">${esc(pl.name)}</div>
                 <div class="pl-count">${(pl.tracks||[]).length} canción${(pl.tracks||[]).length!==1?'es':''} · por ${esc(pl.created_by||'?')}</div>
             </div>
             <div class="pl-actions">
                 <button class="pl-btn" title="Reproducir" onclick="event.stopPropagation();openPl(${pl.id});playPlaylistAll()">▶</button>
-                <button class="pl-btn del" title="Eliminar" onclick="event.stopPropagation();deletePlaylist(${pl.id})">🗑</button>
+                <button class="pl-btn del" title="Eliminar" onclick="event.stopPropagation();deletePlaylist(${pl.id})"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5h15"/><path d="M9 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h3.4A1.3 1.3 0 0 1 15 4.8v1.7"/><path d="M6.5 6.5 7.3 20a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-13.5"/><line x1="10.2" y1="10.5" x2="10.2" y2="17"/><line x1="13.8" y1="10.5" x2="13.8" y2="17"/></svg></button>
             </div>
         </div>`).join('');
 }
@@ -775,10 +776,10 @@ function renderPlTracks(id){
             </div>
             <div class="track-info">
                 <div class="t-title">${esc(t.title)}</div>
-                <div class="t-artist">${esc(t.artist||'')}${t.added_by?' · ✦ '+esc(t.added_by):''}</div>
+                <div class="t-artist">${esc(t.artist||'')}${t.added_by?' · <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 2.9 6 6.6.7-4.9 4.5 1.3 6.5L12 17.3l-5.9 3.2 1.3-6.5-4.9-4.5 6.6-.7Z" fill="currentColor" stroke="none"/></svg> '+esc(t.added_by):''}</div>
             </div>
             <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
-                <button class="card-dl" title="Quitar" onclick="event.stopPropagation();removeTrackFromPlaylist(${id},${i})" style="color:#f66;">✕</button>
+                <button class="card-dl" title="Quitar" onclick="event.stopPropagation();removeTrackFromPlaylist(${id},${i})" style="color:#f66;"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="5.5" y2="18.5"/></svg></button>
             </div>
         </div>`).join('');
 }
@@ -822,7 +823,7 @@ function _renderModalPls(){
     } else {
         list.innerHTML=playlists.map(pl=>`
             <div class="modal-pl-item" onclick="modalAddTo(${pl.id})">
-                <span>🎵 ${esc(pl.name)}</span>
+                <span><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg> ${esc(pl.name)}</span>
                 <small>${(pl.tracks||[]).length} canciones</small>
             </div>`).join('');
     }
@@ -835,7 +836,7 @@ async function modalAddTo(plId){
     if(!_modalTrack)return;
     const pl=await addTrackToPlaylist(plId,_modalTrack);
     closeModal();
-    if(pl){setBadge('✅ Añadida a: '+esc(pl.name),true);setTimeout(()=>setBadge('▶ Reproduciendo',true),2500);}
+    if(pl){setBadge('<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-6.5"/></svg> Añadida a: '+esc(pl.name),true);setTimeout(()=>setBadge('▶ Reproduciendo',true),2500);}
 }
 async function modalCreateAndAdd(){
     const name=document.getElementById('modalNewPl').value.trim();if(!name)return;
@@ -863,7 +864,7 @@ async function doSearch(){
         const d=await(await fetch('search?q='+encodeURIComponent(q)+'&limit='+searchLimit)).json();
         searchResults=d.results||[];renderSearch(searchResults);
     }catch(e){
-        document.getElementById('srchList').innerHTML='<div class="empty">❌ '+esc(e.message)+'</div>';
+        document.getElementById('srchList').innerHTML='<div class="empty"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg> '+esc(e.message)+'</div>';
     }
     document.getElementById('srchSpinner').style.display='none';
 }
@@ -874,7 +875,7 @@ function renderSearch(res){
         <div class="track-card" id="sc-${i}" onclick="selSearch(${i})">
             <div class="track-thumb">
                 <img src="${esc(r.thumbnail||'')}" onerror="this.style.display='none'" style="${r.thumbnail?'':'display:none'}">
-                <span style="${r.thumbnail?'display:none':''}">🎵</span>
+                <span style="${r.thumbnail?'display:none':''}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/><path d="M8.9 18V5.5L19.4 4v11.5"/><path d="M8.9 8.8 19.4 7.3"/></svg></span>
             </div>
             <div class="track-info">
                 <div class="t-title">${esc(r.title)}</div>
@@ -882,7 +883,7 @@ function renderSearch(res){
                 <div class="t-album">${r.duration?fmtTime(r.duration):''}</div>
             </div>
             <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
-                <button class="card-dl" title="Descargar al dispositivo" onclick="event.stopPropagation();dlSearch(${i},this)">⬇</button>
+                <button class="card-dl" title="Descargar al dispositivo" onclick="event.stopPropagation();dlSearch(${i},this)"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg></button>
                 <button class="card-dl" title="Añadir a playlist" onclick="event.stopPropagation();openAddToPlaylistTrack({id:searchResults[${i}].id,title:searchResults[${i}].title,artist:searchResults[${i}].uploader||'YouTube',thumb:searchResults[${i}].thumbnail||'',src:'stream/'+searchResults[${i}].id})" style="font-size:16px;">≡</button>
             </div>
             <div class="mini-prog" id="spr-${i}"><div class="mini-prog-fill" id="spf-${i}"></div></div>
@@ -932,13 +933,13 @@ function dlSearch(i,btn){
             const a=document.createElement('a');a.href=url;a.download=(r.title||'cancion')+'.mp3';
             document.body.appendChild(a);a.click();document.body.removeChild(a);
             setTimeout(()=>URL.revokeObjectURL(url),5000);
-            btn.textContent='✅';
+            btn.innerHTML='<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-6.5"/></svg>';
             addToDownloaded(r.title,r.uploader||'YouTube',r.thumbnail||'');
-            setTimeout(()=>{btn.textContent='⬇';bar.style.display='none';},2500);
+            setTimeout(()=>{btn.innerHTML='<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg>';bar.style.display='none';},2500);
         })
         .catch(e=>{
-            btn.textContent='❌';bar.style.display='none';
-            setTimeout(()=>btn.textContent='⬇',2500);
+            btn.innerHTML='<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>';bar.style.display='none';
+            setTimeout(()=>btn.innerHTML='<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg>',2500);
             alert('Error: '+e.message);
         });
 }
@@ -997,14 +998,14 @@ function playPrev(){
 }
 function toggleRadioMode(val){
     radioMode=val!==undefined?val:!radioMode;
-    document.getElementById('radioToggleBtn').textContent=radioMode?'🟢 Radio: ON':'📻 Radio: OFF';
+    document.getElementById('radioToggleBtn').innerHTML=radioMode?'<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V14"/><path d="M9.5 20V9"/><path d="M15 20V6"/><path d="M20.5 20V3"/></svg> Radio: ON':'<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="1.6"/><circle cx="8" cy="14.5" r="2.2"/><path d="M13 13h5M13 16h3"/><path d="m7 9 3.5-5.5"/></svg> Radio: OFF';
     document.getElementById('radioToggleBtn').classList.toggle('on',radioMode);
     const cb=document.getElementById('cfgRadio');if(cb)cb.checked=radioMode;
 }
 function dlCurrent(){
     if(curVideoId){
         const i=searchResults.findIndex(r=>r.id===curVideoId);
-        if(i>=0){dlSearch(i,document.querySelector('#sc-'+i+' .card-dl')||{textContent:'⬇'});return;}
+        if(i>=0){dlSearch(i,document.querySelector('#sc-'+i+' .card-dl')||{textContent:'<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/></svg>'});return;}
         window.open('download/'+curVideoId+'.mp3','_blank');
     } else {alert('Busca una canción para poder descargarla.');}
 }
@@ -1018,15 +1019,15 @@ audio.addEventListener('error',()=>{
     if(code===2){
         if(!audio.dataset.retrying){
             audio.dataset.retrying='1';
-            setBadge('⚠️ Conexión caída — reintentando...',false);
+            setBadge('<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20.5H2Z"/><line x1="12" y1="9.3" x2="12" y2="14.3"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg> Conexión caída — reintentando...',false);
             setTimeout(()=>{audio.load();audio.play().catch(()=>{});delete audio.dataset.retrying;},600);
             return;
         }
-        setBadge('⚠️ No se pudo conectar ('+label+')',false);
+        setBadge('<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20.5H2Z"/><line x1="12" y1="9.3" x2="12" y2="14.3"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg> No se pudo conectar ('+label+')',false);
         alert('Se cortó la conexión del stream. Inténtalo de nuevo.');
         return;
     }
-    setBadge('⚠️ No disponible ('+label+')',false);
+    setBadge('<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20.5H2Z"/><line x1="12" y1="9.3" x2="12" y2="14.3"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg> No disponible ('+label+')',false);
     alert('Este tema no se pudo reproducir. Prueba otra canción.');
 });
 
@@ -1044,7 +1045,7 @@ function setInfo(title,artist,thumb,album,year,dur,genre,extra){
 }
 function setBadge(t,show){
     const b=document.getElementById('trackBadge');
-    b.textContent=t;b.style.display=show===false&&!t?'none':'inline-block';
+    b.innerHTML=t;b.style.display=show===false&&!t?'none':'inline-block';
 }
 function fmtTime(s){const m=Math.floor(s/60),sc=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');}
 function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
