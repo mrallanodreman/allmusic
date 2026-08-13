@@ -556,26 +556,24 @@ def _song_meta_from_slug(artist_slug, title_slug):
     return artist, title
 
 
-def _search_best_video(artist, title):
-    """Busca la canción y evita videos de 'letra'/'lyrics' como reproductor."""
+def _search_videos(artist, title):
+    """Busca la canción; prioriza videos que no sean 'letra/lyrics' como principal,
+    pero devuelve todos los resultados para que el player pueda probar varios."""
     query = f"{artist} {title}"
     try:
         results = music_server.search_youtube(query, max_results=10)
     except Exception as e:
         logger.warning(f"⚠️ Búsqueda falló: {e}")
-        return None
+        return []
     if not results:
-        return None
-    # Priorizar un video que no sea "letra/lyrics/audio/version" para reproducir,
-    # pero si solo hay letras, usar el primero.
-    bad = re.compile(r'\(?(letra|lyrics?|official audio|audio oficial|cover)\)?', re.I)
-    for r in results:
-        if not bad.search(r.get('title', '')):
-            return r
-    return results[0]
+        return []
+    # Ordenar: videos que no son "letra/lyrics/cover" primero (mejor calidad de audio).
+    bad = re.compile(r'\(?(letra|lyrics?|official audio|audio oficial|cover|playlist|album completo)\)?', re.I)
+    results.sort(key=lambda r: 1 if bad.search(r.get('title', '')) else 0)
+    return results
 
 
-def _song_page_html(artist, title, video, lyrics):
+def _song_page_html(artist, title, video, lyrics, video_ids):
     canon = f"https://edgemarketing.art/allmusic/cancion/{quote(artist.lower().replace(' ', '-'))}/{quote(title.lower().replace(' ', '-'))}"
     page_title = f"{artist} - {title} (Letra) | AllMusic"
     desc = f"Escucha gratis {artist} - {title} en AllMusic. Letra completa y reproductor sin registro. 🎧"
@@ -686,27 +684,29 @@ def _song_page_html(artist, title, video, lyrics):
 
 <audio id="audio"></audio>
 <script>
-  const VIDEO_ID={json.dumps(video_id)};
+  const VIDEO_IDS={json.dumps(video_ids)};
   async function playSong(){{
     const btn=document.getElementById('playBtn');
     const status=document.getElementById('status');
     const err=document.getElementById('playerErr');
     btn.disabled=true;btn.textContent='⏳ Cargando...';err.textContent='';
-    try{{
-      const c=await (await fetch('/allmusic/convert/'+VIDEO_ID)).json();
-      if(c&&c.success&&c.link){{
-        const a=document.getElementById('audio');
-        a.src=c.link;a.play();
-        status.textContent='▶ Reproduciendo · {uploader}';
-      }}else{{
-        throw new Error(c&&c.error||'No se pudo obtener el audio');
-      }}
-    }}catch(e){{
-      err.textContent='⚠️ '+e.message+' · Inténtalo de nuevo.';
-      status.textContent='Error al reproducir';
-    }}finally{{
-      btn.disabled=false;btn.textContent='▶ Reproducir gratis';
+    const a=document.getElementById('audio');
+    let played=false;
+    for(const id of VIDEO_IDS){{
+      try{{
+        const c=await (await fetch('/allmusic/convert/'+id)).json();
+        if(c&&c.success&&c.link){{
+          a.src=c.link;a.play();
+          status.textContent='▶ Reproduciendo · {uploader}';
+          played=true;break;
+        }}
+      }}catch(e){{/* prueba siguiente */}}
     }}
+    if(!played){{
+      err.textContent='⚠️ No pudimos obtener el audio. Inténtalo de nuevo en unos segundos.';
+      status.textContent='Error al reproducir';
+    }}
+    btn.disabled=false;btn.textContent='▶ Reproducir gratis';
   }}
 </script>
 </body>
@@ -718,11 +718,13 @@ def cancion(artist_slug, title_slug):
     artist, title = _song_meta_from_slug(artist_slug, title_slug)
     if not artist or not title:
         return redirect('/allmusic/')
-    video = _search_best_video(artist, title)
-    if not video:
+    videos = _search_videos(artist, title)
+    if not videos:
         return redirect('/allmusic/')
+    video = videos[0]
+    video_ids = [v['id'] for v in videos]
     lyrics = _fetch_lyrics(artist, title)
-    html = _song_page_html(artist, title, video, lyrics)
+    html = _song_page_html(artist, title, video, lyrics, video_ids)
     return Response(html, mimetype='text/html')
 
 
