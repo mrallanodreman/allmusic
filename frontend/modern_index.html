@@ -578,10 +578,11 @@ function renderHistory(){
             </div>`).join('');
     }
 }
-function playFromHistory(i){
+async function playFromHistory(i){
     const it=histPlayed[i];if(!it||!it.src)return;
     curVideoId=null;
-    audio.src=it.src;audio.play();
+    const src=it.src.startsWith('stream/')?await resolveDirectSrc(it.src.split('/')[1]):it.src;
+    audio.src=src;audio.play();
     setInfo(it.title,it.artist||'',it.thumb||'','—','—','—','—',null);
 }
 
@@ -703,13 +704,14 @@ function renderPlTracks(id){
             </div>
         </div>`).join('');
 }
-function playPlTrack(plId,idx){
+async function playPlTrack(plId,idx){
     const pl=playlists.find(p=>p.id===plId);if(!pl)return;
     const t=pl.tracks[idx];if(!t)return;
     curPlId=plId;curPlTrackIdx=idx;curList='playlist';curVideoId=t.id||null;
-    audio.src=t.src;audio.play();
+    const src=t.src.startsWith('stream/')?await resolveDirectSrc(t.src.split('/')[1]):t.src;
+    audio.src=src;audio.play();
     setInfo(t.title,t.artist||'',t.thumb||'','—','—','—','—',null);
-    addToPlayed(t.title,t.artist||'',t.thumb||'',t.src);
+    addToPlayed(t.title,t.artist||'',t.thumb||'',src);
     document.querySelectorAll('#plTrackList .track-card').forEach((x,i)=>x.classList.toggle('active',i===idx));
 }
 function playPlaylistAll(){
@@ -814,12 +816,22 @@ function selSearch(i){
     document.getElementById('sc-'+i)?.classList.add('active');
     playResult(searchResults[i]);
 }
-function playResult(r){
+let _directLinkCache={};
+async function resolveDirectSrc(id){
+    if(_directLinkCache[id])return _directLinkCache[id];
+    try{
+        const c=await (await fetch('convert/'+id)).json();
+        if(c&&c.success&&c.link){_directLinkCache[id]=c.link;return c.link;}
+    }catch(e){/* fallback abajo */}
+    return 'stream/'+id;
+}
+async function playResult(r){
     curVideoId=r.id;
-    audio.src='stream/'+r.id;
+    const src=await resolveDirectSrc(r.id);
+    audio.src=src;
     audio.play();
     setInfo(r.title,r.uploader||'YouTube',r.thumbnail||'','YouTube','—',r.duration?fmtTime(r.duration):'—','—',null);
-    addToPlayed(r.title,r.uploader||'YouTube',r.thumbnail||'','stream/'+r.id);
+    addToPlayed(r.title,r.uploader||'YouTube',r.thumbnail||'',src);
 }
 function dlSearch(i,btn){
     const r=searchResults[i];if(!r)return;
