@@ -5,7 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-3871344948149274">
     <base href="/allmusic/">
-    <title>AllMusic PRO</title>
+    <title>AllMusic — Sube tu música, escúchala donde sea</title>
+    <meta name="description" content="AllMusic: tu biblioteca de música personal. Sube tus archivos, escúchalos en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0d0d1a">
+    <meta name="application-name" content="AllMusic">
+    <link rel="canonical" href="https://edgemarketing.art/allmusic/">
+    <link rel="icon" type="image/png" href="https://edgemarketing.art/images/logonegro.png">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AllMusic">
+    <meta property="og:title" content="AllMusic — Sube tu música, escúchala donde sea">
+    <meta property="og:description" content="Sube tu música, guárdala en una sola biblioteca y escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
+    <meta property="og:url" content="https://edgemarketing.art/allmusic/">
+    <meta property="og:image" content="https://edgemarketing.art/images/logonegro.png">
+    <meta property="og:locale" content="es_EC">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AllMusic — Sube tu música, escúchala donde sea">
+    <meta name="twitter:description" content="Sube tu música, escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
+    <meta name="twitter:image" content="https://edgemarketing.art/images/logonegro.png">
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "AllMusic",
+        "url": "https://edgemarketing.art/allmusic/",
+        "applicationCategory": "MusicApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Edge Marketing Agency",
+            "url": "https://edgemarketing.art/"
+        },
+        "description": "Sube tu música y escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere."
+    }
+    </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3871344948149274" crossorigin="anonymous"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
@@ -341,6 +378,32 @@
         .modal-cancel{width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#666;cursor:pointer;font-size:12px;transition:background .15s;}
         .modal-cancel:hover{background:rgba(255,255,255,0.06);}
 
+        /* Upload CTA */
+        .upload-cta{
+            display:flex;align-items:center;justify-content:space-between;gap:12px;
+            background:linear-gradient(135deg,rgba(102,126,234,0.16),rgba(118,75,162,0.16));
+            border:1px solid rgba(102,126,234,0.3);border-radius:14px;
+            padding:14px 16px;margin:16px 20px 6px;
+        }
+        .upload-cta-text{min-width:0;}
+        .upload-cta-title{font-size:14px;font-weight:800;color:#a0b4ff;margin-bottom:2px;}
+        .upload-cta-sub{font-size:11px;color:#7a8aaa;line-height:1.4;}
+        .upload-cta-btn{
+            flex-shrink:0;padding:10px 16px;border-radius:10px;text-decoration:none;
+            background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;
+            font-size:12px;font-weight:700;transition:opacity .15s;
+        }
+        .upload-cta-btn:hover{opacity:.9;}
+
+        /* Footer */
+        .app-footer{
+            flex-shrink:0;text-align:center;padding:10px 12px 14px;
+            font-size:11px;color:#4a5a7a;border-top:1px solid rgba(102,126,234,0.12);
+            margin-top:8px;line-height:1.8;
+        }
+        .app-footer a{color:#7a8aaa;text-decoration:none;margin:0 6px;transition:color .15s;}
+        .app-footer a:hover{color:#a0b4ff;}
+
         /* Mobile */
         @media(max-width:700px){
             .app{flex-direction:column;}
@@ -444,6 +507,14 @@
     <!-- ══ RIGHT PANEL / PLAYER ══ -->
     <div class="right-panel">
 
+        <div class="upload-cta">
+            <div class="upload-cta-text">
+                <div class="upload-cta-title">Sube tu música</div>
+                <div class="upload-cta-sub">Tus archivos. Una biblioteca. En todos lados — incluso offline.</div>
+            </div>
+            <a class="upload-cta-btn" href="artistas.html">🎤 Subir música</a>
+        </div>
+
         <div class="art-wrap">
             <div class="art-outer" id="artOuter">
                 <img id="artImg" src="" alt="" style="display:none"
@@ -453,8 +524,8 @@
             <div class="art-dot"></div>
         </div>
 
-        <div class="track-title-main"  id="trackTitle">AllMusic PRO</div>
-        <div class="track-artist-main" id="trackArtist">Busca o selecciona una canción</div>
+        <div class="track-title-main"  id="trackTitle">AllMusic</div>
+        <div class="track-artist-main" id="trackArtist">Your files. One library. Everywhere.</div>
 
         <div class="track-meta">
             <span>💿 Álbum: <b id="metaAlbum">—</b></span>
@@ -510,6 +581,13 @@
 </div>
 
 <audio id="audio"></audio>
+
+<div class="app-footer">
+    AllMusic · Sube tu música y escúchala donde sea
+    · <a href="about.html">Acerca de</a> · <a href="privacidad.html">Privacidad</a> · <a href="terminos.html">Términos</a> · <a href="cookies.html">Cookies</a> · <a href="dmca.html">DMCA</a>
+    <br>© 2026 AllMusic — Edge Marketing Agency, Quito, Ecuador
+</div>
+
 <script>
 const audio=document.getElementById('audio');
 let searchResults=[];
@@ -722,7 +800,7 @@ function playPlaylistAll(){
 let _modalTrack=null;
 function openAddToPlaylist(){
     const title=document.getElementById('trackTitle').textContent;
-    if(!title||title==='AllMusic PRO'){alert('Primero reproduce una canción.');return;}
+    if(!title||title==='AllMusic'){alert('Primero reproduce una canción.');return;}
     const artist=document.getElementById('trackArtist').textContent;
     const thumb=(document.getElementById('artImg').style.display!=='none'?document.getElementById('artImg').src:'')||'';
     const src=audio.src?audio.src.replace(location.origin+'/allmusic/',''):

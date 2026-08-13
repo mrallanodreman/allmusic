@@ -513,6 +513,11 @@ def frontend_files(filename):
     file_path = os.path.join(FRONTEND_DIR, filename)
     if os.path.exists(file_path) and os.path.isfile(file_path):
         return send_from_directory(FRONTEND_DIR, filename)
+    # Redirect clean legal/static paths (no extension) to their .html file
+    if '.' not in os.path.basename(filename):
+        html_path = os.path.join(FRONTEND_DIR, filename + '.html')
+        if os.path.exists(html_path) and os.path.isfile(html_path):
+            return redirect('/allmusic/' + filename + '.html')
     # SPA fallback
     idx = os.path.join(FRONTEND_DIR, 'index.html')
     if os.path.exists(idx):
