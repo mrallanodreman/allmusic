@@ -100,6 +100,7 @@ class AllMusicServer:
                 search_results = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
                 results = []
                 filtered_count = 0
+                live_filtered_count = 0
 
                 if search_results and 'entries' in search_results:
                     for entry in search_results['entries']:
@@ -110,6 +111,14 @@ class AllMusicServer:
                             if not video_id or len(video_id) != 11 or video_id.startswith('UC'):
                                 continue
                             if not all(c.isalnum() or c in '-_' for c in video_id):
+                                continue
+                            # Streams en vivo/próximos no tienen un audio fijo que
+                            # convertir — RapidAPI los rechaza con "Not available
+                            # for live video" y yt-dlp no tiene qué extraer. "was_live"
+                            # (un directo ya terminado) sí queda con duración real y
+                            # se puede convertir normal, así que no se filtra.
+                            if entry.get('live_status') in ('is_live', 'is_upcoming'):
+                                live_filtered_count += 1
                                 continue
                             if duration and duration > MAX_DURATION_SECONDS:
                                 filtered_count += 1
@@ -136,6 +145,8 @@ class AllMusicServer:
 
                 if filtered_count > 0:
                     logger.info(f"🚫 Filtrados {filtered_count} videos por duración (>2h)")
+                if live_filtered_count > 0:
+                    logger.info(f"🚫 Filtrados {live_filtered_count} videos en vivo/próximos (no convertibles)")
                 logger.info(f"✅ Encontrados {len(results)} resultados válidos")
                 return results
         except Exception as e:
