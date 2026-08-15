@@ -521,9 +521,9 @@
                 </div>
                 <div class="cfg-row">
                     <div><label>Resultados por búsqueda</label><small>Límite de búsqueda</small></div>
-                    <select id="cfgLimit" onchange="searchLimit=+this.value" style="background:#1a1a2e;border:1px solid #333;color:#ccc;padding:4px 8px;border-radius:6px;font-size:12px;">
+                    <select id="cfgLimit" onchange="searchLimit=+this.value;localStorage.setItem('am_search_limit',searchLimit)" style="background:#1a1a2e;border:1px solid #333;color:#ccc;padding:4px 8px;border-radius:6px;font-size:12px;">
                         <option value="25">25</option>
-                        <option value="50" selected>50</option>
+                        <option value="50">50</option>
                         <option value="100">100</option>
                     </select>
                 </div>
@@ -674,7 +674,8 @@
 <script>
 const audio=document.getElementById('audio');
 let searchResults=[];
-let curIdx=-1,curList='',radioMode=false,curVideoId=null,searchLimit=50;
+let curIdx=-1,curList='',radioMode=false,curVideoId=null,searchLimit=+(localStorage.getItem('am_search_limit')||50);
+(function(){const s=document.getElementById('cfgLimit');if(s)s.value=searchLimit;})();
 
 // ── Historial (localStorage) ──
 const LS_PLAYED='am_played', LS_DL='am_downloaded';
