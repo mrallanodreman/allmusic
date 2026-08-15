@@ -22,6 +22,7 @@ import secrets
 import hashlib
 import datetime
 import subprocess
+import mimetypes
 from urllib.parse import quote, unquote
 
 app = Flask(__name__)
@@ -1020,6 +1021,7 @@ def artist_auth_register():
         'artist_name': artist_name, 'slug': slug, 'bio': '', 'genre': genre,
         'header_image': '', 'avatar': '',
         'albums': [], 'files': [],
+        'tracks': [], 'is_premium': False, 'premium_plan': 'free', 'earnings': 0.0,
         'social': {'instagram': '', 'spotify': '', 'youtube': ''},
         'created_at': datetime.datetime.utcnow().isoformat() + 'Z',
         'status': 'active'
@@ -1232,6 +1234,328 @@ def artist_public_profile(slug):
         return jsonify({'error': 'Artista no encontrado'}), 404
     safe = {k: v for k, v in artist.items() if k not in ('pwd_hash', 'salt', 'email')}
     return jsonify(safe)
+
+
+# ── TRACKS (música subida por artistas) ─────────────────────────────────────
+
+def _find_track_owner(track_id, accounts=None):
+    """Devuelve (artista, track) que posee track_id, o (None, None)."""
+    accounts = accounts if accounts is not None else _load_artist_accounts()
+    for a in accounts:
+        for t in a.get('tracks', []):
+            if t.get('id') == track_id:
+                return a, t
+    return None, None
+
+
+def _find_artist_track(artist, track_id):
+    for t in artist.get('tracks', []):
+        if t.get('id') == track_id:
+            return t
+    return None
+
+
+@app.route('/tracks', methods=['POST'])
+def track_upload():
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se recibió archivo'}), 400
+    f = request.files['file']
+    if not f.filename:
+        return jsonify({'error': 'Archivo sin nombre'}), 400
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in ALLOWED_AUDIO_EXTS:
+        return jsonify({'error': f'Tipo no permitido. Acepta: {", ".join(sorted(ALLOWED_AUDIO_EXTS))}'}), 400
+    if (request.form.get('rights_declared') or '').strip().lower() != 'true':
+        return jsonify({'error': 'Debes declarar que tienes los derechos'}), 400
+
+    title = (request.form.get('title') or '').strip()[:200]
+    genre = (request.form.get('genre') or '').strip()[:60]
+    is_public = (request.form.get('is_public') or '').strip().lower() == 'true'
+
+    track_id = f"trk_{int(time.time() * 1000)}"
+    track_dir = os.path.normpath(os.path.join(ARTIST_UPLOADS_DIR, artist['id'], 'tracks'))
+    os.makedirs(track_dir, exist_ok=True)
+    filename = f"{track_id}{ext}"
+    save_path = os.path.normpath(os.path.join(track_dir, filename))
+    if not save_path.startswith(os.path.normpath(ARTIST_UPLOADS_DIR)):
+        return jsonify({'error': 'Acceso denegado'}), 403
+    f.save(save_path)
+    size = os.path.getsize(save_path)
+
+    cover = ''
+    cover_file = request.files.get('cover')
+    if cover_file and cover_file.filename:
+        cext = os.path.splitext(cover_file.filename)[1].lower()
+        if cext in ('.jpg', '.jpeg', '.png', '.webp'):
+            cover_name = f"cover_{track_id}{cext}"
+            cover_path = os.path.normpath(os.path.join(ARTIST_UPLOADS_DIR, artist['id'], cover_name))
+            if cover_path.startswith(os.path.normpath(ARTIST_UPLOADS_DIR)):
+                cover_file.save(cover_path)
+                cover = f'/artists/share/{artist["id"]}/{cover_name}'
+
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    track = {
+        'id': track_id,
+        'title': title or os.path.basename(f.filename),
+        'genre': genre,
+        'cover': cover,
+        'filename': os.path.basename(f.filename),
+        'ext': ext,
+        'url': f'/tracks/{track_id}/audio',
+        'size': size,
+        'duration': 0,
+        'is_public': is_public,
+        'is_premium': False,
+        'price': 0,
+        'rights_declared': True,
+        'rights_declared_at': now,
+        'plays_count': 0,
+        'downloads_count': 0,
+        'earned': 0.0,
+        'created_at': now,
+    }
+    accounts = _load_artist_accounts()
+    idx = next((i for i, a in enumerate(accounts) if a['id'] == artist['id']), None)
+    if idx is None:
+        return jsonify({'error': 'Artista no encontrado'}), 404
+    accounts[idx].setdefault('tracks', []).append(track)
+    _save_artist_accounts(accounts)
+    return jsonify({'ok': True, 'track': track}), 201
+
+
+@app.route('/tracks', methods=['GET'])
+def track_list():
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    return jsonify({'tracks': artist.get('tracks', [])})
+
+
+@app.route('/tracks/public', methods=['GET'])
+def track_public_list():
+    q = (request.args.get('q') or '').strip().lower()
+    genre = (request.args.get('genre') or '').strip().lower()
+    accounts = _load_artist_accounts()
+    tracks = []
+    for a in accounts:
+        for t in a.get('tracks', []):
+            if not t.get('is_public'):
+                continue
+            if q and q not in (t.get('title') or '').lower() and q not in (a.get('artist_name') or '').lower():
+                continue
+            if genre and genre != (t.get('genre') or '').lower():
+                continue
+            entry = dict(t)
+            entry['artist_name'] = a.get('artist_name', '')
+            tracks.append(entry)
+    return jsonify({'tracks': tracks})
+
+
+@app.route('/tracks/<track_id>', methods=['GET'])
+def track_detail(track_id):
+    accounts = _load_artist_accounts()
+    owner, track = _find_track_owner(track_id, accounts)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    current = _get_current_artist()
+    if not track.get('is_public') and (not current or current['id'] != owner['id']):
+        return jsonify({'error': 'Track no encontrado'}), 404
+    result = dict(track)
+    result['artist_name'] = owner.get('artist_name', '')
+    return jsonify(result)
+
+
+@app.route('/tracks/<track_id>', methods=['PATCH'])
+def track_update(track_id):
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    accounts = _load_artist_accounts()
+    idx = next((i for i, a in enumerate(accounts) if a['id'] == artist['id']), None)
+    if idx is None:
+        return jsonify({'error': 'Artista no encontrado'}), 404
+    a = accounts[idx]
+    track = _find_artist_track(a, track_id)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    data = request.get_json(force=True, silent=True) or {}
+
+    old_public = bool(track.get('is_public'))
+    new_public = data['is_public'] if 'is_public' in data else old_public
+    if isinstance(new_public, str):
+        new_public = new_public.strip().lower() == 'true'
+
+    if not old_public and new_public and not track.get('rights_declared'):
+        return jsonify({'error': 'Debes re-declarar que tienes los derechos'}), 400
+
+    if 'title' in data:
+        track['title'] = str(data['title']).strip()[:200] or track.get('title', '')
+    if 'genre' in data:
+        track['genre'] = str(data['genre']).strip()[:60]
+    if 'is_public' in data:
+        track['is_public'] = bool(new_public)
+    if 'is_premium' in data:
+        val = data['is_premium']
+        track['is_premium'] = bool(val) if not isinstance(val, str) else val.strip().lower() == 'true'
+    if 'price' in data:
+        try:
+            track['price'] = float(data['price'])
+        except (TypeError, ValueError):
+            track['price'] = 0
+    if 'cover' in data:
+        track['cover'] = str(data['cover'])[:500]
+    _save_artist_accounts(accounts)
+    return jsonify({'ok': True, 'track': track})
+
+
+@app.route('/tracks/<track_id>', methods=['DELETE'])
+def track_delete(track_id):
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    accounts = _load_artist_accounts()
+    idx = next((i for i, a in enumerate(accounts) if a['id'] == artist['id']), None)
+    if idx is None:
+        return jsonify({'error': 'Artista no encontrado'}), 404
+    a = accounts[idx]
+    track = _find_artist_track(a, track_id)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    track_dir = os.path.normpath(os.path.join(ARTIST_UPLOADS_DIR, a['id'], 'tracks'))
+    file_path = os.path.normpath(os.path.join(track_dir, f"{track_id}{track.get('ext', '')}"))
+    if file_path.startswith(os.path.normpath(ARTIST_UPLOADS_DIR)) and os.path.isfile(file_path):
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            logger.warning(f"⚠️ No se pudo borrar archivo del track {track_id}: {e}")
+    a['tracks'] = [t for t in a.get('tracks', []) if t.get('id') != track_id]
+    _save_artist_accounts(accounts)
+    return jsonify({'ok': True})
+
+
+@app.route('/tracks/<track_id>/play', methods=['POST'])
+def track_play(track_id):
+    accounts = _load_artist_accounts()
+    owner, track = _find_track_owner(track_id, accounts)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    track['plays_count'] = track.get('plays_count', 0) + 1
+    _save_artist_accounts(accounts)
+    return jsonify({'ok': True, 'plays_count': track['plays_count']})
+
+
+@app.route('/tracks/<track_id>/download', methods=['POST'])
+def track_download(track_id):
+    accounts = _load_artist_accounts()
+    owner, track = _find_track_owner(track_id, accounts)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    current = _get_current_artist()
+    is_owner = current is not None and current['id'] == owner['id']
+    if not track.get('is_public') and not is_owner:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    is_premium = bool(track.get('is_premium'))
+    requester_premium = current is not None and bool(current.get('is_premium'))
+    if is_premium and not requester_premium and not is_owner:
+        return jsonify({
+            'error': 'requiere_premium',
+            'message': 'Esta canción requiere licencia para descargar'
+        }), 402
+    track['downloads_count'] = track.get('downloads_count', 0) + 1
+    if is_premium:
+        amount = float(track.get('price') or 0) or 1.0
+        track['earned'] = float(track.get('earned') or 0) + amount
+        owner['earnings'] = float(owner.get('earnings') or 0) + amount
+    _save_artist_accounts(accounts)
+    return jsonify({
+        'url': f'/tracks/{track_id}/audio',
+        'downloads_count': track['downloads_count'],
+        'ok': True
+    })
+
+
+@app.route('/tracks/<track_id>/audio')
+def track_audio(track_id):
+    accounts = _load_artist_accounts()
+    owner, track = _find_track_owner(track_id, accounts)
+    if not track:
+        return jsonify({'error': 'Track no encontrado'}), 404
+    current = _get_current_artist()
+    if not track.get('is_public') and (not current or current['id'] != owner['id']):
+        return jsonify({'error': 'Track no encontrado'}), 404
+    ext = track.get('ext', '.mp3')
+    track_dir = os.path.normpath(os.path.join(ARTIST_UPLOADS_DIR, owner['id'], 'tracks'))
+    filename = f"{track_id}{ext}"
+    file_path = os.path.normpath(os.path.join(track_dir, filename))
+    if not file_path.startswith(os.path.normpath(ARTIST_UPLOADS_DIR)) or not os.path.isfile(file_path):
+        return jsonify({'error': 'Archivo no encontrado'}), 404
+    mime = mimetypes.guess_type(filename)[0] or 'audio/mpeg'
+    return send_from_directory(track_dir, filename, mimetype=mime, conditional=True)
+
+
+# ── PREMIUM / MONETIZACIÓN ───────────────────────────────────────────────────
+
+@app.route('/premium/status', methods=['GET'])
+def premium_status():
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    earnings = 0.0
+    for t in artist.get('tracks', []):
+        if t.get('is_premium'):
+            earnings += float(t.get('earned') or 0)
+    return jsonify({
+        'is_premium': bool(artist.get('is_premium')),
+        'plan': artist.get('premium_plan', 'free'),
+        'earnings': earnings,
+        'premium_since': artist.get('premium_since'),
+    })
+
+
+@app.route('/premium/activate', methods=['POST'])
+def premium_activate():
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    accounts = _load_artist_accounts()
+    idx = next((i for i, a in enumerate(accounts) if a['id'] == artist['id']), None)
+    if idx is None:
+        return jsonify({'error': 'Artista no encontrado'}), 404
+    accounts[idx]['is_premium'] = True
+    accounts[idx]['premium_plan'] = 'premium'
+    accounts[idx]['premium_since'] = datetime.datetime.utcnow().isoformat() + 'Z'
+    _save_artist_accounts(accounts)
+    return jsonify({
+        'ok': True,
+        'is_premium': True,
+        'plan': 'premium',
+        'premium_since': accounts[idx]['premium_since'],
+    })
+
+
+@app.route('/artists/earnings', methods=['GET'])
+def artist_earnings():
+    artist = _get_current_artist()
+    if not artist:
+        return jsonify({'error': 'No autorizado'}), 401
+    if not artist.get('is_premium'):
+        return jsonify({'error': 'Acción reservada para artistas premium'}), 403
+    total = 0.0
+    premium_tracks = []
+    for t in artist.get('tracks', []):
+        if t.get('is_premium'):
+            earned = float(t.get('earned') or 0)
+            total += earned
+            premium_tracks.append({
+                'id': t.get('id'),
+                'title': t.get('title'),
+                'downloads_count': t.get('downloads_count', 0),
+                'earned': earned,
+            })
+    return jsonify({'total': total, 'tracks': premium_tracks})
 
 
 # ── MAIN ───────────────────────────────────────────────────────────────────────
