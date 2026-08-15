@@ -11,20 +11,20 @@
     <meta name="theme-color" content="#0d0d1a">
     <meta name="application-name" content="AllMusic">
     <link rel="canonical" href="https://edgemarketing.art/allmusic/">
-    <link rel="icon" type="image/png" href="https://edgemarketing.art/images/logonegro.png">
+    <link rel="icon" type="image/svg+xml" href="assets/allmusic-logo.svg">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="AllMusic">
     <meta property="og:title" content="AllMusic — Sube tu música, escúchala donde sea">
     <meta property="og:description" content="Sube tu música, guárdala en una sola biblioteca y escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
     <meta property="og:url" content="https://edgemarketing.art/allmusic/">
-    <meta property="og:image" content="https://edgemarketing.art/images/logonegro.png">
+    <meta property="og:image" content="https://edgemarketing.art/allmusic/assets/allmusic-logo.svg">
     <meta property="og:locale" content="es_EC">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="AllMusic — Sube tu música, escúchala donde sea">
     <meta name="twitter:description" content="Sube tu música, escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
-    <meta name="twitter:image" content="https://edgemarketing.art/images/logonegro.png">
+    <meta name="twitter:image" content="https://edgemarketing.art/allmusic/assets/allmusic-logo.svg">
     <!-- JSON-LD -->
     <script type="application/ld+json">
     {
@@ -61,6 +61,13 @@
             border-right:1px solid rgba(102,126,234,0.15);
             position:relative;z-index:20;
         }
+        .am-brand{
+            min-height:72px;display:flex;align-items:center;padding:10px 16px;
+            border-bottom:1px solid rgba(102,126,234,0.15);
+            background:linear-gradient(90deg,rgba(102,126,234,.08),rgba(118,75,162,.04));
+            flex-shrink:0;text-decoration:none;
+        }
+        .am-brand img{width:238px;max-width:100%;height:52px;object-fit:contain;object-position:left center;}
         .tabs{display:flex;border-bottom:1px solid rgba(102,126,234,0.15);flex-shrink:0;}
         .tab-btn{
             flex:1;padding:14px 6px;border:none;background:transparent;color:#555;
@@ -446,6 +453,9 @@
 
     <!-- ══ LEFT PANEL ══ -->
     <div class="left-panel">
+        <a class="am-brand" href="./" aria-label="AllMusic PRO — Inicio">
+            <img src="assets/allmusic-logo.svg" alt="AllMusic PRO">
+        </a>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('history')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> Historial</button>
             <button class="tab-btn"        onclick="switchTab('search')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg> Buscar</button>
