@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 84" role="img" aria-labelledby="title desc">
+  <title id="title">AllMusic PRO</title>
+  <desc id="desc">Identidad de AllMusic PRO: pulso de audio y símbolo de reproducción.</desc>
+  <defs>
+    <linearGradient id="am-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#66E3FF"/>
+      <stop offset=".48" stop-color="#7C7CFF"/>
+      <stop offset="1" stop-color="#C16CFF"/>
+    </linearGradient>
+    <filter id="am-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(4 4)">
+    <rect width="76" height="76" rx="22" fill="#111326" stroke="#34385F"/>
+    <circle cx="38" cy="38" r="23" fill="none" stroke="url(#am-gradient)" stroke-width="2.4" opacity=".9"/>
+    <path d="M31 24v28l23-14z" fill="url(#am-gradient)" filter="url(#am-glow)"/>
+    <path d="M16 38h6m38 0h6M38 16v5m0 34v5" stroke="#66E3FF" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+  </g>
+  <g fill="#F4F5FF">
+    <text x="99" y="49" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="35" font-weight="760" letter-spacing="-1.5">AllMusic</text>
+    <text x="266" y="49" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="800" letter-spacing="2.4" fill="#8FA1FF">PRO</text>
+  </g>
+  <path d="M101 62h215" stroke="url(#am-gradient)" stroke-width="2" stroke-linecap="round" opacity=".65"/>
+</svg>
