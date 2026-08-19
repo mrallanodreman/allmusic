@@ -55,8 +55,16 @@ RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', '')
 RAPIDAPI_KEYS = [k.strip() for k in RAPIDAPI_KEY.split(',') if k.strip()]
 RAPIDAPI_HOST = os.environ.get('RAPIDAPI_HOST', 'youtube-mp36.p.rapidapi.com')
 ALLMUSIC_ADMIN_KEY = os.environ.get('ALLMUSIC_ADMIN_KEY', 'adminallmusic2024')
+
+# 3ra capa: fallback local (yt-dlp en IP residencial) cuando las keys de
+# RapidAPI se agotan. Ver ytfallback-server / hallazgo allmusic-rapidapi-key-rotation.
+YTFALLBACK_URL = os.environ.get('YTFALLBACK_URL', '')  # ej. https://ytfallback.edgemarketing.art
+YTFALLBACK_TOKEN = os.environ.get('YTFALLBACK_TOKEN', '')
+
 if not RAPIDAPI_KEYS:
     logger.warning('RAPIDAPI_KEY no configurada — las conversiones fallarán')
+if not YTFALLBACK_URL:
+    logger.info('YTFALLBACK_URL no configurada — sin 3ra capa de fallback')
 else:
     logger.info(f'🔑 {len(RAPIDAPI_KEYS)} key(s) de RapidAPI cargadas para rotación')
 
@@ -243,10 +251,39 @@ class AllMusicServer:
                     except Exception:
                         pass
 
+            logger.warning(f"⚠️ Todas las keys de RapidAPI agotadas ({len(RAPIDAPI_KEYS)}), probando 3ra capa local")
+            fallback_result = self._convert_via_local_fallback(video_id)
+            if fallback_result is not None:
+                return fallback_result
+
             return {'success': False, 'error': f'Límite de conversiones diarias agotado en todas las keys disponibles ({len(RAPIDAPI_KEYS)}). Intenta más tarde.'}
         except Exception as e:
             logger.error(f"❌ Error inesperado en convert_to_mp3: {e}")
             return {'success': False, 'error': str(e)}
+
+    def _convert_via_local_fallback(self, video_id):
+        """3ra capa: yt-dlp corriendo en una máquina residencial (no bloqueada
+        por YouTube a diferencia del datacenter de Railway), expuesto vía
+        túnel Cloudflare propio con auth por token. Devuelve None si no está
+        configurado o no responde, para que el llamador use el mensaje de
+        error estándar de cuota agotada."""
+        if not YTFALLBACK_URL or not YTFALLBACK_TOKEN:
+            return None
+        try:
+            resp = requests.get(
+                f"{YTFALLBACK_URL.rstrip('/')}/convert/{video_id}",
+                headers={'X-Fallback-Token': YTFALLBACK_TOKEN},
+                timeout=35
+            )
+            data = resp.json()
+            if data.get('success'):
+                logger.info("✅ Conversión resuelta por la 3ra capa local")
+            else:
+                logger.warning(f"⚠️ 3ra capa local respondió sin éxito: {data.get('error')}")
+            return data
+        except Exception as e:
+            logger.warning(f"⚠️ 3ra capa local no disponible: {e}")
+            return None
 
     def stream_via_rapidapi(self, mp3_url):
         """Streaming directo desde URL de RapidAPI.
