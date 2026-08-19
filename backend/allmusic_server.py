@@ -49,11 +49,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Config desde variables de entorno
+# RAPIDAPI_KEY acepta una o varias keys separadas por coma (rotación automática:
+# si una app de RapidAPI agota su cuota diaria (429/403), se prueba la siguiente).
 RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', '')
+RAPIDAPI_KEYS = [k.strip() for k in RAPIDAPI_KEY.split(',') if k.strip()]
 RAPIDAPI_HOST = os.environ.get('RAPIDAPI_HOST', 'youtube-mp36.p.rapidapi.com')
 ALLMUSIC_ADMIN_KEY = os.environ.get('ALLMUSIC_ADMIN_KEY', 'adminallmusic2024')
-if not RAPIDAPI_KEY:
+if not RAPIDAPI_KEYS:
     logger.warning('RAPIDAPI_KEY no configurada — las conversiones fallarán')
+else:
+    logger.info(f'🔑 {len(RAPIDAPI_KEYS)} key(s) de RapidAPI cargadas para rotación')
 
 # Directorios de datos (persistentes en Railway)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -171,63 +176,77 @@ class AllMusicServer:
             except Exception as e:
                 logger.warning(f"⚠️ No se pudo verificar duración: {e}")
 
-            conn = http.client.HTTPSConnection(RAPIDAPI_HOST, timeout=20)
-            headers = {
-                'x-rapidapi-key': RAPIDAPI_KEY,
-                'x-rapidapi-host': RAPIDAPI_HOST
-            }
+            if not RAPIDAPI_KEYS:
+                return {'success': False, 'error': 'RAPIDAPI_KEY no configurada'}
 
-            for attempt in range(max_retries):
+            quota_errors = []
+            for key_index, api_key in enumerate(RAPIDAPI_KEYS):
+                conn = http.client.HTTPSConnection(RAPIDAPI_HOST, timeout=20)
+                headers = {
+                    'x-rapidapi-key': api_key,
+                    'x-rapidapi-host': RAPIDAPI_HOST
+                }
                 try:
-                    conn.request("GET", f"/dl?id={video_id}", headers=headers)
-                    res = conn.getresponse()
-                    data = res.read()
+                    for attempt in range(max_retries):
+                        try:
+                            conn.request("GET", f"/dl?id={video_id}", headers=headers)
+                            res = conn.getresponse()
+                            data = res.read()
 
-                    if res.status == 200:
-                        response_text = data.decode("utf-8").strip()
-                        if not response_text.startswith('{') and not response_text.startswith('['):
-                            return {'success': False, 'error': f'API no disponible: {response_text[:100]}'}
-                        response_json = json.loads(response_text)
-                        status = response_json.get('status', 'unknown')
+                            if res.status == 200:
+                                response_text = data.decode("utf-8").strip()
+                                if not response_text.startswith('{') and not response_text.startswith('['):
+                                    return {'success': False, 'error': f'API no disponible: {response_text[:100]}'}
+                                response_json = json.loads(response_text)
+                                status = response_json.get('status', 'unknown')
 
-                        if status == 'ok':
-                            return {
-                                'success': True,
-                                'link': response_json.get('link'),
-                                'title': response_json.get('title'),
-                                'duration': response_json.get('duration'),
-                                'filesize': response_json.get('filesize', 0)
-                            }
-                        elif status == 'processing':
-                            wait_time = min(10.0, 1.0 * (1.5 ** attempt))
-                            time.sleep(wait_time)
-                            continue
-                        elif status == 'fail':
-                            error_msg = response_json.get('msg', 'Error desconocido')
-                            if 'Long audio' in error_msg or 'duration' in error_msg.lower():
-                                error_msg = "Audio muy largo (>2h). Intenta con una canción más corta."
-                            return {'success': False, 'error': error_msg}
-                        else:
-                            return {'success': False, 'error': f'Estado desconocido: {status}'}
+                                if status == 'ok':
+                                    return {
+                                        'success': True,
+                                        'link': response_json.get('link'),
+                                        'title': response_json.get('title'),
+                                        'duration': response_json.get('duration'),
+                                        'filesize': response_json.get('filesize', 0)
+                                    }
+                                elif status == 'processing':
+                                    wait_time = min(10.0, 1.0 * (1.5 ** attempt))
+                                    time.sleep(wait_time)
+                                    continue
+                                elif status == 'fail':
+                                    error_msg = response_json.get('msg', 'Error desconocido')
+                                    if 'Long audio' in error_msg or 'duration' in error_msg.lower():
+                                        error_msg = "Audio muy largo (>2h). Intenta con una canción más corta."
+                                    return {'success': False, 'error': error_msg}
+                                else:
+                                    return {'success': False, 'error': f'Estado desconocido: {status}'}
+                            else:
+                                if res.status in (429, 403):
+                                    # Cuota diaria de ESTA key agotada — probar la siguiente
+                                    # key de RAPIDAPI_KEYS (rotación) antes de rendirse.
+                                    logger.warning(f"⚠️ Key #{key_index + 1} agotada (HTTP {res.status}), probando siguiente")
+                                    quota_errors.append(f'key #{key_index + 1}: HTTP {res.status}')
+                                    break
+                                return {'success': False, 'error': f'HTTP {res.status}'}
+                        except json.JSONDecodeError:
+                            if attempt == max_retries - 1:
+                                return {'success': False, 'error': 'Error al parsear respuesta JSON'}
+                            time.sleep(1)
+                        except Exception as e:
+                            if attempt == max_retries - 1:
+                                return {'success': False, 'error': str(e)}
+                            time.sleep(1)
                     else:
-                        if res.status in (429, 403):
-                            return {'success': False, 'error': 'Límite de conversiones diarias agotado. Intenta más tarde.'}
-                        return {'success': False, 'error': f'HTTP {res.status}'}
-                except json.JSONDecodeError:
-                    if attempt == max_retries - 1:
-                        return {'success': False, 'error': 'Error al parsear respuesta JSON'}
-                    time.sleep(1)
-                except Exception as e:
-                    if attempt == max_retries - 1:
-                        return {'success': False, 'error': str(e)}
-                    time.sleep(1)
+                        return {'success': False, 'error': f'Máximo de reintentos alcanzado ({max_retries} intentos)'}
+                finally:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
 
-            return {'success': False, 'error': f'Máximo de reintentos alcanzado ({max_retries} intentos)'}
-        finally:
-            try:
-                conn.close()
-            except:
-                pass
+            return {'success': False, 'error': f'Límite de conversiones diarias agotado en todas las keys disponibles ({len(RAPIDAPI_KEYS)}). Intenta más tarde.'}
+        except Exception as e:
+            logger.error(f"❌ Error inesperado en convert_to_mp3: {e}")
+            return {'success': False, 'error': str(e)}
 
     def stream_via_rapidapi(self, mp3_url):
         """Streaming directo desde URL de RapidAPI.
