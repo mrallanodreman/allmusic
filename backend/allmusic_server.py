@@ -444,7 +444,12 @@ def stream(video_id):
             if result.get('success'):
                 music_server.cache[video_id] = result
             else:
-                return jsonify({'success': False, 'error': result.get("error", "Error desconocido")}), 502
+                # Si RapidAPI falló, intentar 3ra capa local directamente
+                fallback = music_server._convert_via_local_fallback(video_id)
+                if fallback and fallback.get('success') and fallback.get('link'):
+                    music_server.cache[video_id] = fallback
+                else:
+                    return jsonify({'success': False, 'error': result.get("error", "Error desconocido")}), 502
 
         mp3_url = music_server.cache[video_id].get('link')
         if not mp3_url:
@@ -462,6 +467,14 @@ def stream(video_id):
         if result.get('success') and result.get('link'):
             music_server.cache[video_id] = result
             stream_resp = music_server.stream_via_rapidapi(result['link'])
+            if stream_resp:
+                return stream_resp
+
+        # Último recurso: 3ra capa local
+        fallback = music_server._convert_via_local_fallback(video_id)
+        if fallback and fallback.get('success') and fallback.get('link'):
+            music_server.cache[video_id] = fallback
+            stream_resp = music_server.stream_via_rapidapi(fallback['link'])
             if stream_resp:
                 return stream_resp
 
