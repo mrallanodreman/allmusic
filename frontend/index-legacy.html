@@ -432,6 +432,27 @@ function renderResults(list) {
     el.innerHTML = html;
 }
 
+function resolveDirectSrc(id, cb) {
+    if (_dcache && _dcache[id]) { cb(_dcache[id]); return; }
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'convert/' + encodeURIComponent(id), true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        var src = 'stream/' + id;
+        if (xhr.status === 200) {
+            try {
+                var d = JSON.parse(xhr.responseText);
+                if (d && d.success && d.link) src = d.link;
+            } catch(e) {}
+        }
+        _dcache[id] = src;
+        cb(src);
+    };
+    xhr.onerror = function() { cb('stream/' + id); };
+    xhr.send();
+}
+var _dcache = {};
+
 function selResult(i) {
     var prev = document.getElementById('ri-' + curIdx);
     if (prev) prev.className = prev.className.replace(' active', '');
@@ -439,10 +460,12 @@ function selResult(i) {
     var el = document.getElementById('ri-' + i);
     if (el) el.className += ' active';
     var r = results[i]; if (!r) return;
-    audio.src = 'stream/' + r.id;
-    audio.play();
+    resolveDirectSrc(r.id, function(src) {
+        audio.src = src;
+        audio.play();
+        addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', src);
+    });
     setInfo(r.title, r.uploader || 'YouTube', r.thumbnail || '');
-    addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', 'stream/' + r.id);
 }
 
 /* ── Historial ── */
@@ -474,8 +497,12 @@ function renderHistory() {
 
 function playFromHistory(i) {
     var it = histPlayed[i]; if (!it || !it.src) return;
-    audio.src = it.src;
-    audio.play();
+    function doPlay(s) { audio.src = s; audio.play(); }
+    if (it.src.indexOf('stream/') === 0) {
+        resolveDirectSrc(it.src.slice('stream/'.length), doPlay);
+    } else {
+        doPlay(it.src);
+    }
     setInfo(it.title, it.artist || '', it.thumb || '');
 }
 
