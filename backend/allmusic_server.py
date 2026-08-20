@@ -278,6 +278,11 @@ class AllMusicServer:
             data = resp.json()
             if data.get('success'):
                 logger.info("✅ Conversión resuelta por la 3ra capa local")
+                # No devolvemos el link de googlevideo directo: el datacenter de
+                # Railway recibe 403 al leerlo (bloqueo por IP). En su lugar
+                # apuntamos al /stream/<id> del ytfallback, que proxea el audio
+                # desde la IP residencial local donde YouTube no bloquea.
+                data['link'] = f"{YTFALLBACK_URL.rstrip('/')}/stream/{video_id}"
             else:
                 logger.warning(f"⚠️ 3ra capa local respondió sin éxito: {data.get('error')}")
             return data
