@@ -811,8 +811,27 @@ def cancion(artist_slug, title_slug):
 
 # ── FRONTEND ───────────────────────────────────────────────────────────────────
 
+def is_legacy_device(ua):
+    """iPads/iPhones viejos (iOS 9-13) reciben el frontend legacy.
+    El modern_index usa JS/CSS moderno que rompe en Safari antiguos."""
+    if not ua:
+        return False
+    m = re.search(r'OS (\d+)[_.]', ua)
+    if not m:
+        return False
+    try:
+        version = int(m.group(1))
+    except ValueError:
+        return False
+    return 9 <= version <= 13 and re.search(r'iPad|iPod|iPhone', ua)
+
+
 @app.route('/')
 def index():
+    ua = request.headers.get('User-Agent', '')
+    legacy_path = os.path.join(FRONTEND_DIR, 'index-legacy.html')
+    if is_legacy_device(ua) and os.path.exists(legacy_path):
+        return send_from_directory(FRONTEND_DIR, 'index-legacy.html')
     idx_path = os.path.join(FRONTEND_DIR, 'index.html')
     modern_path = os.path.join(FRONTEND_DIR, 'modern_index.html')
     if os.path.exists(modern_path):
