@@ -101,17 +101,23 @@ class AllMusicServer:
             logger.info(f"🔍 Buscando: {query}")
             MAX_DURATION_SECONDS = 7200
 
+            # Pool ampliado (x3): en queries genericas ("lofi", "chill") YouTube
+            # llena los primeros puestos con radios EN VIVO 24/7 y proximos,
+            # que se filtran abajo. Con un pool chico quedaba 1 solo resultado
+            # util y la app parecia rota.
+            pool = min(max(max_results * 3, 18), 45)
+
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
-                'default_search': 'ytsearch10:',
+                'default_search': 'ytsearch%d:' % pool,
                 'ignoreerrors': True,
                 'force_generic_extractor': False,
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                search_results = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
+                search_results = ydl.extract_info(f"ytsearch{pool}:{query}", download=False)
                 results = []
                 filtered_count = 0
                 live_filtered_count = 0
