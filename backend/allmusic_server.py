@@ -105,7 +105,7 @@ class AllMusicServer:
             # llena los primeros puestos con radios EN VIVO 24/7 y proximos,
             # que se filtran abajo. Con un pool chico quedaba 1 solo resultado
             # util y la app parecia rota.
-            pool = min(max(max_results * 3, 18), 45)
+            pool = min(max(max_results * 4, 24), 60)
 
             ydl_opts = {
                 'quiet': True,
