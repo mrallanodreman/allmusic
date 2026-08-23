@@ -490,7 +490,7 @@ function selResult(i) {
      * iOS/Safari legacy exige que play() ocurra dentro del mismo gesto físico.
      * No se espera a /convert: arrancamos el endpoint de audio inmediatamente.
      */
-    var streamSrc = 'stream/' + encodeURIComponent(r.id);
+    var streamSrc = 'stream/' + encodeURIComponent(r.id) + '?fast=1';
     startPlaybackFromGesture(streamSrc);
     addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', streamSrc, r.id);
 
@@ -538,7 +538,7 @@ function playFromHistory(i) {
     recoveryAttempted = false;
 
     if (id) {
-        startPlaybackFromGesture('stream/' + encodeURIComponent(id));
+        startPlaybackFromGesture('stream/' + encodeURIComponent(id) + '?fast=1');
         resolveDirectSrc(id, function(src) {
             if (src) _dcache[id] = src;
         });
