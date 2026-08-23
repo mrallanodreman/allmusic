@@ -314,7 +314,7 @@
 
 </div>
 
-<audio id="audio"></audio>
+<audio id="audio" preload="none" playsinline webkit-playsinline></audio>
 
 <script>
 /* ── AllMusic PRO Legacy Player ──
@@ -326,6 +326,8 @@
 var audio   = document.getElementById('audio');
 var results = [];
 var curIdx  = -1;
+var activeId = '';
+var recoveryAttempted = false;
 
 /* ── LocalStorage historial ── */
 var LS_PLAYED = 'am_played';
@@ -338,9 +340,16 @@ try {
 function savePlayed() {
     try { localStorage.setItem(LS_PLAYED, JSON.stringify(histPlayed.slice(0, 50))); } catch(e) {}
 }
-function addToPlayed(title, artist, thumb, src) {
-    if (histPlayed.length && histPlayed[0].title === title) return;
-    histPlayed.unshift({ title: title, artist: artist, thumb: thumb, src: src, ts: Date.now() });
+function addToPlayed(title, artist, thumb, src, id) {
+    if (histPlayed.length && histPlayed[0].title === title) {
+        histPlayed[0].src = src;
+        histPlayed[0].id = id || histPlayed[0].id || '';
+        histPlayed[0].ts = Date.now();
+        savePlayed();
+        renderHistory();
+        return;
+    }
+    histPlayed.unshift({ title: title, artist: artist, thumb: thumb, src: src, id: id || '', ts: Date.now() });
     if (histPlayed.length > 50) histPlayed.pop();
     savePlayed();
     renderHistory();
@@ -453,6 +462,19 @@ function resolveDirectSrc(id, cb) {
 }
 var _dcache = {};
 
+function startPlaybackFromGesture(src) {
+    audio.pause();
+    audio.src = src;
+    audio.load();
+    var playRequest;
+    try { playRequest = audio.play(); } catch(e) { playRequest = null; }
+    if (playRequest && typeof playRequest.catch === 'function') {
+        playRequest.catch(function() {
+            /* Safari antiguo puede no devolver Promise; el evento error maneja el fallback. */
+        });
+    }
+}
+
 function selResult(i) {
     var prev = document.getElementById('ri-' + curIdx);
     if (prev) prev.className = prev.className.replace(' active', '');
@@ -460,10 +482,21 @@ function selResult(i) {
     var el = document.getElementById('ri-' + i);
     if (el) el.className += ' active';
     var r = results[i]; if (!r) return;
+
+    activeId = r.id;
+    recoveryAttempted = false;
+
+    /*
+     * iOS/Safari legacy exige que play() ocurra dentro del mismo gesto físico.
+     * No se espera a /convert: arrancamos el endpoint de audio inmediatamente.
+     */
+    var streamSrc = 'stream/' + encodeURIComponent(r.id);
+    startPlaybackFromGesture(streamSrc);
+    addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', streamSrc, r.id);
+
+    /* Calienta el enlace alternativo sin romper el gesto de reproducción. */
     resolveDirectSrc(r.id, function(src) {
-        audio.src = src;
-        audio.play();
-        addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', src);
+        if (src) _dcache[r.id] = src;
     });
     setInfo(r.title, r.uploader || 'YouTube', r.thumbnail || '');
 }
@@ -496,12 +529,21 @@ function renderHistory() {
 }
 
 function playFromHistory(i) {
-    var it = histPlayed[i]; if (!it || !it.src) return;
-    function doPlay(s) { audio.src = s; audio.play(); }
-    if (it.src.indexOf('stream/') === 0) {
-        resolveDirectSrc(it.src.slice('stream/'.length), doPlay);
-    } else {
-        doPlay(it.src);
+    var it = histPlayed[i]; if (!it) return;
+    var id = it.id || '';
+    if (!id && it.src && it.src.indexOf('stream/') === 0) {
+        id = decodeURIComponent(it.src.slice('stream/'.length));
+    }
+    activeId = id;
+    recoveryAttempted = false;
+
+    if (id) {
+        startPlaybackFromGesture('stream/' + encodeURIComponent(id));
+        resolveDirectSrc(id, function(src) {
+            if (src) _dcache[id] = src;
+        });
+    } else if (it.src) {
+        startPlaybackFromGesture(it.src);
     }
     setInfo(it.title, it.artist || '', it.thumb || '');
 }
@@ -543,13 +585,45 @@ audio.addEventListener('timeupdate', function() {
     document.getElementById('timeTot').textContent = fmtTime(audio.duration);
 });
 audio.addEventListener('error', function() {
+    if (activeId && !recoveryAttempted) {
+        recoveryAttempted = true;
+        document.getElementById('trackArtist').textContent = 'Reintentando reproducción…';
+        resolveDirectSrc(activeId, function(src) {
+            if (!src || src === 'stream/' + activeId) {
+                document.getElementById('trackArtist').textContent = 'Error al cargar el audio';
+                return;
+            }
+            audio.src = src;
+            audio.load();
+            var retry;
+            try { retry = audio.play(); } catch(e) { retry = null; }
+            if (retry && typeof retry.catch === 'function') {
+                retry.catch(function() {
+                    document.getElementById('trackArtist').textContent = 'Toca ▶ para reproducir';
+                });
+            }
+        });
+        return;
+    }
     document.getElementById('trackArtist').textContent = 'Error al cargar el audio';
     document.getElementById('artWrap').className = 'art-wrap';
     document.getElementById('playBtn').textContent = '▶';
 });
 
 /* ── Controls ── */
-function togglePlay() { if (audio.paused) audio.play(); else audio.pause(); }
+function togglePlay() {
+    if (audio.paused) {
+        var request;
+        try { request = audio.play(); } catch(e) { request = null; }
+        if (request && typeof request.catch === 'function') {
+            request.catch(function() {
+                document.getElementById('trackArtist').textContent = 'No se pudo iniciar. Selecciona la canción otra vez.';
+            });
+        }
+    } else {
+        audio.pause();
+    }
+}
 function skipBack()   { audio.currentTime = Math.max(0, audio.currentTime - 10); }
 function skipFwd()    { if (audio.duration) audio.currentTime = Math.min(audio.duration, audio.currentTime + 10); }
 function playNext() {
