@@ -325,8 +325,17 @@ class AllMusicServer:
                 'Access-Control-Allow-Origin': '*',
                 'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
             }
-            ctype = response.headers.get('Content-Type', 'audio/mpeg')
-            out_headers['Content-Type'] = ctype if ctype.startswith('audio/') else 'audio/mpeg'
+            # Safari/iOS valida que el MIME coincida con el contenedor real.
+            # Los fallbacks suelen entregar M4A con Content-Type video/mp4; marcarlo
+            # como audio/mpeg hace que Safari legacy descarte el stream sin reproducir.
+            ctype = response.headers.get('Content-Type', 'audio/mpeg').split(';', 1)[0].strip().lower()
+            if ctype in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
+                ctype = 'audio/mp4'
+            elif ctype in ('video/webm', 'application/webm'):
+                ctype = 'audio/webm'
+            elif not ctype.startswith('audio/'):
+                ctype = 'application/octet-stream'
+            out_headers['Content-Type'] = ctype
             if response.status_code == 206 and response.headers.get('Content-Range'):
                 out_headers['Content-Range'] = response.headers['Content-Range']
             if response.headers.get('Content-Length'):
@@ -372,8 +381,15 @@ class AllMusicServer:
                         headers['Range'] = client_range
                     response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
                     if response.status_code in [200, 206]:
+                        upstream_type = response.headers.get('Content-Type', 'audio/mp4').split(';', 1)[0].strip().lower()
+                        if upstream_type in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
+                            upstream_type = 'audio/mp4'
+                        elif upstream_type in ('video/webm', 'application/webm'):
+                            upstream_type = 'audio/webm'
+                        elif not upstream_type.startswith('audio/'):
+                            upstream_type = 'application/octet-stream'
                         out_headers = {
-                            'Content-Type': response.headers.get('Content-Type', 'audio/mp4'),
+                            'Content-Type': upstream_type,
                             'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
                             'Cache-Control': 'no-cache',
                             'Access-Control-Allow-Origin': '*',
