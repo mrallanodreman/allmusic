@@ -459,13 +459,30 @@ def stream(video_id):
         if video_id.startswith('UC'):
             return jsonify({'error': 'ID de canal'}), 400
 
-        # PRIMARIO: yt-dlp (YouTube directo, sin cookies)
-        ytdlp_response = music_server.stream_via_ytdlp(video_id)
-        if ytdlp_response:
-            return ytdlp_response
-        logger.warning(f"⚠️ yt-dlp falló para {video_id}, fallback RapidAPI")
+        # El player legacy necesita primer byte rápido. En Railway, yt-dlp suele
+        # consumir 15-30 s antes de fallar; ?fast=1 salta esa penalización y usa
+        # directamente el proveedor estable/caché.
+        fast_mode = request.args.get('fast') == '1'
 
-        # FALLBACK: RapidAPI
+        # Si ya existe un enlace resuelto, úsalo antes de volver a ejecutar yt-dlp.
+        if video_id in music_server.cache:
+            cached_url = music_server.cache[video_id].get('link')
+            if cached_url:
+                cached_response = music_server.stream_via_rapidapi(cached_url)
+                if cached_response:
+                    return cached_response
+                music_server.cache.pop(video_id, None)
+
+        # PRIMARIO para clientes modernos: yt-dlp (YouTube directo, sin cookies).
+        if not fast_mode:
+            ytdlp_response = music_server.stream_via_ytdlp(video_id)
+            if ytdlp_response:
+                return ytdlp_response
+            logger.warning(f"⚠️ yt-dlp falló para {video_id}, fallback RapidAPI")
+        else:
+            logger.info(f"⚡ fast stream para {video_id}: omitiendo yt-dlp")
+
+        # FALLBACK / FAST: RapidAPI + proxy residencial
         if video_id not in music_server.cache:
             result = music_server.convert_to_mp3(video_id)
             if result.get('success'):
