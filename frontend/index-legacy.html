@@ -399,6 +399,7 @@ function doSearch() {
                 var d = JSON.parse(xhr.responseText);
                 results = d.results || [];
                 renderResults(results);
+                prewarmResults(results);
             } catch(e) {
                 document.getElementById('resultsList').innerHTML =
                     '<div class="empty">Error al procesar resultados</div>';
@@ -461,6 +462,27 @@ function resolveDirectSrc(id, cb) {
     xhr.send();
 }
 var _dcache = {};
+var _dwarming = {};
+
+function prewarmOne(id) {
+    if (!id || _dcache[id] || _dwarming[id]) return;
+    _dwarming[id] = true;
+    resolveDirectSrc(id, function(src) {
+        _dwarming[id] = false;
+        if (src) _dcache[id] = src;
+    });
+}
+
+function prewarmResults(list) {
+    if (!list || !list.length) return;
+    if (list[0] && list[0].id) prewarmOne(list[0].id);
+    if (list[1] && list[1].id) {
+        setTimeout(function() { prewarmOne(list[1].id); }, 1200);
+    }
+    if (list[2] && list[2].id) {
+        setTimeout(function() { prewarmOne(list[2].id); }, 2400);
+    }
+}
 
 function startPlaybackFromGesture(src) {
     audio.pause();
@@ -490,14 +512,13 @@ function selResult(i) {
      * iOS/Safari legacy exige que play() ocurra dentro del mismo gesto físico.
      * No se espera a /convert: arrancamos el endpoint de audio inmediatamente.
      */
-    var streamSrc = 'stream/' + encodeURIComponent(r.id) + '?fast=1';
+    var streamSrc = _dcache[r.id] || ('stream/' + encodeURIComponent(r.id) + '?fast=1');
     startPlaybackFromGesture(streamSrc);
     addToPlayed(r.title, r.uploader || 'YouTube', r.thumbnail || '', streamSrc, r.id);
 
-    /* Calienta el enlace alternativo sin romper el gesto de reproducción. */
-    resolveDirectSrc(r.id, function(src) {
-        if (src) _dcache[r.id] = src;
-    });
+    if (!_dcache[r.id] && !_dwarming[r.id]) {
+        prewarmOne(r.id);
+    }
     setInfo(r.title, r.uploader || 'YouTube', r.thumbnail || '');
 }
 
