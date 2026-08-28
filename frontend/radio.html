@@ -130,6 +130,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
 const fmt = s => { s=Math.max(0,Math.floor(s||0)); const m=Math.floor(s/60)%60,h=Math.floor(s/3600),x=s%60; return (h>0?h+':':'')+String(m).padStart(Math.max(2,h?2:1),'0')+':'+String(x).padStart(2,'0'); };
 
 function toast(msg, err){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.toggle('err',!!err); t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3000); }
@@ -174,9 +175,9 @@ function tickTimer(){
 }
 
 async function loadRadio(){
-  try{ const d=await api('/radio/now'); renderState(d); }
+  try{ const d=await api(RADIO_API_BASE+'/now'); renderState(d); }
   catch(e){ toast('No se pudo leer la radio: '+e.message, true); }
-  try{ const b=await api('/radio/admin/blacklist'); renderBlacklist(b.blacklist||[]); }
+  try{ const b=await api(RADIO_API_BASE+'/admin/blacklist'); renderBlacklist(b.blacklist||[]); }
   catch(e){ /* blacklist es opcional en pantalla */ }
 }
 
@@ -184,13 +185,13 @@ function renderBlacklist(list){
   const c=document.getElementById('blacklistChips');
   if(!list||!list.length){ c.innerHTML='<span class="empty">Sin bloqueos</span>'; return; }
   c.innerHTML=list.map(w=>`<span class="chip">${w}<button data-word="${encodeURIComponent(w)}" title="Desbloquear">×</button></span>`).join('');
-  c.querySelectorAll('button').forEach(b=>b.onclick=async()=>{ try{ await api('/radio/admin/blacklist',{method:'DELETE',body:JSON.stringify({word:decodeURIComponent(b.dataset.word)})}); toast('Desbloqueado'); loadRadio(); }catch(e){toast(e.message,true);} });
+  c.querySelectorAll('button').forEach(b=>b.onclick=async()=>{ try{ await api(RADIO_API_BASE+'/admin/blacklist',{method:'DELETE',body:JSON.stringify({word:decodeURIComponent(b.dataset.word)})}); toast('Desbloqueado'); loadRadio(); }catch(e){toast(e.message,true);} });
 }
 
-document.getElementById('btnAdvance').onclick=async()=>{ try{ await api('/radio/advance',{method:'POST',body:'{}'}); toast('Avanzando…'); setTimeout(loadRadio,2500); }catch(e){toast(e.message,true);} };
+document.getElementById('btnAdvance').onclick=async()=>{ try{ await api(RADIO_API_BASE+'/advance',{method:'POST',body:'{}'}); toast('Avanzando…'); setTimeout(loadRadio,2500); }catch(e){toast(e.message,true);} };
 document.getElementById('btnRefresh').onclick=loadRadio;
-document.getElementById('suggestForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('suggestInput').value.trim(); if(!v)return; try{ const r=await api('/radio/suggest',{method:'POST',body:JSON.stringify({query:v,agent:'panel web',reason:'encargado desde la web'})}); toast('Encolado: '+(r.track&&r.track.title||'')); document.getElementById('suggestInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
-document.getElementById('blForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('blInput').value.trim(); if(!v)return; try{ await api('/radio/admin/blacklist',{method:'POST',body:JSON.stringify({word:v})}); toast('Bloqueado: '+v); document.getElementById('blInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
+document.getElementById('suggestForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('suggestInput').value.trim(); if(!v)return; try{ const r=await api(RADIO_API_BASE+'/suggest',{method:'POST',body:JSON.stringify({query:v,agent:'panel web',reason:'encargado desde la web'})}); toast('Encolado: '+(r.track&&r.track.title||'')); document.getElementById('suggestInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
+document.getElementById('blForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('blInput').value.trim(); if(!v)return; try{ await api(RADIO_API_BASE+'/admin/blacklist',{method:'POST',body:JSON.stringify({word:v})}); toast('Bloqueado: '+v); document.getElementById('blInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
 
 loadRadio(); tickTimer(); setInterval(loadRadio,8000);
 </script>
