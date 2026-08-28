@@ -23,6 +23,7 @@ import hashlib
 import datetime
 import subprocess
 import mimetypes
+import random
 from urllib.parse import quote, unquote
 
 app = Flask(__name__)
@@ -1690,7 +1691,321 @@ def artist_earnings():
     return jsonify({'total': total, 'tracks': premium_tracks})
 
 
+# ── IA RADIO ─────────────────────────────────────────────────────────────────
+# Radio continua "escrita" por agentes de IA: cualquier agente (vía MCP) o
+# usuario puede sugerir una canción con /radio/suggest; la radio la toca
+# cuando le toca turno. Con la cola vacía, elige sola vía search_youtube
+# sobre un pool de moods/géneros (mismo patrón HTTP search→convert que ya
+# usa play-song.sh/Home Assistant, sin costo de LLM).
+RADIO_FILE = os.path.join(DATA_DIR, 'radio_state.json')
+RADIO_LOCK = threading.Lock()
+RADIO_MAX_QUEUE = 30
+RADIO_MAX_HISTORY = 25
+RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
+# Tope duro para no quedarse pegado. Subido de 480 a 3600 (1h): el reproductor
+# del Atico controla el fin REAL de cada pista via media_position y pide avanzar
+# con POST /radio/advance, así que este solo es una red de seguridad para
+# playlists largas. Las canciones suenan completas.
+RADIO_MAX_TRACK_SECONDS = 3600
+
+RADIO_FALLBACK_QUERIES = [
+    'lofi chill beats', 'synthwave retro', 'indie rock 2020s', 'jazz piano relax',
+    'rock clásico 80s', 'pop latino', 'deep house mix', 'bossa nova classics',
+    'música electrónica ambient', 'k-pop hits', 'rock en español', 'cumbia suave',
+]
+
+# Reglas clásicas del propietario: géneros/estilos que la radio NO reproduce.
+# Se aplican al título y al artista de cada candidata (y a las queries de
+# rotación), tanto en auto-rotación como en las sugerencias de agentes/usuario.
+# Editable: añade o quita palabras aquí. Normalización quita acentos y pasa a
+# minúsculas para que 'Reggaetón' y 'REGGAETON' caigan igual.
+RADIO_BLACKLIST = [
+    'bachata', 'vallenato', 'reggaeton', 'reggaetón', 'dembow', 'guaracha',
+    'corridos tumbados', 'narcocorrido', 'banda sinaloense', 'genre reggaeton',
+    'mariachi', 'pachanga', 'trap latino', 'wisin', 'ozuna', 'bad bunny',
+    'rapido y furioso', 'daddy yankee', 'maluma', 'anuel', 'karol g', 'j balvin',
+    'feid', 'myke towers', 'rush', 'rauw alejandro', 'farruko', 'sech', 'chencho',
+]
+
+
+def _normalize(text):
+    """Minúsculas y sin acentos para comparar contenido innecesariamente."""
+    import unicodedata
+    if not text:
+        return ''
+    nfkd = unicodedata.normalize('NFKD', str(text))
+    return ''.join(c for c in nfkd if not unicodedata.combining(c)).lower()
+
+
+def _radio_is_blocked(text):
+    """True si el texto (título/artista/query) cae en la lista negra."""
+    t = _normalize(text)
+    return any(_normalize(w) in t for w in RADIO_BLACKLIST)
+
+
+def _load_radio():
+    try:
+        with open(RADIO_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {'current': None, 'queue': [], 'history': []}
+
+
+def _save_radio(state):
+    with open(RADIO_FILE, 'w') as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
+
+
+def _radio_recent_ids(state):
+    ids = {h.get('video_id') for h in state.get('history', [])[:8]}
+    cur = state.get('current')
+    if cur:
+        ids.add(cur.get('video_id'))
+    return ids
+
+
+def _radio_resolve_link(video_id):
+    """Devuelve link CDN directo (cachea igual que /convert). None si falla."""
+    if video_id in music_server.cache:
+        cached = music_server.cache[video_id]
+        if cached.get('success') and cached.get('link'):
+            return cached
+    result = music_server.convert_to_mp3(video_id)
+    if result.get('success'):
+        music_server.cache[video_id] = result
+        return result
+    return None
+
+
+def _radio_pick_next(state):
+    """Saca próxima entrada de la cola, o improvisa una por rotación. Devuelve
+    el dict 'current' listo (con link resuelto) o None si todo falló."""
+    queue = state.get('queue', [])
+    recent = _radio_recent_ids(state)
+
+    while queue:
+        item = queue.pop(0)
+        # Reglas del propietario: saltar sugerencias que caigan en la lista negra
+        if _radio_is_blocked(item.get('title', '') + ' ' + item.get('artist', '')):
+            logger.warning(f"📻 Radio: sugerencia bloqueada por lista negra: {item.get('title')}")
+            continue
+        conv = _radio_resolve_link(item['video_id'])
+        if conv:
+            return {
+                'video_id': item['video_id'],
+                'title': item.get('title', 'Sin título'),
+                'artist': item.get('artist', ''),
+                'thumbnail': item.get('thumbnail', ''),
+                'duration': min(item.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
+                'link': conv.get('link'),
+                'started_at': time.time(),
+                'suggested_by': item.get('suggested_by', 'oyente'),
+                'reason': item.get('reason', ''),
+            }
+        logger.warning(f"📻 Radio: no se pudo convertir sugerencia {item.get('video_id')}, saltando")
+
+    # cola vacía → rotación automática por mood/género
+    tried_queries = random.sample(RADIO_FALLBACK_QUERIES, k=min(4, len(RADIO_FALLBACK_QUERIES)))
+    for query in tried_queries:
+        results = music_server.search_youtube(query, max_results=5)
+        candidates = [
+            r for r in results
+            if r.get('id') not in recent
+            and not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))
+        ]
+        if not candidates:
+            candidates = [r for r in results if not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))]
+        for candidate in candidates:
+            conv = _radio_resolve_link(candidate['id'])
+            if conv:
+                return {
+                    'video_id': candidate['id'],
+                    'title': candidate.get('title', 'Sin título'),
+                    'artist': candidate.get('uploader', ''),
+                    'thumbnail': candidate.get('thumbnail', ''),
+                    'duration': min(candidate.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
+                    'link': conv.get('link'),
+                    'started_at': time.time(),
+                    'suggested_by': 'AllMusic AI Radio',
+                    'reason': f'rotación automática: {query}',
+                }
+    return None
+
+
+def _radio_tick():
+    with RADIO_LOCK:
+        state = _load_radio()
+        cur = state.get('current')
+        now = time.time()
+        needs_next = True
+        if cur:
+            elapsed = now - cur.get('started_at', 0)
+            needs_next = elapsed >= (cur.get('duration') or RADIO_FALLBACK_TRACK_SECONDS)
+        if not needs_next:
+            return
+        nxt = _radio_pick_next(state)
+        if not nxt:
+            return  # todo falló esta vuelta; se reintenta en el próximo tick
+        if cur:
+            hist = state.setdefault('history', [])
+            hist.insert(0, {**{k: v for k, v in cur.items() if k != 'link'}, 'played_at': now})
+            state['history'] = hist[:RADIO_MAX_HISTORY]
+        state['current'] = nxt
+        _save_radio(state)
+
+
+def _radio_loop():
+    logger.info('📻 IA Radio: loop de reproducción iniciado')
+    while True:
+        try:
+            _radio_tick()
+        except Exception as e:
+            logger.error(f"❌ Radio loop error: {e}")
+        time.sleep(5)
+
+
+@app.route('/radio')
+def radio_page():
+    """Sección de radio en la web de AllMusic: dashboard del IA Radio 24/7."""
+    path = os.path.join(FRONTEND_DIR, 'radio.html')
+    if os.path.exists(path):
+        return send_from_directory(FRONTEND_DIR, 'radio.html')
+    return jsonify({'error': 'radio.html no encontrado'}), 404
+
+
+@app.route('/radio/admin/blacklist', methods=['GET'])
+def radio_blacklist_admin_get():
+    """Proxy web-friendly: usa la key del servidor (no se expone al navegador)."""
+    return jsonify({'blacklist': RADIO_BLACKLIST})
+
+
+@app.route('/radio/admin/blacklist', methods=['POST', 'DELETE'])
+def radio_blacklist_admin_edit():
+    data = request.get_json(force=True, silent=True) or {}
+    word = (data.get('word') or '').strip()[:60]
+    if not word:
+        return jsonify({'error': 'word requerido'}), 400
+    norm = _normalize(word)
+    if request.method == 'POST':
+        if not any(_normalize(w) == norm for w in RADIO_BLACKLIST):
+            RADIO_BLACKLIST.append(word)
+        return jsonify({'ok': True, 'blacklist': RADIO_BLACKLIST})
+    before = len(RADIO_BLACKLIST)
+    RADIO_BLACKLIST[:] = [w for w in RADIO_BLACKLIST if _normalize(w) != norm]
+    return jsonify({'ok': True, 'removed': before - len(RADIO_BLACKLIST), 'blacklist': RADIO_BLACKLIST})
+
+
+@app.route('/radio/now')
+def radio_now():
+    state = _load_radio()
+    cur = state.get('current')
+    if not cur:
+        return jsonify({'playing': False, 'queue': state.get('queue', []), 'history': state.get('history', [])[:10]})
+    elapsed = time.time() - cur.get('started_at', 0)
+    track = {k: v for k, v in cur.items() if k != 'started_at'}
+    track['elapsed'] = round(elapsed, 1)
+    return jsonify({
+        'playing': True,
+        'track': track,
+        'queue': state.get('queue', [])[:20],
+        'history': state.get('history', [])[:10],
+    })
+
+
+@app.route('/radio/queue')
+def radio_queue():
+    state = _load_radio()
+    return jsonify({'queue': state.get('queue', [])})
+
+
+@app.route('/radio/suggest', methods=['POST'])
+@limiter.limit("10 per minute")
+def radio_suggest():
+    data = request.get_json(force=True, silent=True) or {}
+    query = (data.get('query') or '').strip()[:200]
+    reason = (data.get('reason') or '').strip()[:200]
+    agent = (data.get('agent') or 'agente anónimo').strip()[:60]
+    if not query:
+        return jsonify({'error': 'query requerido'}), 400
+    # Reglas del propietario: no encolar nada que caiga en la lista negra
+    if _radio_is_blocked(query):
+        return jsonify({'error': 'Estilo bloqueado por las reglas de la radio'}), 403
+    with RADIO_LOCK:
+        state = _load_radio()
+        queue = state.setdefault('queue', [])
+        if len(queue) >= RADIO_MAX_QUEUE:
+            return jsonify({'error': 'Cola llena, intenta más tarde'}), 429
+        results = music_server.search_youtube(query, max_results=1)
+        if not results:
+            return jsonify({'error': f'Sin resultados para "{query}"'}), 404
+        found = results[0]
+        if _radio_is_blocked(found.get('title', '') + ' ' + found.get('uploader', '')):
+            return jsonify({'error': 'El resultado cae en la lista negra de la radio'}), 403
+        entry = {
+            'video_id': found['id'],
+            'title': found.get('title', 'Sin título'),
+            'artist': found.get('uploader', ''),
+            'thumbnail': found.get('thumbnail', ''),
+            'duration': found.get('duration', 0),
+            'suggested_by': agent,
+            'reason': reason,
+            'added_at': datetime.datetime.utcnow().isoformat() + 'Z',
+        }
+        queue.append(entry)
+        _save_radio(state)
+        return jsonify({'queued': True, 'position': len(queue), 'track': entry}), 201
+
+
+@app.route('/radio/blacklist', methods=['GET'])
+def radio_blacklist_get():
+    if ALLMUSIC_ADMIN_KEY and request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
+        return jsonify({'error': 'No autorizado'}), 401
+    return jsonify({'blacklist': RADIO_BLACKLIST})
+
+
+@app.route('/radio/blacklist', methods=['POST', 'DELETE'])
+def radio_blacklist_edit():
+    if ALLMUSIC_ADMIN_KEY and request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
+        return jsonify({'error': 'No autorizado'}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    word = (data.get('word') or '').strip()[:60]
+    if not word:
+        return jsonify({'error': 'word requerido'}), 400
+    norm = _normalize(word)
+    if request.method == 'POST':
+        if not any(_normalize(w) == norm for w in RADIO_BLACKLIST):
+            RADIO_BLACKLIST.append(word)
+        return jsonify({'ok': True, 'blacklist': RADIO_BLACKLIST})
+    # DELETE
+    before = len(RADIO_BLACKLIST)
+    RADIO_BLACKLIST[:] = [w for w in RADIO_BLACKLIST if _normalize(w) != norm]
+    return jsonify({'ok': True, 'removed': before - len(RADIO_BLACKLIST), 'blacklist': RADIO_BLACKLIST})
+
+
+@app.route('/radio/advance', methods=['POST'])
+def radio_advance():
+    """Marca la pista actual como vencida para que el loop la rote de inmediato.
+    Usado por el reproductor del Atico al detectar que la pista real está por
+    terminar antes del tope. NO llama a _radio_tick() aquí porque ese adquiere
+    RADIO_LOCK (non-reentrante) -> evitar deadlock; el loop rota en <=5s."""
+    with RADIO_LOCK:
+        state = _load_radio()
+        cur = state.get('current')
+        if cur:
+            cur['started_at'] = 0
+            _save_radio(state)
+            return jsonify({'ok': True, 'advanced': True,
+                            'was': cur.get('video_id')})
+        return jsonify({'ok': True, 'advanced': False, 'was': None})
+
+
 # ── MAIN ───────────────────────────────────────────────────────────────────────
+
+def _start_radio_loop():
+    thread = threading.Thread(target=_radio_loop, daemon=True)
+    thread.start()
+    logger.info('📻 IA Radio: loop de reproducción iniciado en hilo daemon')
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 2426))
@@ -1702,6 +2017,7 @@ if __name__ == '__main__':
     print(f"🌐 http://0.0.0.0:{port}")
     print(f"🔍 /search?q=CANCION")
     print(f"🎧 /stream/VIDEO_ID")
+    _start_radio_loop()
 
     try:
         app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
