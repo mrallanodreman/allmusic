@@ -1707,6 +1707,7 @@ RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
 # con POST /radio/advance, así que este solo es una red de seguridad para
 # playlists largas. Las canciones suenan completas.
 RADIO_MAX_TRACK_SECONDS = 3600
+RADIO_MASTER_TTL_SECONDS = 15
 
 RADIO_FALLBACK_QUERIES = [
     'lofi chill beats', 'synthwave retro', 'indie rock 2020s', 'jazz piano relax',
@@ -1898,6 +1899,27 @@ def radio_blacklist_admin_edit():
 @app.route('/radio/now')
 def radio_now():
     state = _load_radio()
+    master = state.get('master')
+    if master:
+        age = time.time() - master.get('updated_at', 0)
+        track = master.get('track')
+        if age <= RADIO_MASTER_TTL_SECONDS and master.get('playing') and track:
+            public_track = {k: v for k, v in track.items() if k != 'started_at'}
+            public_track['elapsed'] = round(time.time() - track.get('started_at', time.time()), 1)
+            return jsonify({
+                'playing': True,
+                'master': True,
+                'track': public_track,
+                'queue': master.get('queue', [])[:20],
+                'history': master.get('history', [])[:10],
+            })
+        return jsonify({
+            'playing': False,
+            'master': True,
+            'master_offline': age > RADIO_MASTER_TTL_SECONDS,
+            'queue': master.get('queue', [])[:20],
+            'history': master.get('history', [])[:10],
+        })
     cur = state.get('current')
     if not cur:
         return jsonify({'playing': False, 'queue': state.get('queue', []), 'history': state.get('history', [])[:10]})
@@ -1910,6 +1932,34 @@ def radio_now():
         'queue': state.get('queue', [])[:20],
         'history': state.get('history', [])[:10],
     })
+
+
+@app.route('/radio/master', methods=['POST'])
+def radio_master_update():
+    """Heartbeat de la cabina master local (Atico) hacia la emisión pública."""
+    if not ALLMUSIC_ADMIN_KEY or request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
+        return jsonify({'error': 'No autorizado'}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    raw_track = data.get('track') or {}
+    link = str(raw_track.get('link') or '')[:2000]
+    if data.get('playing') and not (link.startswith('https://') or link.startswith('http://')):
+        return jsonify({'error': 'link de transmisión inválido'}), 400
+    now = time.time()
+    elapsed = max(0, float(raw_track.get('elapsed') or 0))
+    allowed = ('video_id', 'title', 'artist', 'thumbnail', 'duration', 'link', 'suggested_by', 'reason')
+    track = {key: raw_track.get(key) for key in allowed if raw_track.get(key) is not None}
+    track['started_at'] = now - elapsed
+    with RADIO_LOCK:
+        state = _load_radio()
+        state['master'] = {
+            'updated_at': now,
+            'playing': bool(data.get('playing')),
+            'track': track,
+            'queue': (data.get('queue') or [])[:RADIO_MAX_QUEUE],
+            'history': (data.get('history') or [])[:RADIO_MAX_HISTORY],
+        }
+        _save_radio(state)
+    return jsonify({'ok': True, 'master': True})
 
 
 @app.route('/radio/queue')
