@@ -1708,6 +1708,7 @@ RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
 # playlists largas. Las canciones suenan completas.
 RADIO_MAX_TRACK_SECONDS = 3600
 RADIO_MASTER_TTL_SECONDS = 15
+RADIO_LIVE_STREAM_URL = os.environ.get('RADIO_LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3')
 
 RADIO_FALLBACK_QUERIES = [
     'lofi chill beats', 'synthwave retro', 'indie rock 2020s', 'jazz piano relax',
@@ -1909,6 +1910,7 @@ def radio_now():
             return jsonify({
                 'playing': True,
                 'master': True,
+                'stream_url': RADIO_LIVE_STREAM_URL,
                 'track': public_track,
                 'queue': master.get('queue', [])[:20],
                 'history': master.get('history', [])[:10],
@@ -1916,6 +1918,7 @@ def radio_now():
         return jsonify({
             'playing': False,
             'master': True,
+            'stream_url': RADIO_LIVE_STREAM_URL,
             'master_offline': age > RADIO_MASTER_TTL_SECONDS,
             'queue': master.get('queue', [])[:20],
             'history': master.get('history', [])[:10],
@@ -1928,6 +1931,7 @@ def radio_now():
     track['elapsed'] = round(elapsed, 1)
     return jsonify({
         'playing': True,
+        'stream_url': RADIO_LIVE_STREAM_URL,
         'track': track,
         'queue': state.get('queue', [])[:20],
         'history': state.get('history', [])[:10],

@@ -1139,7 +1139,7 @@ const ICON_PAUSE='<svg class="icon" width="24" height="24" viewBox="0 0 24 24" f
 audio.addEventListener('play',()=>{
     let isLiveRadio=false;
     if(_radioListening&&_radioTrack){
-        const radioSrc=new URL(_radioTrack.link,location.href).href;
+        const radioSrc=new URL(_radioStreamUrl,location.href).href;
         if(audio.currentSrc&&audio.currentSrc!==radioSrc){
             _radioListening=false;_radioListeningVideoId=null;radioListenButton('Escuchar en vivo');
         }else isLiveRadio=true;
@@ -1216,12 +1216,14 @@ let _nowElapsed=null;
 let _radioTrack=null;
 let _radioListening=false;
 let _radioListeningVideoId=null;
+let _radioStreamUrl='https://mail.edgemarketing.art/radio/live.mp3';
 const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
 async function rApi(path,opts){const r=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d;}
 const $=s=>{const d=document.createElement('div');d.textContent=s;return d.textContent;};
 function radioThumb(t){return (t&&t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:('https://i.ytimg.com/vi/'+((t&&t.video_id)||'')+'/hqdefault.jpg');}
 function renderRadio(d){
     const live=document.getElementById('radioLive');
+    _radioStreamUrl=d.stream_url||_radioStreamUrl;
     if(d.playing){
         live.className='radio-live live';live.textContent=d.master?'● Master en vivo':'● En vivo';
         const t=d.track||{};
@@ -1250,28 +1252,23 @@ function renderRadio(d){
 function radioRefresh(){rApi(RADIO_API_BASE+'/now').then(renderRadio).catch(e=>{document.getElementById('radioLive').className='radio-live paused';document.getElementById('radioLive').textContent='Error: '+e.message;});}
 function radioListenButton(text){const b=document.getElementById('radioListenBtn');if(b)b.textContent=text;}
 function radioTunePlayer(t){
-    if(!t||!t.link){alert('La transmisión todavía no tiene audio disponible.');return;}
+    if(!t||!_radioStreamUrl){alert('La transmisión todavía no tiene audio disponible.');return;}
     _radioListening=true;
     _radioListeningVideoId=t.video_id||null;
     curList='ia-radio';curVideoId=null;
-    const initialElapsed=Math.max(0,Number(t.elapsed)||0),startedAt=Date.now();
     setInfo(t.title,t.artist||t.uploader||'AllMusic IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
-    audio.src=t.link;
-    audio.addEventListener('loadedmetadata',()=>{
-        const liveElapsed=initialElapsed+(Date.now()-startedAt)/1000;
-        audio.currentTime=Math.min(liveElapsed,Math.max(0,(audio.duration||liveElapsed)-0.25));
-    },{once:true});
+    if(audio.currentSrc!==new URL(_radioStreamUrl,location.href).href)audio.src=_radioStreamUrl;
     audio.play().then(()=>{
         radioListenButton('Escuchando en vivo');
         setBadge('● IA Radio · En vivo',true);
     }).catch(()=>radioListenButton('Toca para escuchar'));
 }
 function radioSyncPlayer(t){
-    if(!_radioListening||!t||!t.link)return;
-    if(_radioListeningVideoId!==t.video_id){radioTunePlayer(t);return;}
-    if(audio.paused)return;
-    const target=Math.max(0,Number(t.elapsed)||0);
-    if(Math.abs(audio.currentTime-target)>3)audio.currentTime=Math.min(target,Math.max(0,(audio.duration||target)-0.25));
+    if(!_radioListening||!t)return;
+    if(_radioListeningVideoId!==t.video_id){
+        _radioListeningVideoId=t.video_id||null;
+        setInfo(t.title,t.artist||t.uploader||'AllMusic IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
+    }
 }
 function radioListenLive(){
     if(_radioTrack){radioTunePlayer(_radioTrack);return;}
