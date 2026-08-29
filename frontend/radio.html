@@ -66,6 +66,9 @@
   .toast.err{border-color:var(--red)}
   a{color:var(--accent)}
   .hint{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.5}
+  .stream-box{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .stream-box audio{width:100%;height:38px;accent-color:var(--g2)}
+  .stream-status{color:var(--mut);font-size:12px}
 </style>
 </head>
 <body>
@@ -92,8 +95,13 @@
       </div>
       <div class="bar"><i id="barFill"></i></div>
       <div class="rowbtns">
+        <button id="btnListen">Escuchar en vivo</button>
         <button id="btnAdvance" title="Pasa a la siguiente pista">Siguiente</button>
         <button class="ghost" id="btnRefresh" title="Actualizar">Actualizar</button>
+      </div>
+      <div class="stream-box">
+        <audio id="radioAudio" controls preload="none"></audio>
+        <span class="stream-status" id="streamStatus">La transmisión está lista.</span>
       </div>
       <form class="suggest" id="suggestForm">
         <input type="text" id="suggestInput" placeholder="Encargar un mood o canción… ej: lo-fi chill" autocomplete="off">
@@ -132,8 +140,68 @@
 <script>
 const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
 const fmt = s => { s=Math.max(0,Math.floor(s||0)); const m=Math.floor(s/60)%60,h=Math.floor(s/3600),x=s%60; return (h>0?h+':':'')+String(m).padStart(Math.max(2,h?2:1),'0')+':'+String(x).padStart(2,'0'); };
+const radioAudio=document.getElementById('radioAudio');
+const LS_RADIO_LISTENING='allmusic_radio_listening';
+let radioStreamUrl='';
+let radioListening=localStorage.getItem(LS_RADIO_LISTENING)==='1';
+let streamConnected=false;
+let reconnectTimer=null;
+let reconnectAttempt=0;
+let streamGeneration=0;
 
 function toast(msg, err){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.toggle('err',!!err); t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3000); }
+
+function streamStatus(text){ document.getElementById('streamStatus').textContent=text; }
+function streamSrc(){
+  const url=new URL(radioStreamUrl,location.href);
+  url.searchParams.set('client','web-'+Date.now()+'-'+(++streamGeneration));
+  return url.href;
+}
+function stopStream(){
+  radioListening=false;
+  streamConnected=false;
+  reconnectAttempt=0;
+  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
+  localStorage.removeItem(LS_RADIO_LISTENING);
+  radioAudio.pause();
+  radioAudio.removeAttribute('src');
+  radioAudio.load();
+  document.getElementById('btnListen').textContent='Escuchar en vivo';
+  streamStatus('La transmisión está detenida.');
+}
+function scheduleStreamReconnect(){
+  if(!radioListening||reconnectTimer)return;
+  streamConnected=false;
+  const delay=Math.min(30000,1000*Math.pow(2,reconnectAttempt++));
+  document.getElementById('btnListen').textContent='Reconectando…';
+  streamStatus('Conexión caída. Reconectando…');
+  reconnectTimer=setTimeout(()=>{reconnectTimer=null;connectStream();},delay);
+}
+function connectStream(){
+  if(!radioListening||!radioStreamUrl)return;
+  streamConnected=true;
+  radioAudio.src=streamSrc();
+  radioAudio.load();
+  const pending=radioAudio.play();
+  if(pending&&typeof pending.then==='function'){
+    pending.then(()=>{
+      reconnectAttempt=0;
+      document.getElementById('btnListen').textContent='Escuchando en vivo';
+      streamStatus('Stream conectado.');
+    }).catch(e=>{
+      if(e&&e.name==='NotAllowedError'){
+        document.getElementById('btnListen').textContent='Toca para escuchar';
+        streamStatus('El navegador requiere una acción para iniciar el audio.');
+      }else scheduleStreamReconnect();
+    });
+  }
+}
+function toggleStream(){
+  if(radioListening&&!radioAudio.paused){stopStream();return;}
+  radioListening=true;
+  localStorage.setItem(LS_RADIO_LISTENING,'1');
+  connectStream();
+}
 
 async function api(path, opts){
   const r = await fetch(path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
@@ -143,6 +211,7 @@ async function api(path, opts){
 }
 
 function renderState(d){
+  radioStreamUrl=d.stream_url||radioStreamUrl;
   const badge=document.getElementById('stateBadge');
   if(d.playing){
     badge.className='badge live'; badge.querySelector('#stateText').textContent='En vivo';
@@ -167,6 +236,7 @@ function renderState(d){
   const h=document.getElementById('historyList');
   if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Sin historial</li>'; }
   else h.innerHTML=d.history.map(x=>`<li>${x.title||''}</li>`).join('');
+  if(d.playing&&radioListening&&!streamConnected)connectStream();
 }
 
 function tickTimer(){
@@ -189,10 +259,14 @@ function renderBlacklist(list){
 }
 
 document.getElementById('btnAdvance').onclick=async()=>{ try{ await api(RADIO_API_BASE+'/advance',{method:'POST',body:'{}'}); toast('Avanzando…'); setTimeout(loadRadio,2500); }catch(e){toast(e.message,true);} };
+document.getElementById('btnListen').onclick=toggleStream;
 document.getElementById('btnRefresh').onclick=loadRadio;
 document.getElementById('suggestForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('suggestInput').value.trim(); if(!v)return; try{ const r=await api(RADIO_API_BASE+'/suggest',{method:'POST',body:JSON.stringify({query:v,agent:'panel web',reason:'encargado desde la web'})}); toast('Encolado: '+(r.track&&r.track.title||'')); document.getElementById('suggestInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
 document.getElementById('blForm').onsubmit=async(e)=>{ e.preventDefault(); const v=document.getElementById('blInput').value.trim(); if(!v)return; try{ await api(RADIO_API_BASE+'/admin/blacklist',{method:'POST',body:JSON.stringify({word:v})}); toast('Bloqueado: '+v); document.getElementById('blInput').value=''; loadRadio(); }catch(e){toast(e.message,true);} };
 
+radioAudio.addEventListener('error',()=>{if(radioListening)scheduleStreamReconnect();});
+radioAudio.addEventListener('stalled',()=>{if(radioListening)scheduleStreamReconnect();});
+radioAudio.addEventListener('ended',()=>{if(radioListening)scheduleStreamReconnect();});
 loadRadio(); tickTimer(); setInterval(loadRadio,8000);
 </script>
 </body>

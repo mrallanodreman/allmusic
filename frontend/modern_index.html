@@ -1139,9 +1139,10 @@ const ICON_PAUSE='<svg class="icon" width="24" height="24" viewBox="0 0 24 24" f
 audio.addEventListener('play',()=>{
     let isLiveRadio=false;
     if(_radioListening&&_radioTrack){
-        const radioSrc=new URL(_radioStreamUrl,location.href).href;
-        if(audio.currentSrc&&audio.currentSrc!==radioSrc){
-            _radioListening=false;_radioListeningVideoId=null;radioListenButton('Escuchar en vivo');
+        const radioSrc=new URL(_radioStreamUrl,location.href);
+        const currentSrc=audio.currentSrc?new URL(audio.currentSrc,location.href):null;
+        if(currentSrc&&(currentSrc.origin!==radioSrc.origin||currentSrc.pathname!==radioSrc.pathname)){
+            radioStopListening();
         }else isLiveRadio=true;
     }
     document.getElementById('playBtn').innerHTML=ICON_PAUSE;
@@ -1164,6 +1165,7 @@ audio.addEventListener('timeupdate',()=>{
     document.getElementById('metaDur').textContent=fmtTime(audio.duration);
 });
 audio.addEventListener('ended',()=>{
+    if(_radioListening&&curList==='ia-radio'){radioScheduleReconnect();return;}
     document.getElementById('artOuter').classList.remove('playing');
     setBadge('■ Finalizado',false);
     if(curList==='playlist'&&curPlId){
@@ -1184,7 +1186,7 @@ function togglePlay(){
     }
     audio.pause();
     if(curList==='ia-radio'){
-        _radioListening=false;_radioListeningVideoId=null;radioListenButton('Escuchar en vivo');
+        radioStopListening();
     }
 }
 function seekTo(v){if(audio.duration)audio.currentTime=(v/100)*audio.duration;}
@@ -1217,6 +1219,11 @@ let _radioTrack=null;
 let _radioListening=false;
 let _radioListeningVideoId=null;
 let _radioStreamUrl='https://mail.edgemarketing.art/radio/live.mp3';
+const LS_RADIO_LISTENING='am_radio_listening';
+let _radioResumeOnLoad=localStorage.getItem(LS_RADIO_LISTENING)==='1';
+let _radioReconnectTimer=null;
+let _radioReconnectAttempt=0;
+let _radioStreamGeneration=0;
 const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
 async function rApi(path,opts){const r=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d;}
 const $=s=>{const d=document.createElement('div');d.textContent=s;return d.textContent;};
@@ -1249,19 +1256,55 @@ function renderRadio(d){
     if(!d.history||!d.history.length){h.innerHTML='<div class="empty">Sin historial</div>';}
     else h.innerHTML=d.history.map(x=>'<div class="track-item"><div class="t-art" style="background-image:url(\''+radioThumb(x)+'\')"></div><div style="min-width:0;flex:1"><div class="t-ti" style="color:#ccc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+$(x.title||'')+'</div></div></div>').join('');
 }
-function radioRefresh(){rApi(RADIO_API_BASE+'/now').then(renderRadio).catch(e=>{document.getElementById('radioLive').className='radio-live paused';document.getElementById('radioLive').textContent='Error: '+e.message;});}
+function radioRefresh(){rApi(RADIO_API_BASE+'/now').then(d=>{renderRadio(d);radioResumeIfRequested(d);}).catch(e=>{document.getElementById('radioLive').className='radio-live paused';document.getElementById('radioLive').textContent='Error: '+e.message;});}
 function radioListenButton(text){const b=document.getElementById('radioListenBtn');if(b)b.textContent=text;}
+function radioStreamSrc(){
+    const url=new URL(_radioStreamUrl,location.href);
+    url.searchParams.set('client','web-'+Date.now()+'-'+(++_radioStreamGeneration));
+    return url.href;
+}
+function radioStopListening(){
+    _radioListening=false;
+    _radioListeningVideoId=null;
+    _radioReconnectAttempt=0;
+    if(_radioReconnectTimer){clearTimeout(_radioReconnectTimer);_radioReconnectTimer=null;}
+    localStorage.removeItem(LS_RADIO_LISTENING);
+    radioListenButton('Escuchar en vivo');
+}
+function radioScheduleReconnect(){
+    if(!_radioListening||_radioReconnectTimer)return;
+    const delay=Math.min(30000,1000*Math.pow(2,_radioReconnectAttempt++));
+    radioListenButton('Reconectando…');
+    _radioReconnectTimer=setTimeout(()=>{
+        _radioReconnectTimer=null;
+        radioConnectStream();
+    },delay);
+}
+function radioConnectStream(){
+    if(!_radioListening||!_radioStreamUrl)return;
+    audio.src=radioStreamSrc();
+    audio.load();
+    const pending=audio.play();
+    if(pending&&typeof pending.then==='function'){
+        pending.then(()=>{
+            _radioReconnectAttempt=0;
+            radioListenButton('Escuchando en vivo');
+            setBadge('● IA Radio · En vivo',true);
+        }).catch(e=>{
+            // A reload may lose the user gesture; the button remains available.
+            if(e&&e.name==='NotAllowedError')radioListenButton('Toca para escuchar');
+            else radioScheduleReconnect();
+        });
+    }
+}
 function radioTunePlayer(t){
     if(!t||!_radioStreamUrl){alert('La transmisión todavía no tiene audio disponible.');return;}
     _radioListening=true;
     _radioListeningVideoId=t.video_id||null;
+    localStorage.setItem(LS_RADIO_LISTENING,'1');
     curList='ia-radio';curVideoId=null;
     setInfo(t.title,t.artist||t.uploader||'AllMusic IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
-    if(audio.currentSrc!==new URL(_radioStreamUrl,location.href).href)audio.src=_radioStreamUrl;
-    audio.play().then(()=>{
-        radioListenButton('Escuchando en vivo');
-        setBadge('● IA Radio · En vivo',true);
-    }).catch(()=>radioListenButton('Toca para escuchar'));
+    radioConnectStream();
 }
 function radioSyncPlayer(t){
     if(!_radioListening||!t)return;
@@ -1273,6 +1316,12 @@ function radioSyncPlayer(t){
 function radioListenLive(){
     if(_radioTrack){radioTunePlayer(_radioTrack);return;}
     rApi(RADIO_API_BASE+'/now').then(d=>{renderRadio(d);if(d.playing&&d.track)radioTunePlayer(d.track);}).catch(e=>alert(e.message));
+}
+function radioResumeIfRequested(d){
+    if(!_radioListening&&_radioResumeOnLoad&&d.playing&&d.track){
+        _radioResumeOnLoad=false;
+        radioTunePlayer(d.track);
+    }
 }
 setInterval(()=>{if(_nowElapsed!=null){_nowElapsed+=1;document.getElementById('radioElapsed').textContent=Rfmt(_nowElapsed);document.getElementById('radioProg').style.width=Math.min(100,(_nowElapsed/(window._nowDur||1))*100)+'%';}},1000);
 setInterval(radioRefresh,8000);
@@ -1287,6 +1336,10 @@ function dlCurrent(){
 }
 
 audio.addEventListener('error',()=>{
+    if(_radioListening&&curList==='ia-radio'){
+        radioScheduleReconnect();
+        return;
+    }
     const m=audio.error;
     const code=m?m.code:0;
     const names=['','NETWORK_ERR','DECODE_ERR','SRC_ERR','MEDIA_ERR'];
@@ -1306,6 +1359,7 @@ audio.addEventListener('error',()=>{
     setBadge('<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20.5H2Z"/><line x1="12" y1="9.3" x2="12" y2="14.3"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg> No disponible ('+label+')',false);
     alert('Este tema no se pudo reproducir. Prueba otra canción.');
 });
+audio.addEventListener('stalled',()=>{if(_radioListening&&curList==='ia-radio')radioScheduleReconnect();});
 
 // ── Display ──
 function setInfo(title,artist,thumb,album,year,dur,genre,extra){
