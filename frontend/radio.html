@@ -3,136 +3,329 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050505">
 <title>IA Radio 24/7 · AllMusic</title>
 <style>
   :root{
-    --bg:#0d0d1a; --bg2:#12122a; --card:#1a1a2e; --card2:#16213e;
-    --g1:#764ba2; --g2:#667eea; --g3:#f093fb; --accent:#a0b4ff; --pink:#f093fb;
-    --txt:#e6e6f0; --mut:#8a8aaa; --ok:#5ab982; --red:#ff6b6b; --border:#2d2d3a;
+    --bg:#050505;
+    --bg-soft:#090909;
+    --panel:#0b0b0b;
+    --panel-2:#0f0f0f;
+    --panel-3:#141414;
+    --white:#f7f7f5;
+    --text:#e9e9e6;
+    --muted:#858585;
+    --muted-2:#5b5b5b;
+    --line:#202020;
+    --line-soft:#161616;
+    --live:#ff3040;
+    --live-soft:rgba(255,48,64,.12);
+    --live-line:rgba(255,48,64,.28);
+    --ok:#7ee2a8;
+    --shadow:0 30px 80px rgba(0,0,0,.52);
   }
+
   *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg);color-scheme:dark}
   body{
-    background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     min-height:100vh;
+    background:
+      radial-gradient(circle at 18% -10%,rgba(255,255,255,.055),transparent 28%),
+      radial-gradient(circle at 92% 18%,rgba(255,48,64,.04),transparent 22%),
+      var(--bg);
+    color:var(--text);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    letter-spacing:-.01em;
   }
-  .wrap{max-width:980px;margin:0 auto;padding:24px 18px 60px}
-  header.top{display:flex;align-items:center;gap:14px;padding:14px 0 6px}
-  header.top .logo{font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--g2),var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
-  header.top .logo a{text-decoration:none;color:inherit}
-  header.top .sub{color:var(--mut);font-size:13px;margin-left:auto}
-  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px}
-  .badge.live{background:rgba(90,185,130,.15);color:var(--ok)}
-  .badge.paused{background:rgba(255,107,107,.15);color:var(--red)}
-  .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.4s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  h1{font-size:26px;margin:18px 0 4px}
-  h1 small{color:var(--mut);font-size:14px;font-weight:500;display:block;margin-top:4px}
-  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:20px}
-  @media(max-width:820px){.grid{grid-template-columns:1fr}}
-  .card{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:16px;padding:18px}
-  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:12px}
-  .now{display:flex;gap:16px;align-items:center}
-  .now img{width:110px;height:110px;border-radius:12px;object-fit:cover;background:linear-gradient(135deg,var(--g1),var(--g2))}
-  .now .meta{min-width:0}
-  .now .tit{font-size:18px;font-weight:700;line-height:1.25}
-  .now .art{color:var(--accent);margin-top:3px;font-size:14px}
-  .now .time{margin:10px 0 4px;color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
-  .bar{height:6px;background:var(--border);border-radius:6px;overflow:hidden}
-  .bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--g1),var(--g3));transition:width 1s linear;border-radius:6px}
-  .rowbtns{display:flex;gap:10px;margin-top:14px}
-  button{background:linear-gradient(90deg,var(--g1),var(--g2));border:none;color:#fff;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px;transition:filter .15s}
-  button:hover{filter:brightness(1.12)}
-  button.ghost{background:transparent;border:1px solid var(--border);color:var(--txt)}
-  button.danger{background:rgba(255,107,107,.18);color:var(--red)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  form.suggest{display:flex;gap:8px;margin-top:12px}
-  input[type=text]{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--txt);padding:10px 12px;border-radius:10px;font-size:14px;outline:none}
-  input[type=text]:focus{border-color:var(--g2)}
+  body::before{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:-1;
+    background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
+    background-size:48px 48px;
+    mask-image:linear-gradient(to bottom,black,transparent 78%);
+  }
+
+  button,input,a,audio{font:inherit}
+  button{appearance:none}
+  a{color:inherit}
+  .wrap{width:min(1180px,calc(100% - 36px));margin:0 auto;padding:26px 0 64px}
+
+  /* Header */
+  header.top{
+    display:flex;align-items:center;gap:16px;
+    min-height:54px;padding:0 0 20px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .brand{
+    display:flex;align-items:center;gap:11px;text-decoration:none;
+    color:var(--white);font-size:18px;font-weight:900;letter-spacing:-.045em;
+  }
+  .brand-mark{
+    width:30px;height:30px;border:1px solid #2c2c2c;border-radius:9px;
+    display:grid;place-items:center;background:#0c0c0c;position:relative;overflow:hidden;
+  }
+  .brand-mark::before,.brand-mark::after{
+    content:"";position:absolute;bottom:7px;width:3px;border-radius:3px;background:#fff;
+    animation:brandEq 1.1s ease-in-out infinite alternate;
+  }
+  .brand-mark::before{height:10px;left:9px}
+  .brand-mark::after{height:16px;right:9px;animation-delay:-.45s}
+  @keyframes brandEq{from{transform:scaleY(.45);opacity:.55}to{transform:scaleY(1);opacity:1}}
+  .top-divider{width:1px;height:18px;background:var(--line)}
+  .top-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .top-spacer{flex:1}
+  .back-link{
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#aaa;
+    font-size:12px;font-weight:700;padding:8px 11px;border:1px solid var(--line);border-radius:10px;
+    background:#090909;transition:border-color .18s,color .18s,background .18s;
+  }
+  .back-link:hover{color:#fff;border-color:#3b3b3b;background:#0d0d0d}
+
+  /* Broadcast hero */
+  .broadcast-head{padding:34px 0 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end}
+  .eyebrow{display:flex;align-items:center;gap:10px;color:#aaa;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .live-lamp{width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 0 6px rgba(255,48,64,.08),0 0 24px rgba(255,48,64,.45)}
+  h1{font-size:clamp(34px,5vw,64px);line-height:.94;letter-spacing:-.065em;color:var(--white);font-weight:900;max-width:760px}
+  h1 span{color:#707070}
+  .hero-copy{color:var(--muted);font-size:13px;line-height:1.65;max-width:630px;margin-top:15px}
+  .state-cluster{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .badge{
+    display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:9px 13px;
+    font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--line);background:#0a0a0a;color:#999;
+  }
+  .badge.live{color:#fff;border-color:var(--live-line);background:var(--live-soft)}
+  .badge.paused{color:#8d8d8d;background:#0a0a0a}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .badge.live .dot{background:var(--live);box-shadow:0 0 12px rgba(255,48,64,.8);animation:pulse 1.15s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
+  .state-note{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.1em}
+
+  /* Main layout */
+  .broadcast-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr);gap:18px;align-items:stretch}
+  .card{background:linear-gradient(180deg,#0d0d0d,#090909);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line-soft)}
+  .card-kicker{font-size:10px;color:#707070;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+  .card-meta{font-size:10px;color:#4f4f4f;font-variant-numeric:tabular-nums}
+
+  /* Now Playing */
+  .now-card{position:relative;isolation:isolate}
+  .now-card::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(circle at 28% 35%,rgba(255,255,255,.035),transparent 38%)}
+  .now-stage{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;padding:26px 26px 18px;align-items:center}
+  .cover-wrap{position:relative;width:220px;aspect-ratio:1;border-radius:18px;overflow:hidden;background:#111;border:1px solid #252525;box-shadow:0 20px 45px rgba(0,0,0,.5)}
+  .cover-wrap img{width:100%;height:100%;display:block;object-fit:cover;filter:saturate(.92) contrast(1.04)}
+  .cover-wrap::after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.06);border-radius:inherit;pointer-events:none}
+  .on-air-tab{position:absolute;left:12px;top:12px;z-index:2;padding:7px 9px;border-radius:7px;background:rgba(5,5,5,.84);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);display:flex;align-items:center;gap:7px;font-size:9px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#fff}
+  .on-air-tab i{display:block;width:6px;height:6px;border-radius:50%;background:var(--live);box-shadow:0 0 10px var(--live)}
+  .meta{min-width:0}
+  .meta-overline{font-size:10px;color:#646464;text-transform:uppercase;letter-spacing:.12em;font-weight:800;margin-bottom:8px}
+  .now .tit{font-size:clamp(24px,3.4vw,42px);font-weight:900;color:var(--white);line-height:1.02;letter-spacing:-.045em;overflow-wrap:anywhere}
+  .now .art{font-size:15px;color:#999;margin-top:10px;font-weight:650}
+  .now .time{font-size:11px;color:#616161;font-variant-numeric:tabular-nums;margin-top:21px;display:flex;gap:6px;align-items:center}
+  .time-sep{color:#333}
+
+  .bar{height:3px;background:#222;border-radius:99px;overflow:hidden;margin:0 26px}
+  .bar i{display:block;height:100%;width:0%;background:#f3f3f3;transition:width 1s linear;border-radius:99px;box-shadow:0 0 12px rgba(255,255,255,.16)}
+
+  .broadcast-console{padding:18px 26px 24px}
+  .console-top{display:flex;align-items:center;gap:18px;justify-content:space-between}
+  .eq{height:32px;display:flex;align-items:center;gap:3px;min-width:88px}
+  .eq span{width:3px;height:20%;background:#6c6c6c;border-radius:3px;transform-origin:center;animation:eq 800ms ease-in-out infinite alternate}
+  .eq span:nth-child(2){animation-delay:-.16s}.eq span:nth-child(3){animation-delay:-.5s}.eq span:nth-child(4){animation-delay:-.28s}.eq span:nth-child(5){animation-delay:-.67s}.eq span:nth-child(6){animation-delay:-.38s}.eq span:nth-child(7){animation-delay:-.74s}.eq span:nth-child(8){animation-delay:-.2s}.eq span:nth-child(9){animation-delay:-.58s}.eq span:nth-child(10){animation-delay:-.42s}.eq span:nth-child(11){animation-delay:-.7s}.eq span:nth-child(12){animation-delay:-.1s}
+  @keyframes eq{from{height:18%;background:#555}to{height:88%;background:#f2f2f2}}
+  body:not(.is-live) .eq span{animation-play-state:paused;height:16%;background:#333}
+  .rowbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  button{
+    border:1px solid #2a2a2a;background:#131313;color:#dedede;font-weight:800;
+    padding:10px 14px;border-radius:10px;cursor:pointer;font-size:12px;
+    transition:transform .14s,background .14s,border-color .14s,color .14s;
+  }
+  button:hover{transform:translateY(-1px);background:#181818;border-color:#3a3a3a;color:#fff}
+  button:active{transform:translateY(0)}
+  button.primary{background:#f3f3f0;color:#080808;border-color:#f3f3f0}
+  button.primary:hover{background:#fff;border-color:#fff;color:#000}
+  button.live-action{background:var(--live);border-color:var(--live);color:#fff;box-shadow:0 7px 24px rgba(255,48,64,.14)}
+  button.live-action:hover{background:#ff4250;border-color:#ff4250}
+  button.ghost{background:transparent;color:#888}
+  button:disabled{opacity:.42;cursor:not-allowed;transform:none}
+
+  .stream-box{margin-top:16px;padding:13px 14px;border:1px solid #1d1d1d;border-radius:13px;background:#080808;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+  .stream-box audio{width:100%;height:36px;filter:grayscale(1);opacity:.72}
+  .stream-status{font-size:10px;color:#5d5d5d;white-space:nowrap}
+
+  .request-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .request-label{font-size:10px;color:#616161;text-transform:uppercase;letter-spacing:.12em;font-weight:850;margin-bottom:8px}
+  form.suggest{display:flex;gap:8px}
+  input[type=text]{min-width:0;flex:1;background:#080808;border:1px solid #222;color:#eee;padding:11px 12px;border-radius:10px;font-size:12px;outline:none;transition:border-color .16s,background .16s}
+  input[type=text]::placeholder{color:#4d4d4d}
+  input[type=text]:focus{border-color:#4a4a4a;background:#0b0b0b}
+  .hint{color:#505050;font-size:10px;margin-top:8px;line-height:1.5}
+
+  /* Queue */
+  .queue-card{min-height:100%}
+  .queue-list{padding:8px 12px 14px;max-height:570px;overflow:auto;scrollbar-width:thin;scrollbar-color:#2b2b2b transparent}
   ul{list-style:none}
-  li.q{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+  li.q{display:grid;grid-template-columns:22px 48px minmax(0,1fr);gap:10px;align-items:center;padding:10px 6px;border-bottom:1px solid #171717}
   li.q:last-child{border-bottom:none}
-  li.q img{width:42px;height:42px;border-radius:8px;object-fit:cover;background:var(--bg2)}
-  li.q .tit{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  li.q .sub{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  li.q .n{color:var(--mut);font-weight:800;font-size:12px;width:18px;text-align:right}
-  .empty{color:var(--mut);font-size:13px;padding:8px 0}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);color:var(--mut);font-size:12px;padding:5px 8px 5px 12px;border-radius:20px}
-  .chip button{background:none;border:none;color:var(--red);font-weight:800;cursor:pointer;font-size:14px;padding:0 4px;line-height:1}
-  .hist li{font-size:13px;color:var(--mut);padding:5px 0;border-bottom:1px dashed var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  li.q img{width:48px;height:48px;border-radius:9px;object-fit:cover;background:#111;border:1px solid #232323}
+  li.q .tit{font-size:12px;color:#ddd;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  li.q .sub{font-size:10px;color:#575757;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  li.q .n{font-size:10px;color:#454545;font-weight:900;font-variant-numeric:tabular-nums;text-align:center}
+  .empty{color:#555;font-size:11px;padding:18px 8px;text-align:center}
+
+  /* Lower cards */
+  .lower-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-top:18px}
+  .lower-card{box-shadow:none}
+  .hist{padding:7px 16px 16px}
+  .hist li{display:flex;align-items:center;gap:9px;font-size:11px;color:#7c7c7c;padding:9px 2px;border-bottom:1px solid #171717;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hist li::before{content:"";width:4px;height:4px;border-radius:50%;background:#353535;flex:none}
+  .hist li:first-child{color:#bbb}.hist li:first-child::before{background:#888}
   .hist li:last-child{border:none}
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--card2);border:1px solid var(--g2);color:var(--txt);padding:11px 18px;border-radius:12px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:transform .3s;z-index:50}
+  .blacklist-body{padding:14px 16px 18px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;min-height:28px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:#0b0b0b;border:1px solid #242424;color:#777;font-size:10px;font-weight:700;padding:6px 7px 6px 10px;border-radius:999px}
+  .chip button{background:transparent;border:none;color:#666;font-weight:800;cursor:pointer;font-size:14px;padding:0 3px;line-height:1;transform:none}
+  .chip button:hover{color:var(--live);background:transparent;transform:none}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:#111;border:1px solid #333;color:#eee;padding:11px 16px;border-radius:11px;font-size:11px;font-weight:700;box-shadow:0 18px 50px rgba(0,0,0,.7);transition:transform .26s ease;z-index:50}
   .toast.show{transform:translateX(-50%) translateY(0)}
-  .toast.err{border-color:var(--red)}
-  a{color:var(--accent)}
-  .hint{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.5}
-  .stream-box{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
-  .stream-box audio{width:100%;height:38px;accent-color:var(--g2)}
-  .stream-status{color:var(--mut);font-size:12px}
+  .toast.err{border-color:var(--live-line);color:#ff818b}
+
+  .footer{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:26px 2px 0;color:#444;font-size:10px}
+  .footer strong{color:#666}.footer a{text-decoration:none;color:#666}.footer a:hover{color:#fff}
+
+  @media(max-width:900px){
+    .broadcast-head{grid-template-columns:1fr}.state-cluster{align-items:flex-start}
+    .broadcast-grid,.lower-grid{grid-template-columns:1fr}
+    .queue-list{max-height:410px}
+  }
+  @media(max-width:640px){
+    .wrap{width:min(100% - 22px,1180px);padding-top:14px}
+    header.top{gap:10px}.top-divider,.top-label{display:none}.back-link{padding:7px 9px;font-size:10px}
+    .broadcast-head{padding:24px 2px 17px}.hero-copy{font-size:12px}
+    .now-stage{grid-template-columns:108px minmax(0,1fr);gap:16px;padding:18px 16px 14px}
+    .cover-wrap{width:108px;border-radius:13px}.on-air-tab{font-size:8px;left:7px;top:7px;padding:5px 6px}
+    .now .tit{font-size:21px}.now .art{font-size:12px}.now .time{margin-top:12px}
+    .bar{margin:0 16px}.broadcast-console{padding:14px 16px 18px}.console-top{align-items:flex-start;flex-direction:column}.rowbtns{justify-content:flex-start;width:100%}
+    button{padding:9px 11px;font-size:11px}.stream-box{grid-template-columns:1fr}.stream-status{white-space:normal}
+    form.suggest{flex-direction:column}.request-box button,.blacklist-body form button{width:100%}
+    .footer{flex-direction:column;align-items:flex-start}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="logo"><a href="/">AllMusic</a></div>
-    <span class="badge" id="stateBadge"><span class="dot"></span><span id="stateText">Cargando…</span></span>
-    <div class="sub">IA Radio 24/7</div>
+    <a class="brand" href="/allmusic/" aria-label="Volver a AllMusic">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>AllMusic</span>
+    </a>
+    <span class="top-divider" aria-hidden="true"></span>
+    <span class="top-label">Broadcast System</span>
+    <span class="top-spacer"></span>
+    <a class="back-link" href="/allmusic/">← Volver al reproductor</a>
   </header>
 
-  <h1>IA Radio 24/7 <small>Radio continua de AllMusic · sonando en la bocina Atico · control por agentes y web</small></h1>
+  <section class="broadcast-head">
+    <div>
+      <div class="eyebrow"><span class="live-lamp"></span> AllMusic · transmisión autónoma</div>
+      <h1>RADIO <span>24/7</span></h1>
+      <p class="hero-copy">Una señal continua administrada por AllMusic. Escucha el stream, revisa qué sigue y encarga una canción o un mood sin salir de la transmisión.</p>
+    </div>
+    <div class="state-cluster">
+      <span class="badge" id="stateBadge"><span class="dot"></span><span id="stateText">Cargando…</span></span>
+      <span class="state-note">Atico · señal principal</span>
+    </div>
+  </section>
 
-  <div class="grid">
-    <!-- NOW PLAYING -->
-    <section class="card">
-      <h2>Sonando ahora</h2>
-      <div class="now">
-        <img id="thumb" alt="">
+  <div class="broadcast-grid">
+    <section class="card now-card">
+      <div class="card-head">
+        <span class="card-kicker">Ahora en emisión</span>
+        <span class="card-meta">LIVE FEED / ALLMUSIC</span>
+      </div>
+
+      <div class="now now-stage">
+        <div class="cover-wrap">
+          <div class="on-air-tab"><i></i> ON AIR</div>
+          <img id="thumb" alt="Portada del tema actual">
+        </div>
         <div class="meta">
-          <div class="tit" id="title">—</div>
+          <div class="meta-overline">Sonando ahora</div>
+          <div class="tit" id="title" aria-live="polite">—</div>
           <div class="art" id="artist">—</div>
-          <div class="time"><span id="elapsed">0:00</span> / <span id="duration">0:00</span></div>
+          <div class="time"><span id="elapsed">0:00</span><span class="time-sep">/</span><span id="duration">0:00</span></div>
         </div>
       </div>
-      <div class="bar"><i id="barFill"></i></div>
-      <div class="rowbtns">
-        <button id="btnListen">Escuchar en vivo</button>
-        <button id="btnAdvance" title="Pasa a la siguiente pista">Siguiente</button>
-        <button class="ghost" id="btnRefresh" title="Actualizar">Actualizar</button>
+
+      <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+
+      <div class="broadcast-console">
+        <div class="console-top">
+          <div class="eq" aria-label="Señal de audio activa">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="rowbtns">
+            <button class="live-action" id="btnListen">Escuchar en vivo</button>
+            <button class="primary" id="btnAdvance" title="Pasa a la siguiente pista">Siguiente</button>
+            <button class="ghost" id="btnRefresh" title="Actualizar estado">Actualizar</button>
+          </div>
+        </div>
+
+        <div class="stream-box">
+          <audio id="radioAudio" controls preload="none"></audio>
+          <span class="stream-status" id="streamStatus">La transmisión está lista.</span>
+        </div>
+
+        <div class="request-box">
+          <div class="request-label">Pide algo para la señal</div>
+          <form class="suggest" id="suggestForm">
+            <input type="text" id="suggestInput" placeholder="Canción, artista o mood — ej: lo-fi chill" autocomplete="off" aria-label="Canción o mood a encolar">
+            <button class="primary" type="submit">Encolar</button>
+          </form>
+          <div class="hint">La solicitud entra en la cola de la radio y respeta la lista negra.</div>
+        </div>
       </div>
-      <div class="stream-box">
-        <audio id="radioAudio" controls preload="none"></audio>
-        <span class="stream-status" id="streamStatus">La transmisión está lista.</span>
-      </div>
-      <form class="suggest" id="suggestForm">
-        <input type="text" id="suggestInput" placeholder="Encargar un mood o canción… ej: lo-fi chill" autocomplete="off">
-        <button type="submit">Encolar</button>
-      </form>
-      <div class="hint">Encolar en la radio la hace sonar en el Atico cuando llegue su turno (respetando la lista negra).</div>
     </section>
 
-    <!-- QUEUE -->
-    <section class="card">
-      <h2>Siguiente en la cola</h2>
-      <ul id="queueList"><li class="empty">Cargando…</li></ul>
+    <section class="card queue-card">
+      <div class="card-head">
+        <span class="card-kicker">Siguiente en la señal</span>
+        <span class="card-meta" id="queueCount">QUEUE</span>
+      </div>
+      <ul class="queue-list" id="queueList"><li class="empty">Cargando cola…</li></ul>
     </section>
   </div>
 
-  <!-- HISTORY + BLACKLIST -->
-  <div class="grid" style="margin-top:0">
-    <section class="card">
-      <h2>Historial reciente</h2>
-      <ul class="hist" id="historyList"><li class="empty">Cargando…</li></ul>
+  <div class="lower-grid">
+    <section class="card lower-card">
+      <div class="card-head">
+        <span class="card-kicker">Recién emitido</span>
+        <span class="card-meta">HISTORY</span>
+      </div>
+      <ul class="hist" id="historyList"><li class="empty">Cargando historial…</li></ul>
     </section>
-    <section class="card">
-      <h2>Lista negra (nunca suenan)</h2>
-      <div class="chips" id="blacklistChips"><span class="empty">Cargando…</span></div>
-      <form class="suggest" id="blForm">
-        <input type="text" id="blInput" placeholder="Estilo a bloquear… ej: bachata" autocomplete="off">
-        <button type="submit">Bloquear</button>
-      </form>
-      <div class="hint">La lista negra impide que esos estilos/artistas entren a la radio. Los agentes la administran igualmente.</div>
+
+    <section class="card lower-card">
+      <div class="card-head">
+        <span class="card-kicker">Filtro de programación</span>
+        <span class="card-meta">BLACKLIST</span>
+      </div>
+      <div class="blacklist-body">
+        <div class="chips" id="blacklistChips"><span class="empty">Cargando bloqueos…</span></div>
+        <form class="suggest" id="blForm">
+          <input type="text" id="blInput" placeholder="Artista o estilo a bloquear" autocomplete="off" aria-label="Artista o estilo a bloquear">
+          <button type="submit">Bloquear</button>
+        </form>
+        <div class="hint">Los términos bloqueados no entran en la programación automática.</div>
+      </div>
     </section>
   </div>
+
+  <footer class="footer">
+    <span><strong>AllMusic Radio</strong> · Edge Marketing Agency</span>
+    <span><a href="/allmusic/">Reproductor</a> · <a href="/allmusic/artistas">Artistas</a> · <a href="/allmusic/about">Acerca de</a></span>
+  </footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -213,13 +406,16 @@ async function api(path, opts){
 function renderState(d){
   radioStreamUrl=d.stream_url||radioStreamUrl;
   const badge=document.getElementById('stateBadge');
+  document.body.classList.toggle('is-live',!!d.playing);
   if(d.playing){
     badge.className='badge live'; badge.querySelector('#stateText').textContent='En vivo';
     const t=d.track||{};
     const thumb=document.getElementById('thumb');
-    thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg';
+    const fallback='https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg';
+    thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:fallback;
+    thumb.onerror=()=>{ if(thumb.src!==fallback) thumb.src=fallback; };
     document.getElementById('title').textContent=t.title||'—';
-    document.getElementById('artist').textContent=t.artist||t.uploader||'';
+    document.getElementById('artist').textContent=t.artist||t.uploader||'AllMusic';
     const el=document.getElementById('elapsed'), du=document.getElementById('duration');
     window._nowElapsed=t.elapsed||0;
     el.textContent=fmt(t.elapsed||0);
@@ -228,15 +424,19 @@ function renderState(d){
   } else {
     badge.className='badge paused'; badge.querySelector('#stateText').textContent='En pausa';
   }
-  // queue
   const q=document.getElementById('queueList');
-  if(!d.queue||!d.queue.length){ q.innerHTML='<li class="empty">Cola vacía</li>'; }
-  else q.innerHTML=d.queue.map((x,i)=>`<li class="q"><span class="n">${i+1}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0;flex:1"><div class="tit">${x.title||''}</div><div class="sub">${x.artist||''} ${x.suggested_by?'· '+x.suggested_by:''}</div></span></li>`).join('');
-  // history
+  const queue=d.queue||[];
+  document.getElementById('queueCount').textContent=queue.length?String(queue.length).padStart(2,'0')+' EN COLA':'COLA VACÍA';
+  if(!queue.length){ q.innerHTML='<li class="empty">La cola está vacía.</li>'; }
+  else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}</div></span></li>`).join('');
   const h=document.getElementById('historyList');
-  if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Sin historial</li>'; }
-  else h.innerHTML=d.history.map(x=>`<li>${x.title||''}</li>`).join('');
+  if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Todavía no hay historial.</li>'; }
+  else h.innerHTML=d.history.map(x=>`<li>${escapeHtml(x.title||'')}</li>`).join('');
   if(d.playing&&radioListening&&!streamConnected)connectStream();
+}
+
+function escapeHtml(value){
+  return String(value||'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 }
 
 function tickTimer(){
@@ -253,8 +453,8 @@ async function loadRadio(){
 
 function renderBlacklist(list){
   const c=document.getElementById('blacklistChips');
-  if(!list||!list.length){ c.innerHTML='<span class="empty">Sin bloqueos</span>'; return; }
-  c.innerHTML=list.map(w=>`<span class="chip">${w}<button data-word="${encodeURIComponent(w)}" title="Desbloquear">×</button></span>`).join('');
+  if(!list||!list.length){ c.innerHTML='<span class="empty">Sin bloqueos activos.</span>'; return; }
+  c.innerHTML=list.map(w=>`<span class="chip">${escapeHtml(w)}<button data-word="${encodeURIComponent(w)}" title="Desbloquear" aria-label="Desbloquear ${escapeHtml(w)}">×</button></span>`).join('');
   c.querySelectorAll('button').forEach(b=>b.onclick=async()=>{ try{ await api(RADIO_API_BASE+'/admin/blacklist',{method:'DELETE',body:JSON.stringify({word:decodeURIComponent(b.dataset.word)})}); toast('Desbloqueado'); loadRadio(); }catch(e){toast(e.message,true);} });
 }
 
@@ -267,6 +467,7 @@ document.getElementById('blForm').onsubmit=async(e)=>{ e.preventDefault(); const
 radioAudio.addEventListener('error',()=>{if(radioListening)scheduleStreamReconnect();});
 radioAudio.addEventListener('stalled',()=>{if(radioListening)scheduleStreamReconnect();});
 radioAudio.addEventListener('ended',()=>{if(radioListening)scheduleStreamReconnect();});
+radioAudio.addEventListener('playing',()=>{streamConnected=true;reconnectAttempt=0;streamStatus('Stream conectado.');});
 loadRadio(); tickTimer(); setInterval(loadRadio,8000);
 </script>
 </body>
