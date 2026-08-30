@@ -540,6 +540,119 @@
     .icon{display:inline-block;vertical-align:-0.2em;flex-shrink:0}
     .icon-spin{animation:iconSpin .8s linear infinite}
     @keyframes iconSpin{to{transform:rotate(360deg)}}
+        /* Radio full-canvas mode — the sidebar is only the dial */
+        .player-shell{
+            width:100%;height:100%;min-height:0;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:10px;overflow:auto;position:relative;z-index:1;
+        }
+        .radio-stage{
+            display:none;flex:1;min-height:0;width:100%;height:100%;
+            grid-template-columns:minmax(310px,.95fr) minmax(380px,1.35fr);
+            grid-template-rows:auto auto minmax(0,1fr);
+            gap:14px;overflow-y:auto;overflow-x:hidden;padding:4px;
+            scrollbar-width:thin;scrollbar-color:rgba(255,51,200,.6) transparent;
+            position:relative;z-index:1;
+        }
+        .radio-stage::-webkit-scrollbar,.radio-stage-right::-webkit-scrollbar{width:5px;}
+        .radio-stage::-webkit-scrollbar-thumb,.radio-stage-right::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ff33c8,#40f3ff);border-radius:4px;}
+        .radio-stage > .radio-ticker,.radio-stage > .radio-intro{grid-column:1/-1;}
+        .radio-stage .radio-ticker{margin:0;}
+        .radio-stage .radio-intro{
+            display:flex;align-items:center;justify-content:space-between;gap:18px;
+            padding:2px 4px 0;
+        }
+        .radio-intro-stamp{
+            flex:0 0 auto;border:2px solid #d8ff3f;color:#d8ff3f;padding:8px 11px 6px;
+            font:900 11px/1 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            letter-spacing:.08em;text-align:center;transform:rotate(-4deg);
+            box-shadow:4px 4px 0 rgba(255,51,200,.35);
+        }
+        .radio-intro-stamp b{font-size:24px;color:#40f3ff;letter-spacing:.02em;}
+        .radio-stage-left,.radio-stage-right{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px;}
+        .radio-stage-left .radio-now{min-height:150px;padding:18px;}
+        .radio-stage-left .radio-now-art,.radio-stage-left .radio-now-art img{width:110px;height:110px;}
+        .radio-stage-left .radio-now-title{font-size:18px;}
+        .radio-stage-left .radio-mood-panel{flex:1;min-height:235px;}
+        .radio-stage-right{overflow-y:auto;padding-right:3px;}
+        .radio-stage-right .radio-chart-panel{flex:1;min-height:260px;margin-top:0;}
+        .radio-stage-right .radio-top-list{min-height:210px;}
+        .radio-stage-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0;}
+        .radio-stage-lists .radio-list-panel{margin-top:0;min-width:0;}
+        .radio-stage-lists .radio-list-panel .track-list{max-height:170px;}
+        .radio-rail{
+            margin:15px 13px 18px;padding:18px 14px;display:flex;flex:1;flex-direction:column;gap:16px;
+            background:linear-gradient(165deg,rgba(255,51,200,.14),rgba(8,4,16,.96) 58%);
+            border:1px solid rgba(64,243,255,.3);position:relative;overflow:hidden;
+            box-shadow:7px 7px 0 rgba(64,243,255,.08);
+        }
+        .radio-rail::before{
+            content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;
+            background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(64,243,255,.09) 6px);
+        }
+        .radio-rail > *{position:relative;z-index:1;}
+        .radio-rail-status{display:flex;align-items:center;gap:7px;color:#d8ff3f;font-size:8px;font-weight:950;letter-spacing:.1em;}
+        .radio-rail-status b{margin-left:auto;color:#40f3ff;font-size:9px;}
+        .radio-rail-dot{width:7px;height:7px;border-radius:50%;background:#d8ff3f;box-shadow:0 0 12px #d8ff3f;animation:radioPulse 1.1s ease-in-out infinite;}
+        .radio-rail-brand{display:flex;flex-direction:column;gap:7px;}
+        .radio-rail-brand span{color:#40f3ff;font-size:8px;font-weight:950;letter-spacing:.12em;}
+        .radio-rail-brand strong{font:900 clamp(48px,6vw,78px)/.74 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;color:#fff;letter-spacing:.01em;text-shadow:4px 4px 0 rgba(255,51,200,.3);}
+        .radio-rail-brand em{font-style:normal;color:#ff33c8;}
+        .radio-rail-eq{height:58px;display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid rgba(64,243,255,.25);padding:0 2px 5px;}
+        .radio-rail-eq i{display:block;flex:1;min-width:3px;background:linear-gradient(180deg,#40f3ff,#ff33c8);animation:radioEq 1.2s ease-in-out infinite alternate;}
+        .radio-rail-eq i:nth-child(2n){animation-delay:-.55s;}.radio-rail-eq i:nth-child(3n){animation-delay:-.9s;}
+        .radio-rail-now{display:grid;gap:5px;padding:11px 0;border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09);}
+        .radio-rail-now span,.radio-rail-mood span{color:#d8ff3f;font-size:8px;font-weight:950;letter-spacing:.1em;}
+        .radio-rail-now strong{color:#fff;font-size:12px;line-height:1.28;overflow-wrap:anywhere;}
+        .radio-rail-mood{display:grid;gap:4px;}
+        .radio-rail-mood strong{color:#40f3ff;font:900 22px/.9 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;overflow-wrap:anywhere;}
+        .radio-rail-copy{color:#ae98bb;font-size:10px;line-height:1.5;margin-top:auto;}
+        .radio-rail-foot{color:#785b86;font-size:8px;letter-spacing:.08em;line-height:1.35;}
+        @keyframes radioPulse{50%{opacity:.35;transform:scale(.78)}}
+        @keyframes radioEq{from{transform:scaleY(.55);opacity:.7}to{transform:scaleY(1);opacity:1}}
+        body.radio-active .left-panel{
+            width:clamp(220px,22vw,300px);
+            background:linear-gradient(180deg,rgba(19,7,31,.98),rgba(8,4,16,.98));
+            border-right-color:rgba(255,51,200,.3);
+        }
+        body.radio-active .tabs{border-bottom-color:rgba(255,51,200,.2);}
+        body.radio-active .tab-btn{font-size:10px;padding:12px 4px;letter-spacing:-.02em;}
+        body.radio-active .right-panel{
+            align-items:stretch;justify-content:flex-start;padding:18px 24px;overflow:hidden;
+            background:radial-gradient(circle at 55% 38%,rgba(255,51,200,.14),transparent 32%),linear-gradient(150deg,#11051d 0%,#090412 58%,#050207 100%);
+        }
+        body.radio-active .right-panel .player-shell{display:none;}
+        body.radio-active .right-panel .radio-stage{display:grid;}
+        @media(max-width:1100px){
+            body.radio-active .left-panel{width:240px;}
+            body.radio-active .right-panel{padding:16px;}
+            .radio-stage{grid-template-columns:minmax(270px,1fr) minmax(320px,1.15fr);gap:11px;}
+            .radio-stage-lists{grid-template-columns:1fr;}
+        }
+        @media(max-width:900px){
+            body.radio-active .left-panel{width:100%;max-height:185px;border-right:none;border-bottom:1px solid rgba(255,51,200,.28);}
+            body.radio-active .right-panel{padding:12px 10px;overflow:hidden;}
+            .radio-stage{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:auto;}
+            .radio-stage-left,.radio-stage-right{grid-column:1;overflow:visible;}
+            .radio-stage-right .radio-chart-panel{min-height:0;}
+            .radio-stage-lists{grid-template-columns:1fr 1fr;}
+            .radio-rail{margin:10px 12px;padding:12px 14px;gap:10px;}
+            .radio-rail-brand strong{font-size:44px;}
+            .radio-rail-eq{height:30px;}
+        }
+        @media(max-width:560px){
+            body.radio-active .left-panel{max-height:165px;}
+            body.radio-active .right-panel{padding:8px 6px;}
+            .radio-stage{gap:9px;padding:2px;}
+            .radio-stage .radio-intro{gap:8px;}
+            .radio-intro-stamp{display:none;}
+            .radio-stage-left .radio-now{padding:11px;min-height:0;}
+            .radio-stage-left .radio-now-art,.radio-stage-left .radio-now-art img{width:72px;height:72px;}
+            .radio-stage-left .radio-now-title{font-size:15px;}
+            .radio-stage-lists{grid-template-columns:1fr;}
+            .radio-rail{margin:8px 8px;padding:10px 12px;}
+            .radio-rail-copy,.radio-rail-foot{display:none;}
+        }
+
 </style>
 </head>
 <body>
@@ -697,18 +810,52 @@
 
         <!-- IA Radio 24/7 — experiencia MTV 2000s -->
         <div class="tab-pane" id="pane-radio">
-            <div class="radio-pane">
-                <div class="radio-ticker" aria-label="Estado de la transmisión">
-                    <span class="radio-ticker-label">ON AIR</span>
-                    <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
-                    <span class="radio-ticker-live" id="radioLive">Cargando…</span>
+            <div class="radio-rail">
+                <div class="radio-rail-status">
+                    <span class="radio-rail-dot"></span>
+                    <span id="radioRailLive">MASTER EN VIVO</span>
+                    <b>24/7</b>
                 </div>
+                <div class="radio-rail-brand">
+                    <span>ALLMUSIC / BROADCAST</span>
+                    <strong>IA<br><em>RADIO</em></strong>
+                </div>
+                <div class="radio-rail-eq" aria-hidden="true">
+                    <i style="height:22%"></i><i style="height:58%"></i><i style="height:36%"></i><i style="height:84%"></i><i style="height:48%"></i><i style="height:72%"></i><i style="height:28%"></i><i style="height:66%"></i><i style="height:42%"></i><i style="height:92%"></i><i style="height:34%"></i><i style="height:76%"></i>
+                </div>
+                <div class="radio-rail-now">
+                    <span>AHORA SUENA</span>
+                    <strong id="radioRailTrack">Conectando con la señal…</strong>
+                </div>
+                <div class="radio-rail-mood">
+                    <span>MOOD :</span>
+                    <strong id="radioRailMood">SIGNAL STANDBY</strong>
+                </div>
+                <p class="radio-rail-copy">La cabina completa está a la derecha. El sidebar queda como tu dial de navegación.</p>
+                <div class="radio-rail-foot">SEÑAL PRINCIPAL // ÁTICO // QUITO</div>
+            </div>
+        </div>
+    </div>
 
-                <div class="radio-intro">
+    <!-- ══ RIGHT PANEL / PLAYER ══ -->
+    <div class="right-panel">
+
+        <section class="radio-stage" id="radioStage" aria-label="IA Radio 24/7">
+            <div class="radio-ticker" aria-label="Estado de la transmisión">
+                <span class="radio-ticker-label">ON AIR</span>
+                <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
+                <span class="radio-ticker-live" id="radioLive">Cargando…</span>
+            </div>
+
+            <div class="radio-intro">
+                <div>
                     <div class="radio-intro-kicker">BROADCAST SYSTEM // 2000S EDITION</div>
-                    <p class="radio-desc">La señal del master en el Ático. Sintoniza lo que suena ahora, descubre el ranking y manda tu pedido al aire.</p>
+                    <p class="radio-desc">La señal del master en el Ático. Sintoniza, mira el ranking de la audiencia y manda tu pedido al aire.</p>
                 </div>
+                <div class="radio-intro-stamp">LIVE<br><b>TV</b></div>
+            </div>
 
+            <div class="radio-stage-left">
                 <div class="radio-now">
                     <div class="radio-now-art" id="radioArt"></div>
                     <div class="radio-now-meta">
@@ -750,7 +897,9 @@
                         <p class="radio-mood-hint">Toca un mood para prepararlo como pedido.</p>
                     </div>
                 </section>
+            </div>
 
+            <div class="radio-stage-right">
                 <section class="radio-chart-panel" aria-labelledby="radioTopHeading">
                     <div class="radio-panel-heading">
                         <span id="radioTopHeading">Los 10 más pedidos</span>
@@ -761,27 +910,27 @@
                     </ol>
                 </section>
 
-                <section class="radio-list-panel">
-                    <div class="hist-header">
-                        <span>Siguiente en la cola</span>
-                        <span>QUEUE</span>
-                    </div>
-                    <div class="track-list" id="radioQueueList"><div class="empty">Cargando…</div></div>
-                </section>
+                <div class="radio-stage-lists">
+                    <section class="radio-list-panel">
+                        <div class="hist-header">
+                            <span>Siguiente en la cola</span>
+                            <span>QUEUE</span>
+                        </div>
+                        <div class="track-list" id="radioQueueList"><div class="empty">Cargando…</div></div>
+                    </section>
 
-                <section class="radio-list-panel">
-                    <div class="hist-header">
-                        <span>Historial reciente</span>
-                        <span>HISTORY</span>
-                    </div>
-                    <div class="track-list" id="radioHistoryList"><div class="empty">Cargando…</div></div>
-                </section>
+                    <section class="radio-list-panel">
+                        <div class="hist-header">
+                            <span>Historial reciente</span>
+                            <span>HISTORY</span>
+                        </div>
+                        <div class="track-list" id="radioHistoryList"><div class="empty">Cargando…</div></div>
+                    </section>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- ══ RIGHT PANEL / PLAYER ══ -->
-    <div class="right-panel">
+        <div class="player-shell">
 
         <div class="upload-cta">
             <div class="upload-cta-text">
@@ -848,6 +997,7 @@
                  data-ad-format="auto"
                  data-full-width-responsive="true"></ins>
             <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
         </div>
     </div>
 </div>
@@ -1409,6 +1559,8 @@ function renderRadioMood(d){
     const copy=document.getElementById('radioMoodDetail');
     if(value)value.textContent=label;
     if(copy)copy.textContent=detail;
+    const railMood=document.getElementById('radioRailMood');
+    if(railMood)railMood.textContent=label;
 }
 
 async function radioSuggest(event){
@@ -1451,6 +1603,8 @@ function renderRadio(d){
     renderRadioMood(d);
     if(d.playing){
         live.className='radio-live live';live.textContent=d.master?'● Master en vivo':'● En vivo';
+        const railLive=document.getElementById('radioRailLive');if(railLive)railLive.textContent=d.master?'MASTER EN VIVO':'EN VIVO';
+        const railTrack=document.getElementById('radioRailTrack');if(railTrack)railTrack.textContent=(d.track?.title||'ALLMUSIC RADIO').toUpperCase();
         const t=d.track||{};
         _radioTrack=t;
         document.getElementById('radioArt').innerHTML='<img src="'+radioThumb(t)+'" alt="">';
@@ -1465,6 +1619,8 @@ function renderRadio(d){
         if(_radioListening)radioSyncPlayer(t);
     } else {
         live.className='radio-live paused';live.textContent=d.master_offline?'○ Master desconectado':'○ En pausa';
+        const railLive=document.getElementById('radioRailLive');if(railLive)railLive.textContent=d.master_offline?'MASTER OFFLINE':'SEÑAL EN PAUSA';
+        const railTrack=document.getElementById('radioRailTrack');if(railTrack)railTrack.textContent=d.master_offline?'La cabina está desconectada':'La radio está en pausa';
         document.getElementById('radioTitle').textContent=d.master_offline?'La cabina master está desconectada':'La radio está en pausa';
         document.getElementById('radioArtist').textContent='';
         radioSetTicker('SEÑAL EN ESPERA // ALLMUSIC RADIO 24/7');
