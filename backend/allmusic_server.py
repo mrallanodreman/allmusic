@@ -1701,6 +1701,7 @@ RADIO_FILE = os.path.join(DATA_DIR, 'radio_state.json')
 RADIO_LOCK = threading.Lock()
 RADIO_MAX_QUEUE = 30
 RADIO_MAX_HISTORY = 25
+RADIO_MAX_REQUEST_STATS = 250
 RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
 # Tope duro para no quedarse pegado. Subido de 480 a 3600 (1h): el reproductor
 # del Atico controla el fin REAL de cada pista via media_position y pide avanzar
@@ -1748,9 +1749,18 @@ def _radio_is_blocked(text):
 def _load_radio():
     try:
         with open(RADIO_FILE, 'r') as f:
-            return json.load(f)
+            state = json.load(f)
+            if not isinstance(state, dict):
+                raise ValueError('estado de radio inválido')
+            state.setdefault('current', None)
+            state.setdefault('queue', [])
+            state.setdefault('history', [])
+            state.setdefault('request_stats', {})
+            if not isinstance(state.get('request_stats'), dict):
+                state['request_stats'] = {}
+            return state
     except Exception:
-        return {'current': None, 'queue': [], 'history': []}
+        return {'current': None, 'queue': [], 'history': [], 'request_stats': {}}
 
 
 def _save_radio(state):
@@ -1764,6 +1774,81 @@ def _radio_recent_ids(state):
     if cur:
         ids.add(cur.get('video_id'))
     return ids
+
+
+def _radio_register_request(state, found, query=''):
+    """Registra una solicitud aceptada y actualiza su conteo persistente."""
+    video_id = found.get('id') or found.get('video_id')
+    if not video_id:
+        return
+    stats = state.setdefault('request_stats', {})
+    if not isinstance(stats, dict):
+        stats = {}
+        state['request_stats'] = stats
+
+    item = stats.get(video_id)
+    if not isinstance(item, dict):
+        item = {}
+    try:
+        previous_count = int(item.get('request_count') or 0)
+    except (TypeError, ValueError):
+        previous_count = 0
+
+    item.update({
+        'video_id': video_id,
+        'title': found.get('title', item.get('title', 'Sin título')),
+        'artist': found.get('uploader') or found.get('artist') or item.get('artist', ''),
+        'thumbnail': found.get('thumbnail') or item.get('thumbnail', ''),
+        'duration': found.get('duration') or item.get('duration') or 0,
+        'request_count': previous_count + 1,
+        'last_requested_at': datetime.datetime.utcnow().isoformat() + 'Z',
+        'last_query': str(query or '')[:200],
+    })
+    stats[video_id] = item
+
+    if len(stats) > RADIO_MAX_REQUEST_STATS:
+        def count(entry):
+            try:
+                return int(entry.get('request_count') or 0)
+            except (TypeError, ValueError):
+                return 0
+        ordered = sorted(
+            stats.items(),
+            key=lambda pair: (count(pair[1]), str(pair[1].get('last_requested_at', ''))),
+            reverse=True,
+        )
+        state['request_stats'] = dict(ordered[:RADIO_MAX_REQUEST_STATS])
+
+
+def _radio_top_requested(state):
+    """Devuelve las diez canciones con más solicitudes, sin exponer datos internos."""
+    stats = state.get('request_stats') or {}
+    if not isinstance(stats, dict):
+        return []
+
+    def count(entry):
+        try:
+            return int(entry.get('request_count') or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    top = []
+    for video_id, item in stats.items():
+        if not isinstance(item, dict):
+            continue
+        request_count = count(item)
+        if request_count <= 0:
+            continue
+        entry = dict(item)
+        entry['video_id'] = entry.get('video_id') or video_id
+        entry['request_count'] = request_count
+        top.append(entry)
+
+    top.sort(
+        key=lambda entry: (entry.get('request_count', 0), str(entry.get('last_requested_at', ''))),
+        reverse=True,
+    )
+    return top[:10]
 
 
 def _radio_resolve_link(video_id):
@@ -1914,6 +1999,7 @@ def radio_now():
                 'track': public_track,
                 'queue': master.get('queue', [])[:20],
                 'history': master.get('history', [])[:10],
+                'top_requested': _radio_top_requested(state),
             })
         return jsonify({
             'playing': False,
@@ -1922,10 +2008,16 @@ def radio_now():
             'master_offline': age > RADIO_MASTER_TTL_SECONDS,
             'queue': master.get('queue', [])[:20],
             'history': master.get('history', [])[:10],
+            'top_requested': _radio_top_requested(state),
         })
     cur = state.get('current')
     if not cur:
-        return jsonify({'playing': False, 'queue': state.get('queue', []), 'history': state.get('history', [])[:10]})
+        return jsonify({
+            'playing': False,
+            'queue': state.get('queue', []),
+            'history': state.get('history', [])[:10],
+            'top_requested': _radio_top_requested(state),
+        })
     elapsed = time.time() - cur.get('started_at', 0)
     track = {k: v for k, v in cur.items() if k != 'started_at'}
     track['elapsed'] = round(elapsed, 1)
@@ -1935,6 +2027,7 @@ def radio_now():
         'track': track,
         'queue': state.get('queue', [])[:20],
         'history': state.get('history', [])[:10],
+        'top_requested': _radio_top_requested(state),
     })
 
 
@@ -2006,8 +2099,14 @@ def radio_suggest():
             'added_at': datetime.datetime.utcnow().isoformat() + 'Z',
         }
         queue.append(entry)
+        _radio_register_request(state, found, query)
         _save_radio(state)
-        return jsonify({'queued': True, 'position': len(queue), 'track': entry}), 201
+        return jsonify({
+            'queued': True,
+            'position': len(queue),
+            'track': entry,
+            'top_requested': _radio_top_requested(state),
+        }), 201
 
 
 @app.route('/radio/blacklist', methods=['GET'])
