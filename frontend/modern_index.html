@@ -778,6 +778,7 @@
                 </section>
             </div>
         </div>
+    </div>
 
     <!-- ══ RIGHT PANEL / PLAYER ══ -->
     <div class="right-panel">
@@ -1382,7 +1383,10 @@ function renderRadioMood(d){
     const source=(String(track.reason||'')+' '+String(track.title||'')).toLowerCase();
     let label=d&&d.playing?'ALLMUSIC MIX':'SIGNAL STANDBY';
     let detail=d&&d.playing?'La señal está activa. El mood se infiere de la programación actual.':'La cabina está lista para recibir el próximo pedido.';
-    if(/lo[- ]?fi|chill|ambient|relax/.test(source)){
+    if(/jazz|piano|bossa/.test(source)){
+        label='JAZZ LATE';
+        detail='Una franja nocturna con groove, piano y espacio para respirar.';
+    }else if(/lo[- ]?fi|chill|ambient|relax/.test(source)){
         label='LO-FI / CHILL';
         detail='Baja las luces: texturas suaves y una señal para escuchar sin prisa.';
     }else if(/synthwave|retro/.test(source)){
@@ -1391,9 +1395,6 @@ function renderRadioMood(d){
     }else if(/indie|alternative/.test(source)){
         label='INDIE ALT';
         detail='Guitarras al frente, señal alternativa y rotación fuera del molde.';
-    }else if(/jazz|piano|bossa/.test(source)){
-        label='JAZZ LATE';
-        detail='Una franja nocturna con groove, piano y espacio para respirar.';
     }else if(/house|electronic|dance/.test(source)){
         label='NIGHT DANCE';
         detail='Pulso electrónico activado: la cabina está en modo pista.';
