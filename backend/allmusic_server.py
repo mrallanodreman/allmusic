@@ -888,7 +888,14 @@ def index():
 def frontend_files(filename):
     file_path = os.path.join(FRONTEND_DIR, filename)
     if os.path.exists(file_path) and os.path.isfile(file_path):
-        return send_from_directory(FRONTEND_DIR, filename)
+        resp = send_from_directory(FRONTEND_DIR, filename)
+        # La parrilla de la radio se refresca con cada deploy/cambio de assets:
+        # nunca cachear los assets de radio para que la UI C24 se vea al instante.
+        if '/assets/radio/' in '/' + filename or filename.startswith('assets/radio/'):
+            resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+        return resp
     # Redirect clean legal/static paths (no extension) to their .html file.
     # The path may arrive prefixed with 'allmusic/' (reverse proxy), so strip it.
     rel = filename
@@ -2180,7 +2187,12 @@ def radio_page():
     """Sección de radio en la web de AllMusic: dashboard del IA Radio 24/7."""
     path = os.path.join(FRONTEND_DIR, 'radio.html')
     if os.path.exists(path):
-        return send_from_directory(FRONTEND_DIR, 'radio.html')
+        resp = send_from_directory(FRONTEND_DIR, 'radio.html')
+        # Nunca cachear el HTML de la radio: cada cambio de UI debe verse al toque.
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
     return jsonify({'error': 'radio.html no encontrado'}), 404
 
 
