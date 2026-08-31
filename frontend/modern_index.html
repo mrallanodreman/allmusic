@@ -1591,7 +1591,7 @@ async function radioSuggest(event){
     try{
         const result=await rApi(RADIO_API_BASE+'/suggest',{method:'POST',body:JSON.stringify({query,agent:'panel AllMusic',reason:'pedido desde la radio'})});
         if(input)input.value='';
-        if(status)status.textContent='Pedido recibido · posición '+(result.position||'en cola');
+        const eta=result.eta_minutes!=null?(' · aprox. '+(result.eta_minutes<1?'menos de 1 min':result.eta_minutes+' min')):'';\n        if(status)status.textContent='Pedido recibido · posición '+(result.position||'en cola')+eta;
         radioRefresh();
     }catch(e){
         if(status)status.textContent='No se pudo encolar: '+e.message;
