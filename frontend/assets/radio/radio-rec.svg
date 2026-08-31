@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 86" role="img" aria-label="REC broadcast badge">
+  <g transform="rotate(-2 150 43)">
+    <path d="M8 14 285 9l7 58-280 7z" fill="#050505" stroke="#f21b22" stroke-width="6"/>
+    <path d="m23 23 247-4" stroke="#f21b22" stroke-width="2" stroke-dasharray="5 6"/>
+    <text x="28" y="58" fill="#f21b22" font-family="Impact,Arial Black,sans-serif" font-size="40" letter-spacing="4">REC</text>
+    <circle cx="249" cy="43" r="11" fill="#f21b22"/>
+    <circle cx="249" cy="43" r="4" fill="#050505"/>
+  </g>
+</svg>
