@@ -1881,6 +1881,19 @@ def _radio_eta_seconds(state, target):
     return int(max(0, remaining))
 
 
+def _radio_public_queue(state, limit=20):
+    """Añade ETA efímera a cada elemento que ve la interfaz o el master."""
+    public = []
+    for item in _radio_effective_queue(state)[:limit]:
+        if not isinstance(item, dict):
+            continue
+        entry = dict(item)
+        eta_seconds = _radio_eta_seconds(state, item)
+        entry['eta_seconds'] = eta_seconds
+        entry['eta_minutes'] = max(0, int(round(eta_seconds / 60)))
+        public.append(entry)
+    return public
+
 
 
 def _radio_register_request(state, found, query=''):
@@ -2099,7 +2112,7 @@ def radio_now():
         state = _load_radio()
         if _radio_reconcile_master(state):
             _save_radio(state)
-        public_queue = _radio_effective_queue(state)
+        public_queue = _radio_public_queue(state, 20)
     master = state.get('master')
     if master:
         age = time.time() - master.get('updated_at', 0)
@@ -2195,11 +2208,12 @@ def radio_master_update():
         else:
             effective_queue = _radio_effective_queue(state)
         _save_radio(state)
+    public_queue = _radio_public_queue(state, 20)
     return jsonify({
         'ok': True,
         'master': True,
-        'queue': effective_queue[:20],
-        'next_request': effective_queue[0] if effective_queue else None,
+        'queue': public_queue,
+        'next_request': public_queue[0] if public_queue else None,
     })
 
 
@@ -2209,7 +2223,7 @@ def radio_queue():
         state = _load_radio()
         if _radio_reconcile_master(state):
             _save_radio(state)
-        return jsonify({'queue': _radio_effective_queue(state)})
+        return jsonify({'queue': _radio_public_queue(state, RADIO_MAX_QUEUE)})
 
 
 @app.route('/radio/suggest', methods=['POST'])
@@ -2251,7 +2265,7 @@ def radio_suggest():
         _radio_register_request(state, found, query)
         if _radio_master_is_active(state):
             state['master']['queue'] = _radio_effective_queue(state)
-        public_queue = _radio_effective_queue(state)
+        public_queue = _radio_public_queue(state, RADIO_MAX_QUEUE)
         position = next(
             (index + 1 for index, item in enumerate(public_queue)
              if _radio_item_key(item) == _radio_item_key(entry)),
