@@ -1519,6 +1519,236 @@
             height:280px!important;
         }
 
+        /* ── RADIO SECOND PASS / SCALE + BROADCAST HARDWARE ── */
+        body.radio-active .radio-rail-clock{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-top:auto;
+            padding:7px 4px 5px;
+            border-top:2px solid #f2dc00;
+            color:#f2dc00;
+            font-family:"Courier New",monospace;
+            font-size:10px;
+            letter-spacing:.06em;
+        }
+        body.radio-active .radio-rail-clock span{
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            font-weight:900;
+        }
+        body.radio-active .radio-rail-clock strong{
+            font:900 14px/1 "Courier New",monospace;
+            color:#f2dc00;
+            text-shadow:2px 2px 0 #ed1687;
+        }
+        body.radio-active .radio-rail-rec{
+            display:block;
+            width:105px;
+            height:auto;
+            margin-top:-5px;
+            transform:rotate(-2deg);
+        }
+        body.radio-active .radio-rail-now-playing{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:6px;
+            min-height:33px;
+            padding:4px 4px 1px;
+            border-top:2px solid #fff;
+            color:#fff;
+            font:900 9px/1 Arial Black,Arial,sans-serif;
+            letter-spacing:.04em;
+        }
+        body.radio-active .radio-rail-now-playing span{color:#f2dc00;}
+        body.radio-active .radio-rail-now-playing b{
+            display:flex;
+            align-items:center;
+            gap:4px;
+            color:#40f3ff;
+            font-size:11px;
+        }
+        body.radio-active .radio-rail-now-playing img{
+            width:25px;
+            height:25px;
+            object-fit:contain;
+            filter:drop-shadow(2px 2px 0 #ed1687);
+        }
+        body.radio-active .radio-transmission-dock{
+            position:absolute;
+            top:2px;
+            right:2%;
+            z-index:6;
+            display:flex;
+            align-items:flex-start;
+            gap:12px;
+            color:#fff;
+            text-align:right;
+            font-family:"Courier New",monospace;
+            pointer-events:none;
+        }
+        body.radio-active .radio-transmission-dock strong{
+            color:#fff;
+            font-size:16px;
+            line-height:1;
+            letter-spacing:.02em;
+        }
+        body.radio-active .radio-transmission-dock span{
+            color:#40f3ff;
+            font:900 9px/1.1 Arial Black,Arial,sans-serif;
+            letter-spacing:.06em;
+        }
+        body.radio-active .radio-transmission-dock span b{color:#f2dc00;font-size:15px;}
+        body.radio-active .radio-ticker{
+            grid-template-columns:auto minmax(0,1fr) auto minmax(175px,auto);
+        }
+        body.radio-active .radio-ticker-mark{
+            display:flex;
+            align-items:center;
+            gap:5px;
+            min-width:0;
+            padding:0 8px 0 3px;
+            color:#f2dc00;
+            font:900 8px/1 Arial Black,Arial,sans-serif;
+            letter-spacing:.04em;
+            white-space:nowrap;
+        }
+        body.radio-active .radio-ticker-mark img{
+            width:25px;
+            height:25px;
+            object-fit:contain;
+            filter:drop-shadow(1px 1px 0 #ed1687);
+        }
+        body.radio-active .radio-now{padding-bottom:82px;}
+        body.radio-active .radio-now-meta{padding-bottom:4px;}
+        body.radio-active .radio-now-deck{
+            position:absolute;
+            left:14px;
+            right:14px;
+            bottom:9px;
+            z-index:2;
+        }
+        body.radio-active .radio-deck-bars{
+            display:flex;
+            align-items:flex-end;
+            gap:3px;
+            height:31px;
+            padding:0 2px 4px;
+            border-bottom:2px solid #40f3ff;
+        }
+        body.radio-active .radio-deck-bars i{
+            flex:1;
+            min-width:2px;
+            height:40%;
+            background:linear-gradient(180deg,#40f3ff 0 45%,#ed1687 46% 100%);
+            animation:radioDeckPulse .72s ease-in-out infinite alternate;
+        }
+        body.radio-active .radio-deck-bars i:nth-child(2n){height:78%;animation-delay:-.21s;}
+        body.radio-active .radio-deck-bars i:nth-child(3n){height:56%;animation-delay:-.44s;}
+        body.radio-active .radio-deck-bars i:nth-child(5n){height:92%;animation-delay:-.61s;}
+        @keyframes radioDeckPulse{to{transform:scaleY(.42);opacity:.66;}}
+        body.radio-active .radio-deck-controls{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:23px;
+            min-height:35px;
+            padding-top:5px;
+            color:#fff;
+            font:900 14px/1 Arial Black,Arial,sans-serif;
+        }
+        body.radio-active .radio-deck-square{
+            width:18px;
+            height:18px;
+            background:#40f3ff;
+            box-shadow:3px 3px 0 #ed1687;
+        }
+        body.radio-active .radio-deck-skip{font-size:16px;}
+        body.radio-active .radio-deck-play{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            width:42px;
+            height:42px;
+            border-radius:50%;
+            background:#f2dc00;
+            color:#050505;
+            font-size:22px;
+            transform:translateY(-4px);
+            box-shadow:3px 3px 0 #ed1687;
+        }
+        body.radio-active .radio-deck-volume{
+            color:#f2f2f2;
+            font-size:10px;
+            letter-spacing:1px;
+        }
+        body.radio-active .radio-mood-body{padding-right:180px;}
+        body.radio-active .radio-mood-tv{
+            position:absolute;
+            z-index:1;
+            right:13px;
+            bottom:24px;
+            width:175px;
+            transform:rotate(-4deg);
+            pointer-events:none;
+            filter:drop-shadow(5px 6px 0 rgba(237,22,135,.34));
+        }
+        body.radio-active .radio-mood-tv img{display:block;width:100%;height:auto;}
+        body.radio-active .radio-chart-panel::after{
+            content:"KEEP IT LOUD";
+            position:absolute;
+            right:11px;
+            bottom:9px;
+            z-index:4;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            width:128px;
+            height:37px;
+            padding:3px 9px;
+            background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font:900 12px/.86 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            letter-spacing:.03em;
+            transform:rotate(-5deg);
+            pointer-events:none;
+        }
+        @media(min-width:1400px){
+            body.radio-active .radio-stage{
+                grid-template-columns:minmax(530px,1.02fr) minmax(590px,1.08fr);
+                gap:12px 20px;
+            }
+            body.radio-active .radio-intro-kicker{min-width:530px;font-size:92px;}
+            body.radio-active .radio-chart-panel .radio-panel-heading{font-size:43px;min-height:82px;padding-left:24px;}
+            body.radio-active .radio-stage-left .radio-now{
+                grid-template-columns:minmax(205px,225px) minmax(0,1fr);
+                gap:22px;
+            }
+            body.radio-active .radio-stage-left .radio-now-title{font-size:clamp(29px,2.12vw,39px);}
+            body.radio-active .radio-requested{grid-template-columns:58px 82px minmax(0,1fr) auto;}
+            body.radio-active .radio-requested img{width:76px;height:76px;}
+            body.radio-active .radio-requested-rank{font-size:50px;}
+        }
+        @media(max-width:900px){
+            body.radio-active .radio-ticker{grid-template-columns:auto minmax(0,1fr) auto;}
+            body.radio-active .radio-ticker-mark{display:none;}
+            body.radio-active .radio-transmission-dock{display:none;}
+            body.radio-active .radio-now{padding-bottom:76px;}
+            body.radio-active .radio-mood-body{padding-right:14px;}
+            body.radio-active .radio-mood-tv{width:142px;right:8px;bottom:48px;opacity:.7;}
+        }
+        @media(max-width:560px){
+            body.radio-active .radio-rail-clock,
+            body.radio-active .radio-rail-rec,
+            body.radio-active .radio-rail-now-playing{display:none;}
+            body.radio-active .radio-now-deck{left:10px;right:10px;}
+            body.radio-active .radio-deck-controls{gap:12px;}
+            body.radio-active .radio-mood-tv{display:none;}
+            body.radio-active .radio-chart-panel::after{width:110px;right:6px;}
+        }
+
 </style>
 </head>
 <body>
@@ -1698,6 +1928,14 @@
                     <strong id="radioRailMood">SIGNAL STANDBY</strong>
                 </div>
                 <div class="radio-rail-foot">SEÑAL PRINCIPAL // ÁTICO // QUITO</div>
+                <div class="radio-rail-clock" aria-label="Contador de transmisión">
+                    <span>TCR</span><strong id="radioRailClock">00:00:00:00</strong>
+                </div>
+                <img class="radio-rail-rec" src="assets/radio/radio-rec.svg" alt="REC">
+                <div class="radio-rail-now-playing">
+                    <span>NOW PLAYING</span>
+                    <b><img src="assets/radio/c24-radio.png" alt=""> C24</b>
+                </div>
             </div>
         </div>
     </div>
@@ -1710,6 +1948,12 @@
                 <span class="radio-ticker-label">ON AIR</span>
                 <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
                 <span class="radio-ticker-live" id="radioLive">Cargando…</span>
+                <span class="radio-ticker-mark"><img src="assets/radio/c24-radio.png" alt=""> ALLMUSIC PRO BROADCAST 24/7</span>
+            </div>
+
+            <div class="radio-transmission-dock" aria-label="Canal de transmisión">
+                <strong id="radioBroadcastClock">12:47:36 PM</strong>
+                <span>CHANNEL <b>47</b><br>STEREO</span>
             </div>
 
             <div class="radio-intro">
@@ -1728,6 +1972,10 @@
                         <div class="radio-now-artist" id="radioArtist">—</div>
                         <div class="radio-now-time"><span id="radioElapsed">0:00</span> / <span id="radioDuration">0:00</span></div>
                         <div class="radio-prog"><div class="radio-prog-fill" id="radioProg"></div></div>
+                    </div>
+                    <div class="radio-now-deck" aria-hidden="true">
+                        <div class="radio-deck-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        <div class="radio-deck-controls"><span class="radio-deck-square"></span><span class="radio-deck-skip">◀◀</span><span class="radio-deck-play">▶</span><span class="radio-deck-skip">▶▶</span><span class="radio-deck-volume">▮▮▮▮</span></div>
                     </div>
                 </div>
 
@@ -1752,6 +2000,7 @@
                         <span class="radio-mood-prefix">MOOD :</span>
                         <strong class="radio-mood-value" id="radioMoodValue">SIGNAL STANDBY</strong>
                         <p class="radio-mood-detail" id="radioMoodDetail">La cabina está lista para recibir el próximo pedido.</p>
+                        <div class="radio-mood-tv" aria-hidden="true"><img src="assets/radio/radio-tv.svg" alt=""></div>
                         <div class="radio-mood-chips" aria-label="Moods rápidos">
                             <button type="button" class="radio-mood-chip" data-radio-mood="lo-fi chill">LO-FI</button>
                             <button type="button" class="radio-mood-chip" data-radio-mood="synthwave retro">SYNTHWAVE</button>
@@ -2578,6 +2827,15 @@ function radioResumeIfRequested(d){
         radioTunePlayer(d.track);
     }
 }
+function radioPaintClock(){
+    const now=new Date();
+    const time=document.getElementById('radioBroadcastClock');
+    const rail=document.getElementById('radioRailClock');
+    if(time)time.textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
+    if(rail){const h=String(now.getHours()).padStart(2,'0'),m=String(now.getMinutes()).padStart(2,'0'),sec=String(now.getSeconds()).padStart(2,'0');rail.textContent='00:'+h+':'+m+':'+sec;}
+}
+radioPaintClock();
+setInterval(radioPaintClock,1000);
 setInterval(()=>{if(_nowElapsed!=null){_nowElapsed+=1;document.getElementById('radioElapsed').textContent=Rfmt(_nowElapsed);document.getElementById('radioProg').style.width=Math.min(100,(_nowElapsed/(window._nowDur||1))*100)+'%';}},1000);
 setInterval(radioRefresh,8000);
 setTimeout(radioRefresh,600);
