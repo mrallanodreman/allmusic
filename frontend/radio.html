@@ -570,7 +570,7 @@ body.radio-ready.has-history-data .dynamic-history{opacity:1;pointer-events:auto
     <button type="submit" aria-label="Pedir">Pedir</button>
   </form>
 
-  <img class="dynamic-cover" id="thumb" src="./assets/radio/radio-now-cover.jpg" alt="Portada del tema actual">
+  <img class="dynamic-cover" id="thumb" src="./assets/radio/radio-now-cover.png" alt="Portada del tema actual">
   <div class="dynamic-live-copy" aria-live="polite">
     <div class="now-title" id="title">80s Rock Songs Everyone Knows</div>
     <div class="now-artist" id="artist">Best of 80s Rock Music Playlist</div>
@@ -705,7 +705,7 @@ function renderState(d){
     badge.className='badge live'; badge.querySelector('#stateText').textContent='En vivo';
     const t=d.track||{};
     const thumb=document.getElementById('thumb');
-    const fallback='./assets/radio/radio-now-cover.jpg';
+    const fallback='./assets/radio/radio-now-cover.png';
     const remoteFallback=t.video_id?'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg':fallback;
     thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:remoteFallback;
     thumb.onerror=()=>{ if(thumb.src!==fallback) thumb.src=fallback; };
