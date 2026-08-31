@@ -1782,6 +1782,91 @@
         body.radio-active .radio-rail-clock{margin-top:0;}
         body.radio-active .radio-rail-now-playing{margin-top:auto;}
         body.radio-active .radio-chart-panel{position:relative;}
+        /* ── RADIO HAND 3 / PIXEL COMPARISON ── */
+        @media(min-width:1200px){
+            body.radio-active .radio-stage{
+                grid-template-rows:150px minmax(0,1fr) 166px 55px;
+            }
+            body.radio-active .radio-stage-left{
+                grid-template-rows:327px 43px 20px minmax(250px,1fr);
+                gap:9px;
+                padding-bottom:0;
+            }
+            body.radio-active .radio-stage-left .radio-actions{display:none;}
+            body.radio-active .radio-stage-right{
+                padding-top:66px;
+            }
+            body.radio-active .radio-chart-panel{
+                flex:0 0 468px;
+            }
+            body.radio-active .radio-stage-lists{
+                flex:0 0 300px;
+                height:300px;
+            }
+            body.radio-active .radio-intro{
+                padding-top:10px;
+            }
+            body.radio-active .radio-intro-kicker{
+                min-height:126px;
+            }
+            body.radio-active .radio-ticker{
+                min-height:55px;
+            }
+        }
+        body.radio-active .radio-deck-square,
+        body.radio-active .radio-deck-play{
+            border:0;
+            padding:0;
+            cursor:pointer;
+            font-family:inherit;
+        }
+        body.radio-active .radio-deck-square:focus-visible,
+        body.radio-active .radio-deck-play:focus-visible{
+            outline:2px solid #fff;
+            outline-offset:3px;
+        }
+        body.radio-active .radio-requested-empty{
+            display:grid;
+            grid-template-columns:52px minmax(0,1fr) auto;
+            align-items:center;
+            gap:11px;
+            min-height:31px;
+            height:31px;
+            padding:0;
+            border-bottom:2px dashed rgba(255,255,255,.44);
+        }
+        body.radio-active .radio-requested-empty .radio-requested-rank{
+            color:#fff;
+            font-size:22px;
+            text-shadow:none;
+        }
+        body.radio-active .radio-empty-line{
+            display:block;
+            width:100%;
+            border-top:2px dashed rgba(255,255,255,.48);
+        }
+        body.radio-active .radio-requested-empty .radio-requested-count{
+            display:block;
+            color:#ed1687;
+            font:900 18px/1 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+        }
+        @media(min-width:1400px){
+            body.radio-active .radio-intro-kicker{
+                width:420px;
+                min-width:420px;
+                min-height:128px;
+                font-size:90px;
+            }
+            body.radio-active .radio-intro-stamp{
+                right:70px;
+            }
+        }
+        @media(max-width:1199px){
+            body.radio-active .radio-deck-play{
+                width:38px;
+                height:38px;
+            }
+        }
 </style>
 </head>
 <body>
@@ -2006,9 +2091,15 @@
                         <div class="radio-now-time"><span id="radioElapsed">0:00</span> / <span id="radioDuration">0:00</span></div>
                         <div class="radio-prog"><div class="radio-prog-fill" id="radioProg"></div></div>
                     </div>
-                    <div class="radio-now-deck" aria-hidden="true">
-                        <div class="radio-deck-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                        <div class="radio-deck-controls"><span class="radio-deck-square"></span><span class="radio-deck-skip">◀◀</span><span class="radio-deck-play">▶</span><span class="radio-deck-skip">▶▶</span><span class="radio-deck-volume">▮▮▮▮</span></div>
+                    <div class="radio-now-deck">
+                        <div class="radio-deck-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        <div class="radio-deck-controls">
+                            <button type="button" class="radio-deck-square" onclick="radioRefresh()" aria-label="Actualizar la señal" title="Actualizar"> </button>
+                            <span class="radio-deck-skip" aria-hidden="true">◀◀</span>
+                            <button type="button" class="radio-deck-play" onclick="radioListenLive()" aria-label="Escuchar en vivo" title="Escuchar en vivo">▶</button>
+                            <span class="radio-deck-skip" aria-hidden="true">▶▶</span>
+                            <span class="radio-deck-volume" aria-hidden="true">▮▮▮▮</span>
+                        </div>
                     </div>
                 </div>
 
@@ -2665,18 +2756,23 @@ function renderRadioTopRequested(list){
     const panel=document.getElementById('radioTopList');
     const meta=document.getElementById('radioTopMeta');
     const items=Array.isArray(list)?list.filter(item=>item&&Number.isFinite(Number(item.request_count))&&Number(item.request_count)>0).slice(0,10):[];
-    if(!items.length){
-        if(panel)panel.innerHTML='<li class="empty">Todavía no hay pedidos registrados.</li>';
-        if(meta)meta.textContent='ESPERANDO PEDIDOS';
-        return;
-    }
-    const max=Math.max.apply(null,items.map(item=>Number(item.request_count)||0));
-    if(meta)meta.textContent=String(items.length).padStart(2,'0')+' / 10';
-    panel.innerHTML=items.map((item,index)=>{
+    const max=items.length?Math.max.apply(null,items.map(item=>Number(item.request_count)||0)):1;
+    if(meta)meta.textContent=items.length?(String(items.length).padStart(2,'0')+' / 10'):'ESPERANDO PEDIDOS';
+    if(!panel)return;
+    panel.innerHTML=Array.from({length:10},(_,index)=>{
+        const item=items[index];
+        const rank=String(index+1).padStart(2,'0');
+        if(!item){
+            return '<li class="radio-requested radio-requested-empty">' +
+                '<span class="radio-requested-rank">'+rank+'</span>' +
+                '<span class="radio-empty-line" aria-hidden="true"></span>' +
+                '<span class="radio-requested-count">—</span>' +
+            '</li>';
+        }
         const count=Math.max(0,Number(item.request_count)||0);
         const width=Math.max(10,Math.round((count/max)*100));
         return '<li class="radio-requested">' +
-            '<span class="radio-requested-rank">'+String(index+1).padStart(2,'0')+'</span>' +
+            '<span class="radio-requested-rank">'+rank+'</span>' +
             '<img src="'+radioTopThumb(item)+'" alt="" loading="lazy">' +
             '<span class="radio-requested-info">' +
                 '<b>'+$(item.title||'Sin título')+'</b>' +
