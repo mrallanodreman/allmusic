@@ -618,6 +618,88 @@ a{color:inherit}
   background:rgba(5,5,5,.96)!important;
   z-index:12!important;
 }
+
+/* Mood panel: decorative art is layered; the label is live DOM text. */
+.mood-art-stack{
+  position:absolute!important;
+  left:18.66%!important;
+  top:62.23%!important;
+  width:39.77%!important;
+  height:29.25%!important;
+  z-index:6!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+}
+.mood-art-stack img{
+  position:absolute!important;
+  display:block!important;
+  pointer-events:none!important;
+  user-select:none!important;
+}
+.mood-art-paper{
+  left:3.0%!important;
+  top:3.0%!important;
+  width:91.7%!important;
+  height:51.6%!important;
+  object-fit:fill!important;
+}
+.mood-art-label{
+  left:.6%!important;
+  top:.6%!important;
+  width:22.6%!important;
+  height:21.1%!important;
+  object-fit:fill!important;
+}
+.mood-art-lightning{
+  left:82.4%!important;
+  top:0!important;
+  width:16.2%!important;
+  height:50.2%!important;
+  object-fit:fill!important;
+}
+.mood-art-face{
+  left:69.3%!important;
+  top:45.8%!important;
+  width:28.3%!important;
+  height:40.7%!important;
+  object-fit:fill!important;
+}
+.mood-art-chip{top:64.0%!important;height:12.4%!important;object-fit:fill!important;}
+.mood-chip-lofi{left:1.05%!important;width:11.3%!important;}
+.mood-chip-synthwave{left:13.2%!important;width:17.4%!important;}
+.mood-chip-rock80s{left:31.1%!important;width:13.2%!important;}
+.mood-chip-jazzlate{left:45.1%!important;width:16.8%!important;}
+.mood-chip-nightdance{left:63.3%!important;width:18.9%!important;}
+.dynamic-mood{
+  left:21.0%!important;
+  top:66.0%!important;
+  width:34.1%!important;
+  height:13.7%!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  pointer-events:none!important;
+  overflow:visible!important;
+}
+.dynamic-mood .mood-value{
+  color:#070707!important;
+  font-family:"Bangers","Arial Black",sans-serif!important;
+  font-size:clamp(34px,4.2vw,70px)!important;
+  line-height:.86!important;
+  letter-spacing:.02em!important;
+  text-shadow:1px 1px 0 rgba(255,255,255,.24)!important;
+  transform:rotate(-1deg)!important;
+}
+.dynamic-mood .mood-detail{
+  max-width:73%!important;
+  margin:1.7% 0 0!important;
+  color:#0b0b0b!important;
+  font-size:clamp(9px,.85vw,14px)!important;
+  line-height:1.14!important;
+  font-weight:700!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.2)!important;
+}
 </style>
 </head>
 <body>
@@ -664,6 +746,17 @@ a{color:inherit}
     <span id="topRequestedMeta">0 PEDIDOS</span>
   </section>
 
+  <div class="mood-art-stack" aria-hidden="true">
+    <img class="mood-art-paper" src="./assets/radio/c24/mood/mood-paper-clean.png" alt="">
+    <img class="mood-art-label" src="./assets/radio/c24/mood/mood-label.png" alt="">
+    <img class="mood-art-lightning" src="./assets/radio/c24/mood/mood-lightning.png" alt="">
+    <img class="mood-art-face" src="./assets/radio/c24/mood/mood-face.png" alt="">
+    <img class="mood-art-chip mood-chip-lofi" src="./assets/radio/c24/mood/mood-chip-lofi.png" alt="">
+    <img class="mood-art-chip mood-chip-synthwave" src="./assets/radio/c24/mood/mood-chip-synthwave.png" alt="">
+    <img class="mood-art-chip mood-chip-rock80s" src="./assets/radio/c24/mood/mood-chip-rock80s.png" alt="">
+    <img class="mood-art-chip mood-chip-jazzlate" src="./assets/radio/c24/mood/mood-chip-jazzlate.png" alt="">
+    <img class="mood-art-chip mood-chip-nightdance" src="./assets/radio/c24/mood/mood-chip-nightdance.png" alt="">
+  </div>
   <section class="dynamic-mood dynamic-ui" aria-labelledby="moodTitle">
     <h2 id="moodTitle">Mood de la señal</h2>
     <strong class="mood-value" id="moodValue">ROCK SIGNAL</strong>
