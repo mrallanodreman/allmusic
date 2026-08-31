@@ -541,7 +541,7 @@ function renderState(d){
   const queue=d.queue||[];
   document.getElementById('queueCount').textContent=queue.length?String(queue.length).padStart(2,'0')+' EN COLA':'COLA VACÍA';
   if(!queue.length){ q.innerHTML='<li class="empty">La cola está vacía.</li>'; }
-  else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}</div></span></li>`).join('');
+  else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}${x.eta_minutes!=null?' · '+(x.eta_minutes<1?'menos de 1 min':x.eta_minutes+' min'):''}</div></span></li>`).join('');
   const h=document.getElementById('historyList');
   if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Todavía no hay historial.</li>'; }
   else h.innerHTML=d.history.map(x=>`<li>${escapeHtml(x.title||'')}</li>`).join('');
