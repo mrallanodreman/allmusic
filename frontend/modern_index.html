@@ -657,6 +657,854 @@
         .ad-slot{width:100%;max-width:728px;min-width:0;}
         .ad-slot ins{display:block;width:100%;min-height:90px;}
 
+
+        /* ── RADIO COLLAGE / FINAL MTV 2000s SKIN ── */
+        body.radio-active{
+            background:#050505!important;
+            color:#fff;
+            overflow:hidden;
+        }
+        body.radio-active .app{
+            background:#050505;
+            min-height:100vh;
+        }
+        body.radio-active .left-panel{
+            width:300px!important;
+            background:#050505 url('assets/radio/radio-grain.svg') repeat!important;
+            background-size:180px 180px!important;
+            border-right:2px solid rgba(255,255,255,.82)!important;
+            box-shadow:7px 0 0 #e91688;
+        }
+        body.radio-active .am-brand{
+            min-height:94px;
+            padding:12px 20px 8px;
+            background:transparent!important;
+            border-bottom:1px solid rgba(255,255,255,.36)!important;
+        }
+        body.radio-active .am-brand img{
+            width:244px;
+            height:64px;
+            object-fit:contain;
+            object-position:left center;
+            filter:contrast(1.08) brightness(1.08);
+        }
+        body.radio-active .tabs{
+            display:flex;
+            flex-direction:column;
+            gap:2px;
+            padding:14px 12px 7px;
+            border-bottom:0;
+        }
+        body.radio-active .tab-btn{
+            flex:0 0 auto;
+            width:100%;
+            display:flex;
+            align-items:center;
+            justify-content:flex-start;
+            gap:13px;
+            padding:12px 13px;
+            border:1px solid transparent;
+            border-bottom:1px solid transparent;
+            color:#f1f1f1;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;
+            font-size:14px;
+            font-weight:900;
+            letter-spacing:.035em;
+            text-align:left;
+            text-transform:uppercase;
+        }
+        body.radio-active .tab-btn .icon{
+            width:24px;
+            height:24px;
+            color:#fff;
+            flex:0 0 24px;
+            stroke-width:1.55;
+        }
+        body.radio-active .tab-btn:hover:not(.active){
+            color:#40f3ff;
+            background:rgba(64,243,255,.08);
+            border-color:rgba(64,243,255,.25);
+        }
+        body.radio-active .tab-btn.active{
+            color:#fff;
+            background:#e91688;
+            border-color:#ff4bb7;
+            border-bottom-color:#ff4bb7;
+            box-shadow:5px 5px 0 #f2dc00;
+            text-shadow:2px 2px 0 rgba(0,0,0,.2);
+        }
+        body.radio-active .tab-btn:nth-child(5){
+            font-size:0;
+        }
+        body.radio-active .tab-btn:nth-child(5)::after{
+            content:"EN VIVO";
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;
+            font-size:14px;
+            letter-spacing:.035em;
+        }
+        body.radio-active .cfg-gear{display:none;}
+        body.radio-active #pane-radio{
+            display:flex;
+            flex:1;
+            min-height:0;
+            overflow:hidden;
+        }
+        body.radio-active .radio-rail{
+            margin:13px 15px 16px;
+            padding:18px 12px 12px;
+            gap:14px;
+            background:transparent url('assets/radio/radio-grain.svg') repeat!important;
+            background-size:180px 180px!important;
+            border:0;
+            box-shadow:none;
+        }
+        body.radio-active .radio-rail::before{
+            background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(64,243,255,.12) 6px);
+            opacity:.48;
+        }
+        body.radio-active .radio-rail::after{
+            content:"";
+            position:absolute;
+            right:-6px;
+            bottom:4px;
+            width:86px;
+            height:58px;
+            background:url('assets/radio/radio-crown.svg') center/contain no-repeat;
+            opacity:.8;
+            transform:rotate(-8deg);
+            pointer-events:none;
+        }
+        body.radio-active .radio-rail-status{
+            align-self:stretch;
+            min-height:52px;
+            padding:10px 12px;
+            background:url('assets/radio/radio-paper-yellow.svg') center/100% 100% no-repeat;
+            color:#050505;
+            transform:rotate(-2deg);
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:14px;
+            letter-spacing:.035em;
+        }
+        body.radio-active .radio-rail-status b{
+            color:#050505;
+            font-size:24px;
+            letter-spacing:.02em;
+            text-shadow:2px 2px 0 #40f3ff;
+        }
+        body.radio-active .radio-rail-dot{
+            width:9px;
+            height:9px;
+            background:#ed1687;
+            box-shadow:0 0 12px #ed1687;
+        }
+        body.radio-active .radio-rail-brand{
+            gap:8px;
+            padding-top:4px;
+        }
+        body.radio-active .radio-rail-brand span{
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            letter-spacing:.08em;
+        }
+        body.radio-active .radio-rail-brand strong{
+            font-size:92px;
+            line-height:.68;
+            letter-spacing:-.03em;
+            color:#fff;
+            text-shadow:5px 5px 0 #e91688,-2px -2px 0 #40f3ff;
+        }
+        body.radio-active .radio-rail-brand em{color:#ed1687;}
+        body.radio-active .radio-rail-eq{
+            height:84px;
+            gap:5px;
+            padding:0 2px 7px;
+            border-bottom:2px solid #40f3ff;
+        }
+        body.radio-active .radio-rail-eq i{
+            background:linear-gradient(180deg,#40f3ff 0 43%,#ed1687 44% 100%);
+            box-shadow:0 0 7px rgba(64,243,255,.35);
+        }
+        body.radio-active .radio-rail-now{
+            padding:13px 0;
+            gap:7px;
+            border-top:1px solid rgba(255,255,255,.55);
+            border-bottom:1px solid rgba(255,255,255,.55);
+        }
+        body.radio-active .radio-rail-now span,
+        body.radio-active .radio-rail-mood span{
+            color:#f2dc00;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:9px;
+        }
+        body.radio-active .radio-rail-now strong{
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:13px;
+            color:#fff;
+        }
+        body.radio-active .radio-rail-mood strong{
+            color:#40f3ff;
+            font-size:25px;
+            text-shadow:2px 2px 0 #ed1687;
+        }
+        body.radio-active .radio-rail-foot{
+            color:#fff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:9px;
+            letter-spacing:.055em;
+        }
+        body.radio-active .right-panel{
+            align-items:stretch;
+            justify-content:flex-start;
+            min-width:0;
+            padding:14px 24px 10px;
+            overflow:hidden;
+            background:
+                url('assets/radio/radio-grain.svg') repeat,
+                radial-gradient(circle at 38% 45%,rgba(64,243,255,.08),transparent 31%),
+                #050505!important;
+            background-size:180px 180px,auto,auto!important;
+        }
+        body.radio-active .right-panel::before{
+            width:100%;
+            height:100%;
+            inset:0;
+            transform:none;
+            background:
+                linear-gradient(90deg,transparent 0 49.7%,rgba(255,255,255,.09) 49.8%,transparent 50.1%),
+                linear-gradient(0deg,transparent 0 49.7%,rgba(255,255,255,.06) 49.8%,transparent 50.1%);
+            background-size:100% 100%,100% 100%;
+            opacity:.12;
+        }
+        body.radio-active .right-panel::after{
+            content:"";
+            position:absolute;
+            right:3%;
+            top:3%;
+            width:160px;
+            height:115px;
+            background:url('assets/radio/radio-star.svg') center/contain no-repeat;
+            opacity:.58;
+            transform:rotate(9deg);
+            pointer-events:none;
+        }
+        body.radio-active .radio-stage{
+            display:grid;
+            flex:1 1 auto;
+            width:100%;
+            height:100%;
+            min-height:0;
+            grid-template-columns:minmax(410px,.96fr) minmax(470px,1.24fr);
+            grid-template-rows:96px minmax(0,1fr) 166px 35px;
+            gap:10px 18px;
+            padding:0;
+            overflow:hidden;
+            position:relative;
+            z-index:2;
+        }
+        body.radio-active .radio-stage>.radio-ticker{
+            grid-column:1 / 3;
+            grid-row:4;
+            margin:0;
+            align-self:stretch;
+        }
+        body.radio-active .radio-stage>.radio-intro{
+            grid-column:1;
+            grid-row:1;
+            min-width:0;
+            display:block;
+            padding:4px 0 0;
+            position:relative;
+        }
+        body.radio-active .radio-intro-kicker{
+            display:inline-flex;
+            align-items:center;
+            min-width:410px;
+            min-height:86px;
+            padding:12px 26px 9px;
+            background:url('assets/radio/radio-paper-yellow.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;
+            font-size:78px;
+            line-height:.82;
+            letter-spacing:.015em;
+            text-shadow:none;
+            transform:rotate(-4deg);
+        }
+        body.radio-active .radio-desc{
+            display:block;
+            margin:3px 0 0 18px;
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:9px;
+            line-height:1.2;
+            letter-spacing:.11em;
+            text-transform:uppercase;
+        }
+        body.radio-active .radio-intro-stamp{
+            position:absolute;
+            right:-2px;
+            top:2px;
+            width:128px;
+            min-height:66px;
+            padding:10px 12px 7px;
+            background:url('assets/radio/radio-paper-magenta.svg') center/100% 100% no-repeat;
+            border:0;
+            color:#050505;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:20px;
+            line-height:.8;
+            letter-spacing:.01em;
+            text-align:center;
+            transform:rotate(5deg);
+            box-shadow:none;
+            z-index:3;
+        }
+        body.radio-active .radio-intro-stamp b{
+            display:block;
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:8px;
+            line-height:1;
+            letter-spacing:.05em;
+        }
+        body.radio-active .radio-stage-left{
+            grid-column:1;
+            grid-row:2 / 4;
+            min-width:0;
+            min-height:0;
+            display:grid;
+            grid-template-rows:minmax(230px,1.05fr) 36px 43px auto minmax(210px,1fr);
+            gap:8px;
+            overflow:hidden;
+        }
+        body.radio-active .radio-stage-left .radio-now{
+            min-height:0;
+            padding:12px 14px;
+            display:grid;
+            grid-template-columns:minmax(175px,205px) minmax(0,1fr);
+            gap:18px;
+            align-items:center;
+            border:2px solid rgba(255,255,255,.9);
+            border-radius:0;
+            background:#050505 url('assets/radio/radio-grain.svg') repeat;
+            background-size:180px 180px;
+            box-shadow:7px 7px 0 rgba(64,243,255,.14);
+            overflow:visible;
+        }
+        body.radio-active .radio-now::before{
+            content:"NOW PLAYING";
+            position:absolute;
+            left:12px;
+            top:-14px;
+            padding:5px 11px 4px;
+            color:#050505;
+            background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:8px;
+            letter-spacing:.09em;
+            transform:rotate(-2deg);
+        }
+        body.radio-active .radio-now::after{
+            content:"";
+            position:absolute;
+            right:2%;
+            top:31%;
+            width:100px;
+            height:74px;
+            background:url('assets/radio/radio-arrow.svg') center/contain no-repeat;
+            opacity:.9;
+            transform:rotate(4deg);
+            pointer-events:none;
+        }
+        body.radio-active .radio-stage-left .radio-now-art,
+        body.radio-active .radio-stage-left .radio-now-art img{
+            width:100%;
+            height:100%;
+            min-height:175px;
+            max-height:205px;
+            border-radius:0;
+            object-fit:cover;
+        }
+        body.radio-active .radio-stage-left .radio-now-art{
+            border:2px solid rgba(64,243,255,.75);
+            background:#111;
+            box-shadow:6px 6px 0 #ed1687;
+        }
+        body.radio-active .radio-stage-left .radio-now-title{
+            max-width:360px;
+            color:#fff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:clamp(23px,2.15vw,35px);
+            line-height:.97;
+            letter-spacing:-.045em;
+            text-shadow:2px 2px 0 rgba(64,243,255,.18);
+        }
+        body.radio-active .radio-stage-left .radio-now-artist{
+            color:#ed1687;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:13px;
+            margin-top:8px;
+        }
+        body.radio-active .radio-stage-left .radio-now-time{
+            color:#f2dc00;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:14px;
+            margin-top:15px;
+        }
+        body.radio-active .radio-stage-left .radio-prog{
+            height:5px;
+            margin-top:6px;
+            background:rgba(255,255,255,.25);
+        }
+        body.radio-active .radio-stage-left .radio-prog-fill{
+            background:linear-gradient(90deg,#ed1687,#f2dc00,#40f3ff);
+            box-shadow:none;
+        }
+        body.radio-active .radio-actions{
+            align-items:center;
+            justify-content:flex-start;
+            gap:8px;
+            margin:0;
+        }
+        body.radio-active .radio-actions button{
+            height:34px;
+            padding:6px 12px;
+            border-radius:0;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:9px;
+            text-transform:uppercase;
+        }
+        body.radio-active .radio-actions .btn-primary{
+            background:#f2dc00;
+            color:#050505;
+            border-color:#f2dc00;
+            box-shadow:5px 5px 0 #ed1687;
+        }
+        body.radio-active .radio-actions .btn-secondary{
+            background:#40f3ff;
+            color:#050505;
+            border-color:#40f3ff;
+        }
+        body.radio-active .radio-suggest{
+            display:grid;
+            grid-template-columns:143px minmax(0,1fr) 78px;
+            gap:7px;
+            align-items:stretch;
+            margin:0;
+        }
+        body.radio-active .radio-suggest::before{
+            content:"REQUEST LINE";
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:6px 8px;
+            background:url('assets/radio/radio-paper-magenta.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:17px;
+            line-height:.84;
+            letter-spacing:.02em;
+            text-align:center;
+            transform:rotate(-2deg);
+        }
+        body.radio-active .radio-suggest input[type=text]{
+            width:100%;
+            min-width:0;
+            border:2px solid rgba(255,255,255,.9);
+            border-radius:0;
+            padding:7px 10px;
+            background:#050505;
+            color:#fff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+        }
+        body.radio-active .radio-suggest button{
+            border:0;
+            border-radius:0;
+            padding:7px 8px;
+            background:url('assets/radio/radio-paper-yellow.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:11px;
+            text-transform:uppercase;
+            box-shadow:none;
+        }
+        body.radio-active .radio-suggest-status{
+            align-self:start;
+            margin:0 0 0 151px;
+            color:#aaa;
+            font-size:9px;
+            line-height:1.2;
+        }
+        body.radio-active .radio-mood-panel{
+            min-height:0;
+            margin:0;
+            border:0;
+            border-radius:0;
+            background:
+                url('assets/radio/radio-paper-yellow.svg') center/100% 100% no-repeat,
+                #f2dc00;
+            box-shadow:7px 7px 0 #40f3ff;
+            overflow:hidden;
+            position:relative;
+        }
+        body.radio-active .radio-mood-panel::after{
+            content:"";
+            position:absolute;
+            right:10px;
+            bottom:4px;
+            width:96px;
+            height:132px;
+            background:url('assets/radio/radio-bolt.svg') center/contain no-repeat;
+            opacity:.9;
+            transform:rotate(9deg);
+            pointer-events:none;
+        }
+        body.radio-active .radio-mood-panel .radio-panel-heading{
+            width:102px;
+            min-height:40px;
+            padding:9px 13px 8px;
+            border:0;
+            background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            letter-spacing:.08em;
+            transform:rotate(-3deg);
+        }
+        body.radio-active .radio-mood-panel .radio-panel-heading span:last-child{
+            display:none;
+        }
+        body.radio-active .radio-mood-body{
+            position:relative;
+            z-index:1;
+            padding:5px 22px 13px;
+            display:flex;
+            flex-direction:column;
+            gap:3px;
+            height:calc(100% - 35px);
+        }
+        body.radio-active .radio-mood-kicker{
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            letter-spacing:.12em;
+        }
+        body.radio-active .radio-mood-prefix{
+            margin-top:1px;
+            color:#ed1687;
+            font-size:13px;
+            font-family:Arial Black,Arial,sans-serif;
+        }
+        body.radio-active .radio-mood-value{
+            margin-top:1px;
+            color:#050505;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;
+            font-size:clamp(48px,5.2vw,78px);
+            line-height:.78;
+            letter-spacing:.015em;
+            text-shadow:3px 3px 0 #ed1687;
+        }
+        body.radio-active .radio-mood-detail{
+            max-width:72%;
+            margin-top:8px;
+            color:#151515;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            line-height:1.25;
+        }
+        body.radio-active .radio-mood-chips{
+            display:flex;
+            flex-wrap:wrap;
+            gap:5px;
+            margin-top:auto;
+            max-width:86%;
+        }
+        body.radio-active .radio-mood-chip{
+            padding:6px 8px;
+            border:1px solid #050505;
+            border-radius:0;
+            background:#ed1687;
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:8px;
+            letter-spacing:.04em;
+        }
+        body.radio-active .radio-mood-chip:nth-child(2n){background:#40f3ff;}
+        body.radio-active .radio-mood-chip:nth-child(3n){background:#f2dc00;}
+        body.radio-active .radio-mood-hint{
+            margin:3px 0 0;
+            color:#151515;
+            font-size:8px;
+            font-weight:700;
+        }
+        body.radio-active .radio-stage-right{
+            grid-column:2;
+            grid-row:1 / 4;
+            min-width:0;
+            min-height:0;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            overflow:hidden;
+            padding:0;
+        }
+        body.radio-active .radio-chart-panel{
+            flex:1 1 auto;
+            min-height:0;
+            margin:0;
+            border:2px solid rgba(255,255,255,.86);
+            border-radius:0;
+            background:#050505 url('assets/radio/radio-grain.svg') repeat;
+            background-size:180px 180px;
+            box-shadow:7px 7px 0 rgba(237,22,135,.2);
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+        }
+        body.radio-active .radio-chart-panel .radio-panel-heading{
+            min-height:73px;
+            padding:13px 20px 10px;
+            border:0;
+            background:url('assets/radio/radio-paper-magenta.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;
+            font-size:31px;
+            line-height:.86;
+            letter-spacing:.015em;
+            transform:rotate(-1deg);
+            flex:0 0 auto;
+        }
+        body.radio-active .radio-chart-panel .radio-panel-heading span:last-child{
+            align-self:center;
+            padding:3px 8px;
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:21px;
+            letter-spacing:.01em;
+            text-shadow:2px 2px 0 #ed1687;
+        }
+        body.radio-active .radio-top-list{
+            flex:1;
+            min-height:0;
+            overflow:auto;
+            display:grid;
+            grid-template-columns:1fr;
+            gap:0;
+            padding:2px 18px 10px;
+        }
+        body.radio-active .radio-requested{
+            display:grid;
+            grid-template-columns:52px 74px minmax(0,1fr) auto;
+            gap:11px;
+            align-items:center;
+            padding:8px 0;
+            border-bottom:2px dashed rgba(255,255,255,.44);
+        }
+        body.radio-active .radio-requested-rank{
+            color:#ed1687;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:44px;
+            text-shadow:2px 2px 0 #40f3ff;
+        }
+        body.radio-active .radio-requested img{
+            width:68px;
+            height:68px;
+            border-radius:0;
+            border:2px solid #40f3ff;
+            object-fit:cover;
+        }
+        body.radio-active .radio-requested-info{
+            gap:3px;
+        }
+        body.radio-active .radio-requested-info b{
+            color:#fff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:16px;
+        }
+        body.radio-active .radio-requested-info small{
+            color:#40f3ff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:11px;
+        }
+        body.radio-active .radio-requested-meter{
+            height:6px;
+            margin-top:6px;
+            background:rgba(255,255,255,.18);
+        }
+        body.radio-active .radio-requested-meter i{
+            background:#40f3ff;
+        }
+        body.radio-active .radio-requested-count{
+            color:#40f3ff;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:28px;
+            line-height:.8;
+        }
+        body.radio-active .radio-requested-count small{
+            color:#ed1687;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+            letter-spacing:.05em;
+        }
+        body.radio-active .radio-stage-lists{
+            flex:0 0 166px;
+            min-height:0;
+            display:grid;
+            grid-template-columns:.9fr 1.1fr;
+            gap:10px;
+        }
+        body.radio-active .radio-list-panel{
+            min-width:0;
+            min-height:0;
+            margin:0;
+            border:2px solid rgba(255,255,255,.84);
+            border-radius:0;
+            background:#050505 url('assets/radio/radio-grain.svg') repeat;
+            background-size:180px 180px;
+            overflow:hidden;
+            box-shadow:5px 5px 0 rgba(64,243,255,.12);
+        }
+        body.radio-active .radio-list-panel .hist-header{
+            min-height:43px;
+            padding:8px 11px;
+            border-bottom:0;
+            background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:12px;
+            letter-spacing:.05em;
+            text-transform:uppercase;
+        }
+        body.radio-active .radio-list-panel:nth-child(2) .hist-header{
+            background-image:url('assets/radio/radio-paper-yellow.svg');
+        }
+        body.radio-active .radio-list-panel .hist-header span:last-child{
+            color:#ed1687;
+            font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+            font-size:14px;
+        }
+        body.radio-active .radio-list-panel .track-list{
+            max-height:none;
+            height:calc(100% - 43px);
+            overflow:auto;
+            padding:4px 8px;
+        }
+        body.radio-active .radio-list-panel .track-item{
+            min-height:48px;
+            padding:7px 5px;
+            border-bottom:1px dashed rgba(255,255,255,.38);
+            border-radius:0;
+        }
+        body.radio-active .radio-list-panel .track-item .t-art{
+            width:36px;
+            height:36px;
+            border-radius:0;
+            border:1px solid rgba(255,255,255,.62);
+        }
+        body.radio-active .radio-list-panel .track-item .t-n{
+            color:#f2dc00;
+        }
+        body.radio-active .radio-ticker{
+            min-height:35px;
+            border:0;
+            border-top:2px solid #40f3ff;
+            border-bottom:2px solid #ed1687;
+            background:#1233a0;
+            box-shadow:0 -5px 0 #f2dc00;
+        }
+        body.radio-active .radio-ticker-label{
+            min-width:126px;
+            padding:0 14px;
+            background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+            color:#050505;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+        }
+        body.radio-active .radio-ticker-copy{
+            color:#fff;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+        }
+        body.radio-active .radio-ticker-live{
+            color:#f2dc00;
+            font-family:Arial Black,Arial,sans-serif;
+            font-size:10px;
+        }
+        @media(max-width:1100px){
+            body.radio-active .left-panel{width:246px!important;}
+            body.radio-active .radio-stage{
+                grid-template-columns:minmax(310px,.95fr) minmax(360px,1.05fr);
+                gap:9px;
+            }
+            body.radio-active .radio-intro-kicker{min-width:0;font-size:60px;}
+            body.radio-active .radio-intro-stamp{width:106px;}
+            body.radio-active .radio-stage-left .radio-now{grid-template-columns:145px minmax(0,1fr);gap:11px;}
+            body.radio-active .radio-stage-left .radio-now-title{font-size:23px;}
+            body.radio-active .radio-requested{grid-template-columns:42px 56px minmax(0,1fr) auto;gap:7px;}
+            body.radio-active .radio-requested img{width:54px;height:54px;}
+            body.radio-active .radio-chart-panel .radio-panel-heading{font-size:25px;}
+        }
+        @media(max-width:900px){
+            body.radio-active{
+                overflow:auto;
+            }
+            body.radio-active .app{min-height:100vh;height:auto;flex-direction:column;}
+            body.radio-active .left-panel{
+                width:100%!important;
+                max-height:none;
+                min-height:0;
+                border-right:0!important;
+                border-bottom:2px solid #ed1687!important;
+                box-shadow:0 6px 0 #f2dc00;
+            }
+            body.radio-active .am-brand{min-height:70px;padding:8px 14px;}
+            body.radio-active .am-brand img{width:190px;height:50px;}
+            body.radio-active .tabs{display:grid;grid-template-columns:repeat(5,1fr);padding:6px;gap:3px;}
+            body.radio-active .tab-btn{justify-content:center;gap:4px;padding:8px 3px;font-size:9px;text-align:center;}
+            body.radio-active .tab-btn .icon{width:18px;height:18px;flex-basis:18px;}
+            body.radio-active .tab-btn:nth-child(5)::after{font-size:9px;}
+            body.radio-active .radio-rail{margin:8px 12px 10px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+            body.radio-active .radio-rail-status{grid-column:1/-1;min-height:38px;}
+            body.radio-active .radio-rail-brand strong{font-size:60px;}
+            body.radio-active .radio-rail-eq{height:48px;}
+            body.radio-active .radio-rail-now,.radio-rail-mood{padding:8px 0;}
+            body.radio-active .right-panel{min-height:860px;padding:12px 10px 8px;overflow:visible;}
+            body.radio-active .radio-stage{
+                height:auto;
+                grid-template-columns:1fr;
+                grid-template-rows:auto;
+                gap:10px;
+                overflow:visible;
+            }
+            body.radio-active .radio-stage>.radio-ticker{grid-column:1;grid-row:auto;}
+            body.radio-active .radio-stage>.radio-intro{grid-column:1;grid-row:auto;}
+            body.radio-active .radio-stage-left,
+            body.radio-active .radio-stage-right{grid-column:1;grid-row:auto;overflow:visible;}
+            body.radio-active .radio-stage-left{display:flex;gap:9px;}
+            body.radio-active .radio-stage-left .radio-now{min-height:245px;}
+            body.radio-active .radio-mood-panel{min-height:300px;}
+            body.radio-active .radio-stage-right{display:flex;}
+            body.radio-active .radio-chart-panel{min-height:420px;}
+            body.radio-active .radio-stage-lists{flex:0 0 auto;grid-template-columns:1fr 1fr;height:260px;}
+        }
+        @media(max-width:560px){
+            body.radio-active .tabs{grid-template-columns:repeat(5, minmax(76px,1fr));overflow-x:auto;}
+            body.radio-active .radio-stage-left .radio-now{grid-template-columns:92px minmax(0,1fr);min-height:180px;gap:9px;padding:10px;}
+            body.radio-active .radio-stage-left .radio-now-art,
+            body.radio-active .radio-stage-left .radio-now-art img{min-height:92px;max-height:130px;}
+            body.radio-active .radio-stage-left .radio-now-title{font-size:18px;}
+            body.radio-active .radio-intro-kicker{font-size:48px;min-height:62px;}
+            body.radio-active .radio-intro-stamp{display:none;}
+            body.radio-active .radio-suggest{grid-template-columns:1fr 74px;}
+            body.radio-active .radio-suggest::before{grid-column:1/-1;min-height:38px;}
+            body.radio-active .radio-suggest-status{margin-left:0;}
+            body.radio-active .radio-stage-lists{grid-template-columns:1fr;height:auto;}
+            body.radio-active .radio-list-panel{min-height:180px;}
+            body.radio-active .radio-mood-value{font-size:54px;}
+        }
+
 </style>
 </head>
 <body>
@@ -821,7 +1669,7 @@
                     <b>24/7</b>
                 </div>
                 <div class="radio-rail-brand">
-                    <span>ALLMUSIC / BROADCAST</span>
+                    <span>ALLMUSIC PRO BROADCAST</span>
                     <strong>IA<br><em>RADIO</em></strong>
                 </div>
                 <div class="radio-rail-eq" aria-hidden="true">
@@ -852,10 +1700,10 @@
 
             <div class="radio-intro">
                 <div>
-                    <div class="radio-intro-kicker">BROADCAST SYSTEM // 2000S EDITION</div>
-                    <p class="radio-desc">La señal del master en el Ático. Sintoniza, mira el ranking de la audiencia y manda tu pedido al aire.</p>
+                    <div class="radio-intro-kicker">EN VIVO</div>
+                    <p class="radio-desc">LIVE FROM THE ATTIC // QUITO</p>
                 </div>
-                <div class="radio-intro-stamp">LIVE<br><b>TV</b></div>
+                <div class="radio-intro-stamp">ON AIR<br><b>LIVE FROM<br>THE ATTIC</b></div>
             </div>
 
             <div class="radio-stage-left">
