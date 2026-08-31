@@ -227,6 +227,366 @@ a{color:inherit}
 .toast.show{transform:translate(-50%,0)}
 .toast.err{border-color:var(--red);color:#ff8b8b}
 
+
+/* ── LIVE C24 COMPONENTS ──
+   The mockup supplies the paper, ink and collage treatment.
+   Runtime data is rendered as real UI on top of it. */
+.dynamic-ui{
+  position:absolute!important;
+  z-index:8;
+  margin:0!important;
+  overflow:hidden!important;
+  clip:auto!important;
+  clip-path:none!important;
+  white-space:normal!important;
+  border:0!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  width:auto!important;
+  height:auto!important;
+  padding:0!important;
+}
+.dynamic-cover{
+  left:19.75%!important;
+  top:18.65%!important;
+  width:13.25%!important;
+  height:22.15%!important;
+  object-fit:cover!important;
+  display:block!important;
+  border:2px solid var(--white)!important;
+  border-radius:2px!important;
+  box-shadow:0 0 0 1px #050505,4px 4px 0 rgba(0,0,0,.4)!important;
+  background:#111!important;
+}
+.dynamic-live-copy{
+  left:34.1%!important;
+  top:18.6%!important;
+  width:20.65%!important;
+  height:19.9%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:.7%!important;
+  padding:1.1% 1.05%!important;
+  background:
+    radial-gradient(circle at 80% 18%,rgba(31,65,75,.22),transparent 32%),
+    linear-gradient(90deg,rgba(3,3,3,.99),rgba(6,8,9,.97))!important;
+  color:var(--white)!important;
+  text-shadow:1px 1px 0 #000!important;
+}
+.dynamic-live-copy .now-title{
+  color:#f3f3f1!important;
+  font-family:"Roboto Condensed",Arial,sans-serif!important;
+  font-size:clamp(15px,1.65vw,28px)!important;
+  font-weight:900!important;
+  line-height:1.03!important;
+  max-width:100%!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+.dynamic-live-copy .now-artist{
+  color:#f1f1ee!important;
+  font-size:clamp(10px,1.08vw,18px)!important;
+  line-height:1.05!important;
+  max-width:100%!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+.dynamic-live-copy .now-station{
+  color:var(--pink)!important;
+  font-size:clamp(10px,.92vw,16px)!important;
+  font-weight:900!important;
+  margin-top:auto!important;
+}
+.dynamic-live-copy .now-time{
+  color:var(--yellow)!important;
+  font-size:clamp(11px,1.05vw,18px)!important;
+  font-weight:900!important;
+  display:flex!important;
+  gap:.35em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+.dynamic-progress{
+  left:34.1%!important;
+  top:39.0%!important;
+  width:20.65%!important;
+  height:.7%!important;
+  background:#3d4044!important;
+  border-radius:0!important;
+}
+.dynamic-progress #barFill{
+  display:block!important;
+  height:100%!important;
+  width:0;
+  background:var(--pink)!important;
+  box-shadow:0 0 8px rgba(237,22,135,.65)!important;
+  transition:width .35s linear!important;
+}
+.dynamic-top{
+  left:59.0%!important;
+  top:17.6%!important;
+  width:39.0%!important;
+  height:39.4%!important;
+  padding:1.1% 1.45%!important;
+  background:
+    radial-gradient(circle at 15% 60%,rgba(22,71,74,.12),transparent 35%),
+    rgba(4,5,5,.975)!important;
+  color:var(--white)!important;
+}
+.dynamic-top h2,.dynamic-mood h2,.dynamic-queue h2,.dynamic-history h2{display:none!important}
+.dynamic-top ol{
+  width:100%!important;
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  padding:0!important;
+  margin:0!important;
+  list-style:none!important;
+}
+.requested-item{
+  min-height:15.8%!important;
+  display:grid!important;
+  grid-template-columns:8% 10% minmax(0,1fr) 12%!important;
+  align-items:center!important;
+  gap:1.4%!important;
+  padding:0 0 0 0!important;
+  border-bottom:1px dashed rgba(245,245,243,.32)!important;
+  color:#fff!important;
+  overflow:hidden!important;
+}
+.requested-rank{
+  color:var(--pink)!important;
+  font-family:"Roboto Condensed",Arial,sans-serif!important;
+  font-size:clamp(13px,1.75vw,29px)!important;
+  font-weight:900!important;
+}
+.requested-item img{
+  width:100%!important;
+  aspect-ratio:1!important;
+  object-fit:cover!important;
+  border:1px solid rgba(255,255,255,.4)!important;
+  background:#151515!important;
+}
+.requested-info{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+}
+.requested-info strong{
+  font-size:clamp(10px,1.08vw,18px)!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.requested-info small{
+  color:var(--cyan)!important;
+  font-size:clamp(8px,.85vw,14px)!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.requested-meter{
+  display:block!important;
+  width:100%!important;
+  height:4px!important;
+  margin-top:2px!important;
+  background:#262b2c!important;
+}
+.requested-meter i{
+  display:block!important;
+  height:100%!important;
+  background:var(--cyan)!important;
+}
+.requested-count{
+  color:var(--cyan)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  line-height:1!important;
+}
+.requested-count b{font-size:clamp(14px,1.5vw,25px)!important}
+.requested-count small{color:var(--pink)!important;font-size:clamp(7px,.75vw,12px)!important;font-weight:900!important}
+.requested-item:only-child,.dynamic-top .empty{
+  color:#888!important;
+  font-size:clamp(11px,1vw,16px)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.dynamic-mood{
+  left:19.15%!important;
+  top:64.0%!important;
+  width:36.7%!important;
+  height:20.0%!important;
+  padding:4.6% 2.4% 1.2%!important;
+  background:
+    radial-gradient(circle at 87% 55%,rgba(25,52,55,.24),transparent 28%),
+    linear-gradient(90deg,rgba(4,5,5,.985),rgba(7,8,8,.94))!important;
+  color:#fff!important;
+}
+.mood-value{
+  display:block!important;
+  color:var(--yellow)!important;
+  font-family:"Bangers","Arial Black",sans-serif!important;
+  font-size:clamp(34px,4.5vw,76px)!important;
+  line-height:.85!important;
+  letter-spacing:.015em!important;
+  text-shadow:3px 3px 0 #111!important;
+  transform:rotate(-1deg)!important;
+}
+.mood-detail{
+  max-width:75%!important;
+  margin:2.4% 0 0!important;
+  color:#e8e8e5!important;
+  font-size:clamp(9px,.92vw,15px)!important;
+  line-height:1.18!important;
+}
+.dynamic-queue{
+  left:58.8%!important;
+  top:65.0%!important;
+  width:18.7%!important;
+  height:23.0%!important;
+  padding:2.5% 2.1%!important;
+  background:rgba(4,5,5,.97)!important;
+  color:#fff!important;
+}
+.dynamic-queue ul,.dynamic-history ul{
+  height:82%!important;
+  overflow:hidden!important;
+  margin:0!important;
+  padding:0!important;
+  list-style:none!important;
+}
+.dynamic-queue .q{
+  min-height:31%!important;
+  display:grid!important;
+  grid-template-columns:9% 15% minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:2.5%!important;
+  border-bottom:1px dashed rgba(245,245,243,.32)!important;
+}
+.dynamic-queue .q img{
+  width:100%!important;
+  aspect-ratio:1!important;
+  object-fit:cover!important;
+  background:#111!important;
+}
+.dynamic-queue .n{color:var(--yellow)!important;font-weight:900!important}
+.dynamic-queue .tit,.dynamic-queue .sub{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.dynamic-queue .tit{font-size:clamp(8px,.78vw,13px)!important;font-weight:900!important}
+.dynamic-queue .sub{font-size:clamp(7px,.68vw,11px)!important;color:#aaa!important}
+.dynamic-queue #queueCount{
+  display:block!important;
+  margin-top:3%!important;
+  color:var(--cyan)!important;
+  font-size:clamp(13px,1.35vw,22px)!important;
+  font-weight:900!important;
+}
+.dynamic-history{
+  left:77.6%!important;
+  top:65.0%!important;
+  width:20.0%!important;
+  height:23.0%!important;
+  padding:2.5% 2.1%!important;
+  background:rgba(4,5,5,.97)!important;
+  color:#fff!important;
+}
+.dynamic-history li{
+  min-height:24%!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:5%!important;
+  border-bottom:1px dashed rgba(245,245,243,.32)!important;
+  color:#e9e9e6!important;
+  font-size:clamp(8px,.78vw,13px)!important;
+  line-height:1.1!important;
+  overflow:hidden!important;
+}
+.dynamic-history li::before{
+  content:"▶"!important;
+  flex:0 0 auto!important;
+  color:var(--yellow)!important;
+  font-size:.8em!important;
+}
+.dynamic-history .empty{
+  color:#888!important;
+  justify-content:center!important;
+}
+.runtime-state{
+  position:absolute!important;
+  inset:0!important;
+  z-index:9!important;
+  width:100%!important;
+  height:100%!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  clip:auto!important;
+  opacity:1!important;
+}
+.broadcast-clock{
+  position:absolute!important;
+  right:3.0%!important;
+  top:1.6%!important;
+  width:13.5%!important;
+  color:#f4f4f0!important;
+  font-size:clamp(12px,1.15vw,19px)!important;
+  line-height:1!important;
+  text-align:center!important;
+  font-variant-numeric:tabular-nums!important;
+  text-shadow:2px 2px 0 #000!important;
+}
+#stateBadge{
+  position:absolute!important;
+  right:3.2%!important;
+  top:5.0%!important;
+  color:var(--cyan)!important;
+  font-size:clamp(8px,.78vw,13px)!important;
+  font-weight:900!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+}
+#streamStatus{display:none!important}
+.ticker-window{
+  position:absolute!important;
+  left:9.0%!important;
+  top:91.45%!important;
+  width:82.0%!important;
+  height:7.9%!important;
+  overflow:hidden!important;
+  display:block!important;
+  background:linear-gradient(90deg,rgba(13,54,139,.98),rgba(13,46,120,.95))!important;
+  color:#fff!important;
+  pointer-events:none!important;
+}
+.ticker-window span{
+  position:absolute!important;
+  left:0!important;
+  top:30%!important;
+  white-space:nowrap!important;
+  color:#f7f7f3!important;
+  font-size:clamp(11px,1.05vw,17px)!important;
+  font-weight:900!important;
+  letter-spacing:.08em!important;
+  animation:c24Ticker 18s linear infinite!important;
+}
+.ticker-window #tickerTextClone{left:100%!important}
+@keyframes c24Ticker{
+  from{transform:translateX(0)}
+  to{transform:translateX(-200%)}
+}
 </style>
 </head>
 <body>
@@ -258,22 +618,22 @@ a{color:inherit}
     <button type="submit" aria-label="Pedir">Pedir</button>
   </form>
 
-  <img class="dynamic-cover accessibility-data" id="thumb" src="./assets/radio/radio-now-cover.png" alt="Portada del tema actual" onerror="this.onerror=null;this.src='./assets/radio/radio-now-cover.png';">
-  <div class="dynamic-live-copy accessibility-data" aria-live="polite">
+  <img class="dynamic-cover dynamic-ui" id="thumb" src="./assets/radio/radio-now-cover.png" alt="Portada del tema actual" onerror="this.onerror=null;this.src='./assets/radio/radio-now-cover.png';">
+  <div class="dynamic-live-copy dynamic-ui" aria-live="polite">
     <div class="now-title" id="title">80s Rock Songs Everyone Knows</div>
     <div class="now-artist" id="artist">Best of 80s Rock Music Playlist</div>
     <div class="now-station">CANAL 24 Pro</div>
     <div class="now-time"><span id="elapsed">45:27</span><span>/</span><span id="duration">1:00:00</span></div>
   </div>
-  <div class="dynamic-progress accessibility-data" aria-hidden="true"><i id="barFill"></i></div>
+  <div class="dynamic-progress dynamic-ui" aria-hidden="true"><i id="barFill"></i></div>
 
-  <section class="dynamic-top accessibility-data" aria-labelledby="topRequestedTitle">
+  <section class="dynamic-top dynamic-ui" aria-labelledby="topRequestedTitle">
     <h2 id="topRequestedTitle">Los 10 más pedidos</h2>
     <ol id="topRequestedList"><li class="empty">Todavía no hay pedidos registrados.</li></ol>
     <span id="topRequestedMeta">0 PEDIDOS</span>
   </section>
 
-  <section class="dynamic-mood accessibility-data" aria-labelledby="moodTitle">
+  <section class="dynamic-mood dynamic-ui" aria-labelledby="moodTitle">
     <h2 id="moodTitle">Mood de la señal</h2>
     <strong class="mood-value" id="moodValue">ROCK SIGNAL</strong>
     <p class="mood-detail" id="moodDetail">La cabina está lista para recibir el próximo pedido.</p>
@@ -286,22 +646,25 @@ a{color:inherit}
     <button type="button" class="mood-chip" data-mood="deep house mix" aria-label="Pedir mood night dance">NIGHT DANCE</button>
   </div>
 
-  <section class="dynamic-queue accessibility-data" aria-labelledby="queueTitle">
+  <section class="dynamic-queue dynamic-ui" aria-labelledby="queueTitle">
     <h2 id="queueTitle">Siguiente en la cola</h2>
     <ul id="queueList"><li class="empty">La cola está vacía.</li></ul>
     <span id="queueCount">COLA VACÍA</span>
   </section>
 
-  <section class="dynamic-history accessibility-data" aria-labelledby="historyTitle">
+  <section class="dynamic-history dynamic-ui" aria-labelledby="historyTitle">
     <h2 id="historyTitle">Historial reciente</h2>
     <ul id="historyList"><li class="empty">Todavía no hay historial.</li></ul>
   </section>
 
-  <div class="accessibility-data">
+  <div class="runtime-state">
+    <time id="broadcastClock" class="broadcast-clock">12:47:36 PM</time>
     <span id="stateBadge"><span id="stateText">Cargando…</span></span>
     <span id="streamStatus">La transmisión está lista.</span>
-    <span id="tickerText">CANAL 24 RADIO // 24/7</span>
-    <span id="tickerTextClone">CANAL 24 RADIO // 24/7</span>
+    <div class="ticker-window" aria-live="polite">
+      <span id="tickerText">CANAL 24 RADIO // 24/7</span>
+      <span id="tickerTextClone">CANAL 24 RADIO // 24/7</span>
+    </div>
     <div id="blacklistChips"></div>
     <form id="blForm" class="blacklist-form">
       <input type="text" id="blInput" aria-label="Artista o estilo a bloquear">
@@ -410,6 +773,7 @@ function renderState(d){
     setTicker((t.title||'C24 Radio')+' // '+(t.artist||t.uploader||'C24'));
     const el=document.getElementById('elapsed'), du=document.getElementById('duration');
     window._nowElapsed=t.elapsed||0;
+    window._nowDuration=t.duration||0;
     el.textContent=fmt(t.elapsed||0);
     du.textContent=fmt(t.duration);
     document.getElementById('barFill').style.width=Math.min(100,((t.elapsed||0)/(t.duration||1))*100)+'%';
@@ -436,9 +800,22 @@ function escapeHtml(value){
 }
 
 function tickTimer(){
-  if(window._nowElapsed!=null){ window._nowElapsed+=1; document.getElementById('elapsed').textContent=fmt(window._nowElapsed); }
+  if(window._nowElapsed!=null){
+    window._nowElapsed+=1;
+    document.getElementById('elapsed').textContent=fmt(window._nowElapsed);
+    const durationText=document.getElementById('duration');
+    const duration=window._nowDuration||0;
+    const fill=document.getElementById('barFill');
+    if(fill&&duration)fill.style.width=Math.min(100,(window._nowElapsed/duration)*100)+'%';
+  }
   setTimeout(tickTimer,1000);
 }
+function paintClock(){
+  const clock=document.getElementById('broadcastClock');
+  if(clock)clock.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
+}
+paintClock();
+setInterval(paintClock,1000);
 
 async function loadRadio(){
   try{ const d=await api(RADIO_API_BASE+'/now'); renderState(d); }
