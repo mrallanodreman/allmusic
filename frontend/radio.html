@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#050505">
-<title>AllMusic Radio · En Vivo</title>
+<title>C24 Radio · En Vivo</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Roboto+Condensed:wght@400;500;700;900&display=swap');
 
@@ -46,7 +46,7 @@ a{color:inherit}
   width:100%;
   height:100%;
   display:block;
-  object-fit:fill;
+  object-fit:contain;
   user-select:none;
   pointer-events:none;
 }
@@ -547,11 +547,180 @@ body.radio-ready.has-history-data .dynamic-history{opacity:1;pointer-events:auto
   .accessibility-data{position:absolute}
 }
 
+
+/* C24 RADIO / EXACT MOCKUP ARTBOARD */
+html,body{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  background:#050505;
+}
+body{
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+.radio-artboard{
+  width:min(100vw,calc(100vh * 1672 / 940));
+  height:min(100vh,calc(100vw * 940 / 1672));
+  aspect-ratio:1672 / 940;
+  min-height:0;
+  overflow:hidden;
+  padding:0;
+  background:#050505;
+}
+.reference-art{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  opacity:1;
+  object-fit:contain;
+}
+.radio-artboard::before,
+.radio-artboard::after{
+  display:none!important;
+}
+@media(max-width:900px){
+  body{
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+  }
+  .radio-artboard{
+    width:min(100vw,calc(100vh * 1672 / 940));
+    height:min(100vh,calc(100vw * 940 / 1672));
+    min-height:0;
+    padding:0;
+  }
+  .reference-art{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    opacity:1;
+    object-fit:contain;
+  }
+  .radio-artboard::before,
+  .radio-artboard::after{
+    display:none!important;
+  }
+  .hit-live,
+  .hit-history,
+  .hit-search,
+  .hit-playlists,
+  .hit-music,
+  .hit-refresh{
+    display:block;
+  }
+  .hit-listen{
+    left:34.8%;
+    top:47%;
+    width:3.7%;
+    height:6.2%;
+    transform:none;
+    border:0;
+    border-radius:0;
+    background:transparent;
+  }
+  .hit-advance{
+    left:40.1%;
+    top:47%;
+    width:3.4%;
+    height:6.2%;
+    transform:none;
+  }
+  .hit-request{
+    left:30.3%;
+    top:54.25%;
+    width:35.7%;
+    height:5.1%;
+    margin:0;
+    border:0;
+    background:transparent;
+  }
+  .hit-request input{
+    font-size:clamp(10px,1.05vw,17px);
+  }
+  .hit-request input::placeholder{
+    color:transparent;
+  }
+  .hit-request button{
+    color:transparent;
+  }
+  .dynamic-cover{
+    position:absolute;
+    left:20.2%;
+    top:18.25%;
+    width:13.55%;
+    height:22.7%;
+    margin:0;
+  }
+  .dynamic-live-copy{
+    position:absolute;
+    left:34.5%;
+    top:18.75%;
+    width:23.2%;
+    height:20.55%;
+    margin:0;
+  }
+  .dynamic-progress{
+    position:absolute;
+    left:34.5%;
+    top:39.25%;
+    width:21.25%;
+    height:.75%;
+    margin:0;
+  }
+  .dynamic-top{
+    position:absolute;
+    left:59.8%;
+    top:18.3%;
+    width:39.1%;
+    height:37.7%;
+    margin:0;
+  }
+  .dynamic-mood{
+    position:absolute;
+    left:20.1%;
+    top:68.5%;
+    width:35.7%;
+    height:14.1%;
+    margin:0;
+  }
+  .mood-chips-hit{
+    position:absolute;
+    left:19.3%;
+    top:83.5%;
+    width:34.6%;
+    height:4.1%;
+    margin:0;
+  }
+  .dynamic-queue{
+    position:absolute;
+    left:58.55%;
+    top:65.1%;
+    width:18.3%;
+    height:25.6%;
+    margin:0;
+  }
+  .dynamic-history{
+    position:absolute;
+    left:77.25%;
+    top:65.1%;
+    width:21.15%;
+    height:25.6%;
+    margin:0;
+  }
+}
+
 </style>
 </head>
 <body>
-<main class="radio-artboard" aria-label="AllMusic Radio 24/7">
-  <img class="reference-art" src="./assets/radio/radio-reference.png" alt="Interfaz visual de AllMusic Radio">
+<main class="radio-artboard" aria-label="C24 Radio 24/7">
+  <img class="reference-art" src="./assets/radio/radio-reference.png" alt="Mockup exacto de C24 Radio">
 
   <nav aria-label="Navegación de la radio">
     <a class="hotspot hit-live" href="#live" aria-label="En vivo"></a>
@@ -574,7 +743,7 @@ body.radio-ready.has-history-data .dynamic-history{opacity:1;pointer-events:auto
   <div class="dynamic-live-copy" aria-live="polite">
     <div class="now-title" id="title">80s Rock Songs Everyone Knows</div>
     <div class="now-artist" id="artist">Best of 80s Rock Music Playlist</div>
-    <div class="now-station">AllMusic Pro</div>
+    <div class="now-station">CANAL 24 Pro</div>
     <div class="now-time"><span id="elapsed">45:27</span><span>/</span><span id="duration">1:00:00</span></div>
   </div>
   <div class="dynamic-progress" aria-hidden="true"><i id="barFill"></i></div>
@@ -625,6 +794,11 @@ body.radio-ready.has-history-data .dynamic-history{opacity:1;pointer-events:auto
 const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
 const fmt = s => { s=Math.max(0,Math.floor(s||0)); const m=Math.floor(s/60)%60,h=Math.floor(s/3600),x=s%60; return (h>0?h+':':'')+String(m).padStart(Math.max(2,h?2:1),'0')+':'+String(x).padStart(2,'0'); };
 const radioAudio=document.getElementById('radioAudio');
+const RADIO_FALLBACK='./assets/radio/radio-now-cover.png';
+function bindRadioFallback(img){
+  if(!img)return;
+  img.onerror=()=>{img.onerror=null;img.src=RADIO_FALLBACK;};
+}
 const LS_RADIO_LISTENING='allmusic_radio_listening';
 let radioStreamUrl='';
 let radioListening=localStorage.getItem(LS_RADIO_LISTENING)==='1';
@@ -705,13 +879,13 @@ function renderState(d){
     badge.className='badge live'; badge.querySelector('#stateText').textContent='En vivo';
     const t=d.track||{};
     const thumb=document.getElementById('thumb');
-    const fallback='./assets/radio/radio-now-cover.png';
+    const fallback=RADIO_FALLBACK;
     const remoteFallback=t.video_id?'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg':fallback;
     thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:remoteFallback;
     thumb.onerror=()=>{ if(thumb.src!==fallback) thumb.src=fallback; };
     document.getElementById('title').textContent=t.title||'—';
-    document.getElementById('artist').textContent=t.artist||t.uploader||'AllMusic';
-    setTicker((t.title||'AllMusic Radio')+' // '+(t.artist||t.uploader||'AllMusic'));
+    document.getElementById('artist').textContent=t.artist||t.uploader||'C24';
+    setTicker((t.title||'C24 Radio')+' // '+(t.artist||t.uploader||'C24'));
     const el=document.getElementById('elapsed'), du=document.getElementById('duration');
     window._nowElapsed=t.elapsed||0;
     el.textContent=fmt(t.elapsed||0);
@@ -719,7 +893,7 @@ function renderState(d){
     document.getElementById('barFill').style.width=Math.min(100,((t.elapsed||0)/(t.duration||1))*100)+'%';
   } else {
     badge.className='badge paused'; badge.querySelector('#stateText').textContent='En pausa';
-    setTicker('SEÑAL EN ESPERA // ALLMUSIC RADIO 24/7');
+    setTicker('SEÑAL EN ESPERA // CANAL 24 RADIO 24/7');
   }
   const q=document.getElementById('queueList');
   const queue=d.queue||[];
@@ -727,6 +901,7 @@ function renderState(d){
   document.getElementById('queueCount').textContent=queue.length?String(queue.length).padStart(2,'0')+' EN COLA':'COLA VACÍA';
   if(!queue.length){ q.innerHTML='<li class="empty">La cola está vacía.</li>'; }
   else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}${x.eta_minutes!=null?' · '+(x.eta_minutes<1?'menos de 1 min':x.eta_minutes+' min'):''}</div></span></li>`).join('');
+  q.querySelectorAll('img').forEach(bindRadioFallback);
   const h=document.getElementById('historyList');
   document.body.classList.toggle('has-history-data',!!(d.history&&d.history.length));
   if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Todavía no hay historial.</li>'; }
@@ -751,7 +926,7 @@ async function loadRadio(){
 }
 
 function setTicker(text){
-  const value=String(text||'ALLMUSIC RADIO // 24/7').trim();
+  const value=String(text||'CANAL 24 RADIO // 24/7').trim();
   const first=document.getElementById('tickerText');
   const clone=document.getElementById('tickerTextClone');
   if(first)first.textContent=value;
@@ -784,18 +959,19 @@ function renderTopRequested(list){
       '<img src="'+topRequestedThumb(item)+'" alt="" loading="lazy">' +
       '<span class="requested-info">' +
         '<strong>'+escapeHtml(item.title||'Sin título')+'</strong>' +
-        '<small>'+escapeHtml(item.artist||'AllMusic')+'</small>' +
+        '<small>'+escapeHtml(item.artist||'C24')+'</small>' +
         '<span class="requested-meter" aria-hidden="true"><i style="width:'+width+'%"></i></span>' +
       '</span>' +
       '<span class="requested-count"><b>'+count+'</b><small>PEDIDOS</small></span>' +
     '</li>';
   }).join('');
+  panel.querySelectorAll('img').forEach(bindRadioFallback);
 }
 
 function renderMood(d){
   const track=d&&d.track||{};
   const source=(String(track.reason||'')+' '+String(track.title||'')).toLowerCase();
-  let label=d&&d.playing?'ALLMUSIC MIX':'SIGNAL STANDBY';
+  let label=d&&d.playing?'CANAL 24 MIX':'SIGNAL STANDBY';
   let detail=d&&d.playing?'La señal está activa. El mood se infiere de la programación actual.':'La cabina está lista para recibir el próximo pedido.';
   if(/jazz|piano|bossa/.test(source)){
     label='JAZZ LATE';
@@ -817,7 +993,7 @@ function renderMood(d){
     detail='Amplificadores encendidos y clásicos con voltaje de radio.';
   }else if(/k-pop/.test(source)){
     label='K-POP MODE';
-    detail='Pop de alto voltaje en la rotación de AllMusic.';
+    detail='Pop de alto voltaje en la rotación de C24.';
   }
   const value=document.getElementById('moodValue');
   const copy=document.getElementById('moodDetail');

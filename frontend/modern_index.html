@@ -2064,6 +2064,63 @@
                 grid-template-columns:auto minmax(0,1fr) auto minmax(175px,auto) minmax(92px,auto);
             }
         }
+
+/* C24 RADIO / INTEGRATED VIEW USES THE EXACT MOCKUP ARTBOARD */
+.radio-integrated-frame{
+    display:none;
+}
+body.radio-active{
+    overflow:hidden!important;
+    background:#050505!important;
+}
+body.radio-active .app{
+    display:block!important;
+    width:100vw!important;
+    height:100vh!important;
+}
+body.radio-active .left-panel,
+body.radio-active .right-panel > .player-shell,
+body.radio-active .app-footer{
+    display:none!important;
+}
+body.radio-active .right-panel{
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100vh!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#050505!important;
+    z-index:9990!important;
+}
+body.radio-active .radio-stage{
+    display:block!important;
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100vh!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#050505!important;
+    z-index:9999!important;
+}
+body.radio-active .radio-stage > *:not(.radio-integrated-frame){
+    display:none!important;
+}
+body.radio-active .radio-integrated-frame{
+    display:block!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    border:0!important;
+    background:#050505!important;
+}
+
 </style>
 </head>
 <body>
@@ -2258,7 +2315,9 @@
     <!-- ══ RIGHT PANEL / PLAYER ══ -->
     <div class="right-panel">
 
-        <section class="radio-stage" id="radioStage" aria-label="IA Radio 24/7">
+        <section class="radio-stage" id="radioStage" aria-label="C24 Radio 24/7">
+            <!-- C24 keeps one source of truth: the exact mockup artboard and its local PNG fallback live in radio.html. -->
+            <iframe class="radio-integrated-frame" src="./radio.html?embedded=1" title="C24 Radio · En vivo" data-cover-fallback="./assets/radio/radio-now-cover.png"></iframe>
             <div class="radio-ticker" aria-label="Estado de la transmisión">
                 <span class="radio-ticker-label">NOW PLAYING</span>
                 <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
@@ -2569,7 +2628,7 @@ function switchTab(t){
     document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['history','search','playlists','mymusic','radio'][i]===t));
     document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
     document.getElementById('pane-'+t).classList.add('active');
-    if(t==='radio'&&typeof radioRefresh==='function')radioRefresh();
+    if(t==='radio'){const frame=document.querySelector('.radio-integrated-frame');if(frame)frame.focus();}
     document.querySelector('.cfg-gear').classList.remove('active');
     if(t==='mymusic') myMusicRefresh();
 }
