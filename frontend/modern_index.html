@@ -1899,6 +1899,76 @@
                 right:70px;
             }
         }
+        /* ── RADIO HAND 3 / REFERENCE COLLAGE FINISH ── */
+        @media(min-width:1200px){
+            body.radio-active .radio-stage-left .radio-now{
+                padding-top:0;
+            }
+            body.radio-active .radio-intro-stamp{
+                height:58px;
+                min-height:58px;
+                padding:10px 9px 5px;
+            }
+            body.radio-active .radio-intro-stamp strong{
+                display:block;
+                color:#050505;
+                font:900 20px/.88 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+                letter-spacing:.01em;
+            }
+            body.radio-active .radio-intro-live-note{
+                position:absolute;
+                left:57px;
+                top:43px;
+                z-index:2;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                width:82px;
+                min-height:58px;
+                padding:7px 5px;
+                background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+                color:#050505;
+                font:900 10px/.9 Arial Black,Arial,sans-serif;
+                letter-spacing:.02em;
+                text-align:center;
+                transform:rotate(4deg);
+            }
+            body.radio-active .radio-intro-kicker{
+                transform:rotate(-4deg) translateY(14px);
+            }
+            body.radio-active .radio-stage>.radio-ticker{
+                position:fixed;
+                left:0;
+                right:0;
+                bottom:0;
+                width:100vw;
+                z-index:80;
+            }
+            body.radio-active .radio-rail-now-playing{
+                display:none;
+            }
+        }
+        @media(min-width:1400px){
+            body.radio-active .radio-intro-stamp{
+                top:18px;
+                right:70px;
+            }
+            body.radio-active .radio-intro-live-note{
+                left:64px;
+                top:43px;
+                width:87px;
+                min-height:62px;
+            }
+        }
+        @media(max-width:1199px){
+            body.radio-active .radio-intro-live-note{
+                left:48px;
+                top:39px;
+                width:76px;
+                min-height:52px;
+                font-size:9px;
+            }
+        }
 </style>
 </head>
 <body>
@@ -2095,7 +2165,7 @@
 
         <section class="radio-stage" id="radioStage" aria-label="IA Radio 24/7">
             <div class="radio-ticker" aria-label="Estado de la transmisión">
-                <span class="radio-ticker-label">ON AIR</span>
+                <span class="radio-ticker-label">NOW PLAYING</span>
                 <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
                 <span class="radio-ticker-live" id="radioLive">Cargando…</span>
                 <span class="radio-ticker-mark"><img src="assets/radio/c24-radio.png" alt=""> ALLMUSIC PRO BROADCAST 24/7</span>
@@ -2111,7 +2181,10 @@
                     <div class="radio-intro-kicker">EN VIVO</div>
                     <p class="radio-desc">LIVE FROM THE ATTIC // QUITO</p>
                 </div>
-                <div class="radio-intro-stamp">ON AIR<br><b>LIVE FROM<br>THE ATTIC</b></div>
+                <div class="radio-intro-stamp">
+                    <strong>ON AIR</strong>
+                    <span class="radio-intro-live-note">LIVE FROM<br>THE ATTIC</span>
+                </div>
             </div>
 
             <div class="radio-stage-left">
