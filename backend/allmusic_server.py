@@ -1704,6 +1704,20 @@ RADIO_MAX_HISTORY = 25
 RADIO_MAX_REQUEST_STATS = 250
 RADIO_QUEUE_REVIEW_SECONDS = 5
 RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
+# Moods semilla para arrancar el autofeedback. Se van descubriendo más solos:
+# cada canción reproducida o solicitada registra su mood y se agrega aquí.
+RADIO_SEED_MOODS = [
+    'lofi chill beats', 'synthwave retro', 'indie rock 2020s', 'jazz piano relax',
+    'rock clásico 80s', 'pop latino', 'deep house mix', 'bossa nova classics',
+    'música electrónica ambient', 'k-pop hits', 'rock en español', 'cumbia suave',
+    'funk groove', 'soul classics', 'disco hits 70s 80s', 'R&B smooth',
+    'blues guitar', 'country classics', 'reggae chill', 'ska punk',
+    'metal instrumental', 'post-rock ambient', 'dream pop', 'shoegaze',
+    'guitarra española', 'tango clásico', 'folklór latino', 'cumbia villera',
+    'trip hop', 'drum and bass chill', 'house tropical', 'techno melodic',
+    'alternative rock 2000s', 'emo hits', 'punk rock classics', 'grunge legends',
+    'hip hop old school', 'trap instrumental', 'afrobeat', 'world music',
+]
 # Tope duro para no quedarse pegado. Subido de 480 a 3600 (1h): el reproductor
 # del Atico controla el fin REAL de cada pista via media_position y pide avanzar
 # con POST /radio/advance, así que este solo es una red de seguridad para
@@ -1712,11 +1726,7 @@ RADIO_MAX_TRACK_SECONDS = 3600
 RADIO_MASTER_TTL_SECONDS = 15
 RADIO_LIVE_STREAM_URL = os.environ.get('RADIO_LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3')
 
-RADIO_FALLBACK_QUERIES = [
-    'lofi chill beats', 'synthwave retro', 'indie rock 2020s', 'jazz piano relax',
-    'rock clásico 80s', 'pop latino', 'deep house mix', 'bossa nova classics',
-    'música electrónica ambient', 'k-pop hits', 'rock en español', 'cumbia suave',
-]
+RADIO_FALLBACK_QUERIES = RADIO_SEED_MOODS
 
 # Reglas clásicas del propietario: géneros/estilos que la radio NO reproduce.
 # Se aplican al título y al artista de cada candidata (y a las queries de
@@ -1759,14 +1769,65 @@ def _load_radio():
             state.setdefault('request_stats', {})
             if not isinstance(state.get('request_stats'), dict):
                 state['request_stats'] = {}
+            state.setdefault('discovered_moods', {})
+            state.setdefault('top_index', 0)
             return state
     except Exception:
-        return {'current': None, 'queue': [], 'history': [], 'request_stats': {}}
+        return {'current': None, 'queue': [], 'history': [], 'request_stats': {}, 'discovered_moods': {}, 'top_index': 0}
 
 
 def _save_radio(state):
     with open(RADIO_FILE, 'w') as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+
+def _normalize_mood(text):
+    """Mood normalizado (listo para comparar) y su forma limpia para query."""
+    t = _normalize(str(text or '').strip())
+    if not t:
+        return '', ''
+    return t, str(text).strip()[:80]
+
+
+def _radio_moods(state):
+    """Pool de moods descubiertos + semilla. Devuelve {mood_norm: {mood, uses}}."""
+    moods = {_normalize_mood(m)[0]: {'mood': m, 'uses': 0} for m in RADIO_SEED_MOODS}
+    for key, entry in (state.get('discovered_moods') or {}).items():
+        if isinstance(entry, dict):
+            moods[key] = entry
+    return moods
+
+
+def _radio_discover_mood(state, mood):
+    """Registra un mood (de una canción reproducida o solicitada) para que el
+    random lo reutilice. Autofeedback: cada canción alimenta sus propios moods."""
+    norm, clean = _normalize_mood(mood)
+    if not norm or _radio_is_blocked(norm):
+        return
+    discovered = state.setdefault('discovered_moods', {})
+    cur = discovered.get(norm) or {'mood': clean, 'uses': 0}
+    cur['mood'] = clean
+    cur['uses'] = int(cur.get('uses') or 0) + 1
+    cur['last_used_at'] = datetime.datetime.utcnow().isoformat() + 'Z'
+    discovered[norm] = cur
+
+
+def _radio_pick_mood(state):
+    """Escoge un mood del pool con peso por uso (los más usados suenan más,
+    pero todos tienen chance)."""
+    moods = _radio_moods(state)
+    items = list(moods.values())
+    if not items:
+        return random.choice(RADIO_SEED_MOODS)
+    weights = [1 + (int(i.get('uses') or 0) ** 0.5) for i in items]
+    total = sum(weights)
+    r = random.uniform(0, total)
+    acc = 0
+    for item, w in zip(items, weights):
+        acc += w
+        if r <= acc:
+            return item['mood']
+    return items[-1]['mood']
 
 
 def _radio_recent_ids(state):
@@ -1939,6 +2000,10 @@ def _radio_register_request(state, found, query=''):
         )
         state['request_stats'] = dict(ordered[:RADIO_MAX_REQUEST_STATS])
 
+    # Cada solicitud alimenta el pool de moods descubiertos (autofeedback)
+    if query:
+        _radio_discover_mood(state, query)
+
 
 def _radio_top_requested(state):
     """Devuelve las diez canciones con más solicitudes, sin exponer datos internos."""
@@ -1969,6 +2034,17 @@ def _radio_top_requested(state):
         reverse=True,
     )
     return top[:10]
+
+
+def _radio_public_moods(state, limit=20):
+    """Moods descubiertos ordenados por uso (los más usados primero)."""
+    moods = _radio_moods(state)
+    items = [
+        {'mood': e['mood'], 'uses': int(e.get('uses') or 0)}
+        for e in moods.values() if isinstance(e, dict) and e.get('mood')
+    ]
+    items.sort(key=lambda e: e['uses'], reverse=True)
+    return items[:limit]
 
 
 def _radio_resolve_link(video_id):
@@ -2011,31 +2087,55 @@ def _radio_pick_next(state):
             }
         logger.warning(f"📻 Radio: no se pudo convertir sugerencia {item.get('video_id')}, saltando")
 
-    # cola vacía → rotación automática por mood/género
-    tried_queries = random.sample(RADIO_FALLBACK_QUERIES, k=min(4, len(RADIO_FALLBACK_QUERIES)))
-    for query in tried_queries:
-        results = music_server.search_youtube(query, max_results=5)
-        candidates = [
-            r for r in results
-            if r.get('id') not in recent
-            and not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))
-        ]
-        if not candidates:
-            candidates = [r for r in results if not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))]
-        for candidate in candidates:
-            conv = _radio_resolve_link(candidate['id'])
-            if conv:
-                return {
-                    'video_id': candidate['id'],
-                    'title': candidate.get('title', 'Sin título'),
-                    'artist': candidate.get('uploader', ''),
-                    'thumbnail': candidate.get('thumbnail', ''),
-                    'duration': min(candidate.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
-                    'link': conv.get('link'),
-                    'started_at': time.time(),
-                    'suggested_by': 'AllMusic AI Radio',
-                    'reason': f'rotación automática: {query}',
-                }
+    # cola vacía → 50% top más pedidos (sucesivo), 50% random
+    top = _radio_top_requested(state)
+    use_top = random.random() < 0.5 and top
+
+    if use_top:
+        idx = state.get('top_index', 0) % len(top)
+        item = top[idx]
+        state['top_index'] = (idx + 1) % len(top)
+        conv = _radio_resolve_link(item['video_id'])
+        if conv:
+            return {
+                'video_id': item['video_id'],
+                'title': item.get('title', 'Sin título'),
+                'artist': item.get('artist', ''),
+                'thumbnail': item.get('thumbnail', ''),
+                'duration': min(item.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
+                'link': conv.get('link'),
+                'started_at': time.time(),
+                'suggested_by': 'AllMusic AI Radio',
+                'reason': f'top pedidos #{idx+1} ({item.get("request_count")} pedidos)',
+            }
+
+    # rotación automática por mood del pool descubierto (autofeedback)
+    query = _radio_pick_mood(state)
+    results = music_server.search_youtube(query, max_results=10)
+    candidates = [
+        r for r in results
+        if r.get('id') not in recent
+        and not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))
+    ]
+    if not candidates:
+        candidates = [r for r in results if not _radio_is_blocked(r.get('title', '') + ' ' + r.get('uploader', ''))]
+    if candidates:
+        candidate = random.choice(candidates)
+        conv = _radio_resolve_link(candidate['id'])
+        if conv:
+            _radio_discover_mood(state, query)
+            return {
+                'video_id': candidate['id'],
+                'title': candidate.get('title', 'Sin título'),
+                'artist': candidate.get('uploader', ''),
+                'thumbnail': candidate.get('thumbnail', ''),
+                'duration': min(candidate.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
+                'link': conv.get('link'),
+                'started_at': time.time(),
+                'suggested_by': 'AllMusic AI Radio',
+                'mood': query,
+                'reason': f'rotación automática: {query}',
+            }
     return None
 
 
@@ -2128,6 +2228,7 @@ def radio_now():
                 'queue': public_queue[:20],
                 'history': master.get('history', [])[:10],
                 'top_requested': _radio_top_requested(state),
+                'moods': _radio_public_moods(state),
             })
         return jsonify({
             'playing': False,
@@ -2137,6 +2238,7 @@ def radio_now():
             'queue': public_queue[:20],
             'history': master.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
+            'moods': _radio_public_moods(state),
         })
     cur = state.get('current')
     if not cur:
@@ -2145,6 +2247,7 @@ def radio_now():
             'queue': public_queue[:20],
             'history': state.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
+            'moods': _radio_public_moods(state),
         })
     elapsed = time.time() - cur.get('started_at', 0)
     track = {k: v for k, v in cur.items() if k != 'started_at'}
@@ -2156,6 +2259,19 @@ def radio_now():
         'queue': public_queue[:20],
         'history': state.get('history', [])[:10],
         'top_requested': _radio_top_requested(state),
+        'moods': _radio_public_moods(state),
+    })
+
+
+@app.route('/radio/moods')
+def radio_moods():
+    """Moods descubiertos (autofeedback): los que la radio aprende al reproducir
+    o que la gente/agentes solicitan. Ordenados por más usados primero."""
+    with RADIO_LOCK:
+        state = _load_radio()
+    return jsonify({
+        'moods': _radio_public_moods(state, 50),
+        'total': len(_radio_public_moods(state, 100000)),
     })
 
 
@@ -2171,7 +2287,7 @@ def radio_master_update():
         return jsonify({'error': 'link de transmisión inválido'}), 400
     now = time.time()
     elapsed = max(0, float(raw_track.get('elapsed') or 0))
-    allowed = ('video_id', 'title', 'artist', 'thumbnail', 'duration', 'link', 'suggested_by', 'reason')
+    allowed = ('video_id', 'title', 'artist', 'thumbnail', 'duration', 'link', 'suggested_by', 'reason', 'mood')
     track = {key: raw_track.get(key) for key in allowed if raw_track.get(key) is not None}
     track['started_at'] = now - elapsed
     raw_queue = data.get('queue') or []
