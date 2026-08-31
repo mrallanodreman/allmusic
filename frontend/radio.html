@@ -587,6 +587,25 @@ a{color:inherit}
   from{transform:translateX(0)}
   to{transform:translateX(-200%)}
 }
+
+/* Runtime-only controls stay semantic without leaking into the broadcast artwork. */
+#stateBadge,#blacklistChips,#blForm{
+  display:none!important;
+}
+.dynamic-live-copy,.dynamic-top,.dynamic-mood,.dynamic-queue,.dynamic-history{
+  background:
+    radial-gradient(circle at 18% 22%,rgba(35,80,82,.16),transparent 30%),
+    radial-gradient(circle at 78% 75%,rgba(255,255,255,.035),transparent 35%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px),
+    #050606!important;
+  border:1px solid rgba(245,245,243,.32)!important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.65),0 5px 0 rgba(0,0,0,.32)!important;
+}
+.dynamic-live-copy{border-left:3px solid var(--pink)!important;}
+.dynamic-top{border-left:3px solid var(--cyan)!important;}
+.dynamic-mood{border-left:3px solid var(--yellow)!important;}
+.dynamic-queue{border-left:3px solid var(--cyan)!important;}
+.dynamic-history{border-left:3px solid var(--pink)!important;}
 </style>
 </head>
 <body>
