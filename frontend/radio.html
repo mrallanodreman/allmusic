@@ -619,7 +619,7 @@ a{color:inherit}
   z-index:12!important;
 }
 
-/* Mood panel: decorative art is layered; the label is live DOM text. */
+/* Mood panel: each decorative piece is a transparent full-panel layer; only copy changes live. */
 .mood-art-stack{
   position:absolute!important;
   left:18.66%!important;
@@ -632,44 +632,14 @@ a{color:inherit}
 }
 .mood-art-stack img{
   position:absolute!important;
+  inset:0!important;
   display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:fill!important;
   pointer-events:none!important;
   user-select:none!important;
 }
-.mood-art-paper{
-  left:3.0%!important;
-  top:3.0%!important;
-  width:91.7%!important;
-  height:51.6%!important;
-  object-fit:fill!important;
-}
-.mood-art-label{
-  left:.6%!important;
-  top:.6%!important;
-  width:22.6%!important;
-  height:21.1%!important;
-  object-fit:fill!important;
-}
-.mood-art-lightning{
-  left:82.4%!important;
-  top:0!important;
-  width:16.2%!important;
-  height:50.2%!important;
-  object-fit:fill!important;
-}
-.mood-art-face{
-  left:69.3%!important;
-  top:45.8%!important;
-  width:28.3%!important;
-  height:40.7%!important;
-  object-fit:fill!important;
-}
-.mood-art-chip{top:64.0%!important;height:12.4%!important;object-fit:fill!important;}
-.mood-chip-lofi{left:1.05%!important;width:11.3%!important;}
-.mood-chip-synthwave{left:13.2%!important;width:17.4%!important;}
-.mood-chip-rock80s{left:31.1%!important;width:13.2%!important;}
-.mood-chip-jazzlate{left:45.1%!important;width:16.8%!important;}
-.mood-chip-nightdance{left:63.3%!important;width:18.9%!important;}
 .dynamic-mood{
   left:21.0%!important;
   top:66.0%!important;
@@ -807,6 +777,18 @@ function bindRadioFallback(img){
   if(!img)return;
   img.onerror=()=>{img.onerror=null;img.src=RADIO_FALLBACK;};
 }
+function setImageWithFallback(img,url){
+  if(!img)return;
+  bindRadioFallback(img);
+  const requested=String(url||'');
+  img.src=RADIO_FALLBACK;
+  if(!/^https?:\/\//i.test(requested)||requested===RADIO_FALLBACK)return;
+  const candidate=new Image();
+  candidate.onload=()=>{img.src=candidate.src;};
+  candidate.onerror=()=>{};
+  img._radioCandidate=candidate;
+  candidate.src=requested;
+}
 bindRadioFallback(document.getElementById('thumb'));
 const LS_RADIO_LISTENING='allmusic_radio_listening';
 let radioStreamUrl='';
@@ -888,10 +870,8 @@ function renderState(d){
     badge.className='badge live'; badge.querySelector('#stateText').textContent='En vivo';
     const t=d.track||{};
     const thumb=document.getElementById('thumb');
-    const fallback=RADIO_FALLBACK;
-    const remoteFallback=t.video_id?'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg':fallback;
-    bindRadioFallback(thumb);
-    thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:remoteFallback;
+    const remoteFallback=t.video_id?'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg':RADIO_FALLBACK;
+    setImageWithFallback(thumb,(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:remoteFallback);
     document.getElementById('title').textContent=t.title||'—';
     document.getElementById('artist').textContent=t.artist||t.uploader||'C24';
     setTicker((t.title||'C24 Radio')+' // '+(t.artist||t.uploader||'C24'));
@@ -910,8 +890,8 @@ function renderState(d){
   document.body.classList.toggle('has-queue-data',queue.length>0);
   document.getElementById('queueCount').textContent=queue.length?String(queue.length).padStart(2,'0')+' EN COLA':'COLA VACÍA';
   if(!queue.length){ q.innerHTML='<li class="empty">La cola está vacía.</li>'; }
-  else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${(x.thumbnail&&x.thumbnail.startsWith('http'))?x.thumbnail:'https://i.ytimg.com/vi/'+(x.video_id||'')+'/hqdefault.jpg'}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}${x.eta_minutes!=null?' · '+(x.eta_minutes<1?'menos de 1 min':x.eta_minutes+' min'):''}</div></span></li>`).join('');
-  q.querySelectorAll('img').forEach(bindRadioFallback);
+  else q.innerHTML=queue.map((x,i)=>`<li class="q"><span class="n">${String(i+1).padStart(2,'0')}</span><img src="${RADIO_FALLBACK}" data-image-src="${topRequestedThumb(x)}" alt=""><span style="min-width:0"><div class="tit">${escapeHtml(x.title||'')}</div><div class="sub">${escapeHtml(x.artist||'')}${x.suggested_by?' · '+escapeHtml(x.suggested_by):''}${x.eta_minutes!=null?' · '+(x.eta_minutes<1?'menos de 1 min':x.eta_minutes+' min'):''}</div></span></li>`).join('');
+  q.querySelectorAll('img').forEach(img=>setImageWithFallback(img,img.dataset.imageSrc));
   const h=document.getElementById('historyList');
   document.body.classList.toggle('has-history-data',!!(d.history&&d.history.length));
   if(!d.history||!d.history.length){ h.innerHTML='<li class="empty">Todavía no hay historial.</li>'; }
@@ -979,7 +959,7 @@ function renderTopRequested(list){
     const width=Math.max(10,Math.round((count/max)*100));
     return '<li class="requested-item">' +
       '<span class="requested-rank">'+String(index+1).padStart(2,'0')+'</span>' +
-      '<img src="'+topRequestedThumb(item)+'" alt="" loading="lazy">' +
+      '<img src="'+RADIO_FALLBACK+'" data-image-src="'+topRequestedThumb(item)+'" alt="" loading="lazy">' +
       '<span class="requested-info">' +
         '<strong>'+escapeHtml(item.title||'Sin título')+'</strong>' +
         '<small>'+escapeHtml(item.artist||'C24')+'</small>' +
@@ -988,7 +968,7 @@ function renderTopRequested(list){
       '<span class="requested-count"><b>'+count+'</b><small>PEDIDOS</small></span>' +
     '</li>';
   }).join('');
-  panel.querySelectorAll('img').forEach(bindRadioFallback);
+  panel.querySelectorAll('img').forEach(img=>setImageWithFallback(img,img.dataset.imageSrc));
 }
 
 function renderMood(d){
