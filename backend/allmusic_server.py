@@ -1978,9 +1978,16 @@ def _radio_register_request(state, found, query=''):
     if not isinstance(item, dict):
         item = {}
     try:
-        previous_count = int(item.get('request_count') or 0)
+        # own_count = pedidos recibidos POR ESTA instancia (local o nube).
+        # migración: si venía de antes de la separación, arranca desde request_count.
+        own_count = int(item.get('own_count', item.get('request_count')) or 0)
     except (TypeError, ValueError):
-        previous_count = 0
+        own_count = 0
+    try:
+        peer_count = int(item.get('peer_count') or 0)
+    except (TypeError, ValueError):
+        peer_count = 0
+    own_count += 1
 
     item.update({
         'video_id': video_id,
@@ -1988,7 +1995,9 @@ def _radio_register_request(state, found, query=''):
         'artist': found.get('uploader') or found.get('artist') or item.get('artist', ''),
         'thumbnail': found.get('thumbnail') or item.get('thumbnail', ''),
         'duration': found.get('duration') or item.get('duration') or 0,
-        'request_count': previous_count + 1,
+        'own_count': own_count,
+        'peer_count': peer_count,
+        'request_count': own_count + peer_count,
         'last_requested_at': datetime.datetime.utcnow().isoformat() + 'Z',
         'last_query': str(query or '')[:200],
     })
@@ -2330,6 +2339,47 @@ def radio_master_update():
             'queue': effective_queue[:RADIO_MAX_QUEUE],
             'history': (data.get('history') or [])[:RADIO_MAX_HISTORY],
         }
+        # Unifica el ranking de "más pedidos": el heartbeat trae el top_requested
+        # de la otra instancia (own_count de ese lado) y aquí se fusiona como
+        # peer_count -- reemplazo, no suma, así el heartbeat repetido cada pocos
+        # segundos no infla el contador.
+        peer_top = data.get('request_stats_top') or []
+        if isinstance(peer_top, list):
+            stats = state.setdefault('request_stats', {})
+            if not isinstance(stats, dict):
+                stats = {}
+                state['request_stats'] = stats
+            for entry in peer_top:
+                if not isinstance(entry, dict):
+                    continue
+                vid = entry.get('video_id')
+                if not vid:
+                    continue
+                try:
+                    reported = int(entry.get('request_count') or 0)
+                except (TypeError, ValueError):
+                    continue
+                if reported <= 0:
+                    continue
+                item = stats.get(vid)
+                if not isinstance(item, dict):
+                    item = {}
+                try:
+                    own_count = int(item.get('own_count', 0) or 0)
+                except (TypeError, ValueError):
+                    own_count = 0
+                item.update({
+                    'video_id': vid,
+                    'title': entry.get('title', item.get('title', 'Sin título')),
+                    'artist': entry.get('artist', item.get('artist', '')),
+                    'thumbnail': entry.get('thumbnail') or item.get('thumbnail', ''),
+                    'duration': entry.get('duration') or item.get('duration') or 0,
+                    'own_count': own_count,
+                    'peer_count': reported,
+                    'request_count': own_count + reported,
+                    'last_requested_at': entry.get('last_requested_at') or item.get('last_requested_at', ''),
+                })
+                stats[vid] = item
         if _radio_reconcile_master(state):
             effective_queue = _radio_effective_queue(state)
             state['master']['queue'] = effective_queue[:RADIO_MAX_QUEUE]
