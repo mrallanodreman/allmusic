@@ -1969,6 +1969,96 @@
                 font-size:9px;
             }
         }
+        /* ── RADIO HAND 3 / MISSING REFERENCE ELEMENTS ── */
+        @media(min-width:1200px){
+            body.radio-active .tabs .tab-btn:nth-child(5){
+                order:-1;
+            }
+            body.radio-active .radio-rail-status b{
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                min-width:64px;
+                min-height:34px;
+                padding:4px 7px;
+                background:url('assets/radio/radio-paper-cyan.svg') center/100% 100% no-repeat;
+                color:#050505;
+                font-size:16px;
+                text-shadow:none;
+                transform:rotate(2deg);
+            }
+            body.radio-active .radio-rail-now,
+            body.radio-active .radio-rail-mood{
+                display:none;
+            }
+            body.radio-active .radio-rail::after{
+                display:none;
+            }
+            body.radio-active .radio-stage{
+                z-index:40;
+            }
+            body.radio-active .radio-stage>.radio-ticker{
+                z-index:100;
+            }
+            body.radio-active .radio-mood-panel::after{
+                top:8px;
+                right:12px;
+                bottom:auto;
+                width:92px;
+                height:120px;
+            }
+            body.radio-active .radio-now-meta::after{
+                content:"";
+                position:absolute;
+                z-index:3;
+                top:10px;
+                right:-82px;
+                width:68px;
+                height:68px;
+                background:url('assets/radio/radio-star.svg') center/contain no-repeat;
+                transform:rotate(8deg);
+                pointer-events:none;
+            }
+            body.radio-active .radio-stage-lists .radio-list-panel:first-child{
+                position:relative;
+            }
+            body.radio-active .radio-stage-lists .radio-list-panel:first-child::after{
+                content:"";
+                position:absolute;
+                z-index:0;
+                right:18px;
+                bottom:7px;
+                width:125px;
+                height:88px;
+                background:url('assets/radio/radio-tv.svg') center/contain no-repeat;
+                opacity:.38;
+                transform:rotate(-3deg);
+                pointer-events:none;
+            }
+            body.radio-active .radio-stage-lists .radio-list-panel .hist-header,
+            body.radio-active .radio-stage-lists .radio-list-panel .track-list{
+                position:relative;
+                z-index:1;
+            }
+            body.radio-active .radio-ticker-stay{
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                min-width:92px;
+                height:43px;
+                margin-right:10px;
+                padding:4px 8px;
+                background:url('assets/radio/radio-paper-magenta.svg') center/100% 100% no-repeat;
+                color:#050505;
+                font:900 12px/.82 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+                letter-spacing:.04em;
+                text-align:center;
+                transform:rotate(-3deg);
+            }
+        }
+        @media(max-width:1199px){
+            body.radio-active .radio-ticker-stay{display:none;}
+        }
 </style>
 </head>
 <body>
@@ -2169,6 +2259,7 @@
                 <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
                 <span class="radio-ticker-live" id="radioLive">Cargando…</span>
                 <span class="radio-ticker-mark"><img src="assets/radio/c24-radio.png" alt=""> ALLMUSIC PRO BROADCAST 24/7</span>
+                <span class="radio-ticker-stay">STAY<br>TUNED!</span>
             </div>
 
             <div class="radio-transmission-dock" aria-label="Canal de transmisión">
@@ -2257,7 +2348,7 @@
                     <section class="radio-list-panel">
                         <div class="hist-header">
                             <span>Siguiente en la cola</span>
-                            <span>QUEUE</span>
+                            <span>ON DECK</span>
                         </div>
                         <div class="track-list" id="radioQueueList"><div class="empty">Cargando…</div></div>
                     </section>
@@ -2265,7 +2356,7 @@
                     <section class="radio-list-panel">
                         <div class="hist-header">
                             <span>Historial reciente</span>
-                            <span>HISTORY</span>
+                            <span>PLAYED</span>
                         </div>
                         <div class="track-list" id="radioHistoryList"><div class="empty">Cargando…</div></div>
                     </section>
