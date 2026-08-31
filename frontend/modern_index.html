@@ -2059,6 +2059,11 @@
         @media(max-width:1199px){
             body.radio-active .radio-ticker-stay{display:none;}
         }
+        @media(min-width:1200px){
+            body.radio-active .radio-ticker{
+                grid-template-columns:auto minmax(0,1fr) auto minmax(175px,auto) minmax(92px,auto);
+            }
+        }
 </style>
 </head>
 <body>
