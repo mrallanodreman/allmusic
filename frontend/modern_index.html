@@ -1505,6 +1505,20 @@
             body.radio-active .radio-mood-value{font-size:54px;}
         }
 
+
+        /* Radio viewport lock: the broadcast is the whole screen */
+        body.radio-active .app{
+            height:100vh!important;
+            max-height:100vh;
+        }
+        body.radio-active .app-footer{
+            display:none!important;
+        }
+        body.radio-active .radio-stage-lists{
+            flex:0 0 280px!important;
+            height:280px!important;
+        }
+
 </style>
 </head>
 <body>
