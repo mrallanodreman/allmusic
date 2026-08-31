@@ -258,7 +258,7 @@ a{color:inherit}
     <button type="submit" aria-label="Pedir">Pedir</button>
   </form>
 
-  <img class="dynamic-cover accessibility-data" id="thumb" src="./assets/radio/radio-now-cover.png" alt="Portada del tema actual">
+  <img class="dynamic-cover accessibility-data" id="thumb" src="./assets/radio/radio-now-cover.png" alt="Portada del tema actual" onerror="this.onerror=null;this.src='./assets/radio/radio-now-cover.png';">
   <div class="dynamic-live-copy accessibility-data" aria-live="polite">
     <div class="now-title" id="title">80s Rock Songs Everyone Knows</div>
     <div class="now-artist" id="artist">Best of 80s Rock Music Playlist</div>
@@ -320,6 +320,7 @@ function bindRadioFallback(img){
   if(!img)return;
   img.onerror=()=>{img.onerror=null;img.src=RADIO_FALLBACK;};
 }
+bindRadioFallback(document.getElementById('thumb'));
 const LS_RADIO_LISTENING='allmusic_radio_listening';
 let radioStreamUrl='';
 let radioListening=localStorage.getItem(LS_RADIO_LISTENING)==='1';
@@ -402,8 +403,8 @@ function renderState(d){
     const thumb=document.getElementById('thumb');
     const fallback=RADIO_FALLBACK;
     const remoteFallback=t.video_id?'https://i.ytimg.com/vi/'+(t.video_id||'')+'/hqdefault.jpg':fallback;
+    bindRadioFallback(thumb);
     thumb.src=(t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:remoteFallback;
-    thumb.onerror=()=>{ if(thumb.src!==fallback) thumb.src=fallback; };
     document.getElementById('title').textContent=t.title||'—';
     document.getElementById('artist').textContent=t.artist||t.uploader||'C24';
     setTicker((t.title||'C24 Radio')+' // '+(t.artist||t.uploader||'C24'));
