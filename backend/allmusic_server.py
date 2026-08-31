@@ -1702,6 +1702,7 @@ RADIO_LOCK = threading.Lock()
 RADIO_MAX_QUEUE = 30
 RADIO_MAX_HISTORY = 25
 RADIO_MAX_REQUEST_STATS = 250
+RADIO_QUEUE_REVIEW_SECONDS = 5
 RADIO_FALLBACK_TRACK_SECONDS = 210  # usado si no hay duración conocida
 # Tope duro para no quedarse pegado. Subido de 480 a 3600 (1h): el reproductor
 # del Atico controla el fin REAL de cada pista via media_position y pide avanzar
@@ -1774,6 +1775,112 @@ def _radio_recent_ids(state):
     if cur:
         ids.add(cur.get('video_id'))
     return ids
+
+
+def _radio_item_key(item):
+    """Identificador estable para reconciliar la cola local con el master."""
+    if not isinstance(item, dict):
+        return ''
+    return str(item.get('video_id') or item.get('id') or item.get('request_id') or '')
+
+
+def _radio_merge_queues(primary, secondary):
+    """Prioriza solicitudes pendientes y elimina duplicados al sincronizar."""
+    merged = []
+    seen = set()
+    for source in (primary or [], secondary or []):
+        for item in source:
+            if not isinstance(item, dict):
+                continue
+            key = _radio_item_key(item)
+            if key and key in seen:
+                continue
+            if key:
+                seen.add(key)
+            merged.append(item)
+            if len(merged) >= RADIO_MAX_QUEUE:
+                return merged
+    return merged
+
+
+def _radio_master_is_active(state, now=None):
+    """Indica si el master sigue emitiendo y puede recibir solicitudes."""
+    master = state.get('master') or {}
+    if not isinstance(master, dict) or not master.get('playing') or not master.get('track'):
+        return False
+    try:
+        age = (time.time() if now is None else now) - float(master.get('updated_at') or 0)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= age <= RADIO_MASTER_TTL_SECONDS
+
+
+def _radio_effective_queue(state):
+    """Cola que deben ver la interfaz y el reproductor master."""
+    if _radio_master_is_active(state):
+        master = state.get('master') or {}
+        return _radio_merge_queues(
+            state.get('queue', []),
+            master.get('queue', []),
+        )[:RADIO_MAX_QUEUE]
+    return list(state.get('queue') or [])[:RADIO_MAX_QUEUE]
+
+
+def _radio_reconcile_master(state):
+    """Devuelve a la cola una petición que el loop local tomó antes que el master."""
+    if not _radio_master_is_active(state):
+        return False
+    current = state.get('current')
+    master_track = (state.get('master') or {}).get('track') or {}
+    current_key = _radio_item_key(current)
+    master_key = _radio_item_key(master_track)
+    if not current_key or current_key == master_key:
+        return False
+
+    source = str((current or {}).get('suggested_by') or '').lower()
+    if 'allmusic ai radio' not in source:
+        pending = list(state.get('queue') or [])
+        if not any(_radio_item_key(item) == current_key for item in pending):
+            pending.insert(0, {k: v for k, v in current.items() if k != 'started_at'})
+            state['queue'] = pending[:RADIO_MAX_QUEUE]
+    state['current'] = None
+    return True
+
+
+def _radio_eta_seconds(state, target):
+    """Calcula una ETA aproximada sin interrumpir la pista que está al aire."""
+    target_key = _radio_item_key(target)
+    queue = _radio_effective_queue(state)
+    target_position = next(
+        (index for index, item in enumerate(queue) if _radio_item_key(item) == target_key),
+        None,
+    )
+    if target_position is None:
+        return 0
+
+    active = _radio_master_is_active(state)
+    current = ((state.get('master') or {}).get('track') if active else state.get('current')) or {}
+    remaining = 0.0
+    if current:
+        try:
+            duration = float(current.get('duration') or RADIO_FALLBACK_TRACK_SECONDS)
+        except (TypeError, ValueError):
+            duration = float(RADIO_FALLBACK_TRACK_SECONDS)
+        try:
+            started_at = float(current.get('started_at') or 0)
+        except (TypeError, ValueError):
+            started_at = 0
+        elapsed = max(0, time.time() - started_at) if started_at else 0
+        remaining = max(0, duration - elapsed)
+
+    for item in queue[:target_position]:
+        try:
+            remaining += float(item.get('duration') or RADIO_FALLBACK_TRACK_SECONDS)
+        except (TypeError, ValueError):
+            remaining += RADIO_FALLBACK_TRACK_SECONDS
+    return int(max(0, remaining))
+
+
 
 
 def _radio_register_request(state, found, query=''):
@@ -1922,8 +2029,12 @@ def _radio_pick_next(state):
 def _radio_tick():
     with RADIO_LOCK:
         state = _load_radio()
-        cur = state.get('current')
         now = time.time()
+        if _radio_reconcile_master(state):
+            _save_radio(state)
+        if _radio_master_is_active(state, now):
+            return
+        cur = state.get('current')
         needs_next = True
         if cur:
             elapsed = now - cur.get('started_at', 0)
@@ -1948,7 +2059,7 @@ def _radio_loop():
             _radio_tick()
         except Exception as e:
             logger.error(f"❌ Radio loop error: {e}")
-        time.sleep(5)
+        time.sleep(RADIO_QUEUE_REVIEW_SECONDS)
 
 
 @app.route('/radio')
@@ -1984,7 +2095,11 @@ def radio_blacklist_admin_edit():
 
 @app.route('/radio/now')
 def radio_now():
-    state = _load_radio()
+    with RADIO_LOCK:
+        state = _load_radio()
+        if _radio_reconcile_master(state):
+            _save_radio(state)
+        public_queue = _radio_effective_queue(state)
     master = state.get('master')
     if master:
         age = time.time() - master.get('updated_at', 0)
@@ -1997,7 +2112,7 @@ def radio_now():
                 'master': True,
                 'stream_url': RADIO_LIVE_STREAM_URL,
                 'track': public_track,
-                'queue': master.get('queue', [])[:20],
+                'queue': public_queue[:20],
                 'history': master.get('history', [])[:10],
                 'top_requested': _radio_top_requested(state),
             })
@@ -2006,7 +2121,7 @@ def radio_now():
             'master': True,
             'stream_url': RADIO_LIVE_STREAM_URL,
             'master_offline': age > RADIO_MASTER_TTL_SECONDS,
-            'queue': master.get('queue', [])[:20],
+            'queue': public_queue[:20],
             'history': master.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
         })
@@ -2014,7 +2129,7 @@ def radio_now():
     if not cur:
         return jsonify({
             'playing': False,
-            'queue': state.get('queue', []),
+            'queue': public_queue[:20],
             'history': state.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
         })
@@ -2025,7 +2140,7 @@ def radio_now():
         'playing': True,
         'stream_url': RADIO_LIVE_STREAM_URL,
         'track': track,
-        'queue': state.get('queue', [])[:20],
+        'queue': public_queue[:20],
         'history': state.get('history', [])[:10],
         'top_requested': _radio_top_requested(state),
     })
@@ -2046,23 +2161,55 @@ def radio_master_update():
     allowed = ('video_id', 'title', 'artist', 'thumbnail', 'duration', 'link', 'suggested_by', 'reason')
     track = {key: raw_track.get(key) for key in allowed if raw_track.get(key) is not None}
     track['started_at'] = now - elapsed
+    raw_queue = data.get('queue') or []
+    reported_queue = [item for item in raw_queue[:RADIO_MAX_QUEUE] if isinstance(item, dict)]
     with RADIO_LOCK:
         state = _load_radio()
+        pending = list(state.get('queue') or [])
+        current_key = _radio_item_key(track)
+        pending_for_master = [
+            item for item in pending
+            if _radio_item_key(item) != current_key
+        ]
+        effective_queue = _radio_merge_queues(pending_for_master, reported_queue)
+        acknowledged_keys = {
+            _radio_item_key(item) for item in reported_queue
+            if _radio_item_key(item)
+        }
+        if current_key:
+            acknowledged_keys.add(current_key)
+        state['queue'] = [
+            item for item in pending
+            if _radio_item_key(item) not in acknowledged_keys
+        ][:RADIO_MAX_QUEUE]
         state['master'] = {
             'updated_at': now,
             'playing': bool(data.get('playing')),
             'track': track,
-            'queue': (data.get('queue') or [])[:RADIO_MAX_QUEUE],
+            'queue': effective_queue[:RADIO_MAX_QUEUE],
             'history': (data.get('history') or [])[:RADIO_MAX_HISTORY],
         }
+        if _radio_reconcile_master(state):
+            effective_queue = _radio_effective_queue(state)
+            state['master']['queue'] = effective_queue[:RADIO_MAX_QUEUE]
+        else:
+            effective_queue = _radio_effective_queue(state)
         _save_radio(state)
-    return jsonify({'ok': True, 'master': True})
+    return jsonify({
+        'ok': True,
+        'master': True,
+        'queue': effective_queue[:20],
+        'next_request': effective_queue[0] if effective_queue else None,
+    })
 
 
 @app.route('/radio/queue')
 def radio_queue():
-    state = _load_radio()
-    return jsonify({'queue': state.get('queue', [])})
+    with RADIO_LOCK:
+        state = _load_radio()
+        if _radio_reconcile_master(state):
+            _save_radio(state)
+        return jsonify({'queue': _radio_effective_queue(state)})
 
 
 @app.route('/radio/suggest', methods=['POST'])
@@ -2079,6 +2226,7 @@ def radio_suggest():
         return jsonify({'error': 'Estilo bloqueado por las reglas de la radio'}), 403
     with RADIO_LOCK:
         state = _load_radio()
+        _radio_reconcile_master(state)
         queue = state.setdefault('queue', [])
         if len(queue) >= RADIO_MAX_QUEUE:
             return jsonify({'error': 'Cola llena, intenta más tarde'}), 429
@@ -2089,6 +2237,7 @@ def radio_suggest():
         if _radio_is_blocked(found.get('title', '') + ' ' + found.get('uploader', '')):
             return jsonify({'error': 'El resultado cae en la lista negra de la radio'}), 403
         entry = {
+            'request_id': secrets.token_hex(8),
             'video_id': found['id'],
             'title': found.get('title', 'Sin título'),
             'artist': found.get('uploader', ''),
@@ -2100,10 +2249,21 @@ def radio_suggest():
         }
         queue.append(entry)
         _radio_register_request(state, found, query)
+        if _radio_master_is_active(state):
+            state['master']['queue'] = _radio_effective_queue(state)
+        public_queue = _radio_effective_queue(state)
+        position = next(
+            (index + 1 for index, item in enumerate(public_queue)
+             if _radio_item_key(item) == _radio_item_key(entry)),
+            len(public_queue),
+        )
+        eta_seconds = _radio_eta_seconds(state, entry)
         _save_radio(state)
         return jsonify({
             'queued': True,
-            'position': len(queue),
+            'position': position,
+            'eta_seconds': eta_seconds,
+            'eta_minutes': max(0, int(round(eta_seconds / 60))),
             'track': entry,
             'top_requested': _radio_top_requested(state),
         }), 201
