@@ -1867,6 +1867,38 @@
                 height:38px;
             }
         }
+        /* ── RADIO HAND 3 / FINAL PIXEL ALIGNMENT ── */
+        @media(min-width:1200px){
+            body.radio-active .radio-stage-left .radio-now{
+                align-items:start;
+                padding:8px 14px 82px;
+            }
+            body.radio-active .radio-stage-right .radio-stage-lists{
+                grid-template-columns:.95fr 1.05fr;
+                flex:0 0 300px!important;
+                height:300px!important;
+            }
+            body.radio-active .radio-intro-stamp{
+                top:18px;
+            }
+            body.radio-active .radio-intro-kicker{
+                min-height:112px;
+                transform:rotate(-4deg) translateY(8px);
+            }
+        }
+        @media(min-width:1400px){
+            body.radio-active .radio-intro-kicker{
+                width:420px;
+                min-width:420px;
+                min-height:112px;
+                font-size:90px;
+                transform:rotate(-4deg) translateY(8px);
+            }
+            body.radio-active .radio-intro-stamp{
+                top:18px;
+                right:70px;
+            }
+        }
 </style>
 </head>
 <body>
