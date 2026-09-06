@@ -19,10 +19,13 @@ COPY backend/ ./backend/
 # Copiar frontend
 COPY frontend/ ./frontend/
 
-# Railway no soporta VOLUME; usar Railway Volumes si se necesita persistencia
 RUN mkdir -p /app/data
 ENV ALLMUSIC_DATA_DIR=/app/data
 
-EXPOSE 2426
+# EdgeRadio: IA Radio (:2426) + cabina master stream (:2427)
+EXPOSE 2426 2427
 
-CMD ["python", "-u", "backend/allmusic_server.py"]
+COPY start.sh .
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]

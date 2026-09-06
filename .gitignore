@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.bak
+.bak_*
+node_modules/
+data/

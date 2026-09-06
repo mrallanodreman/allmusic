@@ -2235,10 +2235,12 @@ def radio_now():
             _save_radio(state)
         public_queue = _radio_public_queue(state, 20)
     master = state.get('master')
+    master_offline = False
     if master:
         age = time.time() - master.get('updated_at', 0)
         track = master.get('track')
-        if age <= RADIO_MASTER_TTL_SECONDS and master.get('playing') and track:
+        master_offline = age > RADIO_MASTER_TTL_SECONDS
+        if not master_offline and master.get('playing') and track:
             public_track = {k: v for k, v in track.items() if k != 'started_at'}
             public_track['elapsed'] = round(time.time() - track.get('started_at', time.time()), 1)
             return jsonify({
@@ -2251,20 +2253,12 @@ def radio_now():
                 'top_requested': _radio_top_requested(state),
                 'moods': _radio_public_moods(state),
             })
-        return jsonify({
-            'playing': False,
-            'master': True,
-            'stream_url': RADIO_LIVE_STREAM_URL,
-            'master_offline': age > RADIO_MASTER_TTL_SECONDS,
-            'queue': public_queue[:20],
-            'history': master.get('history', [])[:10],
-            'top_requested': _radio_top_requested(state),
-            'moods': _radio_public_moods(state),
-        })
     cur = state.get('current')
     if not cur:
         return jsonify({
             'playing': False,
+            'master': bool(master),
+            'master_offline': master_offline,
             'queue': public_queue[:20],
             'history': state.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
@@ -2275,6 +2269,8 @@ def radio_now():
     track['elapsed'] = round(elapsed, 1)
     return jsonify({
         'playing': True,
+        'master': bool(master),
+        'master_offline': master_offline,
         'stream_url': RADIO_LIVE_STREAM_URL,
         'track': track,
         'queue': public_queue[:20],
