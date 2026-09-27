@@ -89,8 +89,21 @@ def fanout(data):
                 pass
 
 
+SEEK_TAIL = 8
+
+
 def start_encoder(track):
     elapsed = max(0, float(track.get('elapsed') or 0))
+    duration = float(track.get('duration') or 0)
+    if duration > 0:
+        # El master puede reportar elapsed desfasado (grabación 'atascada' mucho
+        # más allá de la duración real). Buscar más allá del final deja el
+        # encoder mudo: clampa a la cola o re-emite desde el inicio.
+        tail = max(0, duration - SEEK_TAIL)
+        if elapsed >= duration:
+            elapsed = 0.0
+        elif elapsed > tail:
+            elapsed = tail
     command = [
         FFMPEG, '-nostdin', '-hide_banner', '-loglevel', 'error',
         '-re', '-ss', f'{elapsed:.2f}', '-i', track['link'],
@@ -184,13 +197,25 @@ class LiveRadioHandler(BaseHTTPRequestHandler):
             STATUS['clients'] = len(CLIENTS)
         try:
             self.live_headers()
+            misses = 0
             while True:
-                chunk = client.get(timeout=20)
+                try:
+                    chunk = client.get(timeout=20)
+                except queue.Empty:
+                    # Gaps cortos (ej. arranque de un nuevo encoder al cambiar
+                    # de pista) no deben tumbar la conexion -- solo si el
+                    # encoder lleva minutos sin producir nada asumimos que
+                    # esta muerto de verdad.
+                    misses += 1
+                    if misses >= 6:
+                        break
+                    continue
+                misses = 0
                 self.wfile.write(f'{len(chunk):X}\r\n'.encode('ascii'))
                 self.wfile.write(chunk)
                 self.wfile.write(b'\r\n')
                 self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError, TimeoutError, queue.Empty):
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
             pass
         finally:
             with CLIENTS_LOCK:
