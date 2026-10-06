@@ -8,6 +8,8 @@ from gi.repository import Gtk, Gst, GLib, GdkPixbuf, Gdk, Pango
 import requests
 import json
 import os
+import tempfile
+import secrets
 import threading
 import sys
 import time
@@ -29,7 +31,7 @@ def _load_env():
         if os.path.exists(CFG_FILE):
             with open(CFG_FILE) as f:
                 cfg = json.load(f)
-    except:
+    except Exception:
         pass
     API_BASE = os.environ.get('ALLMUSIC_API_BASE') or cfg.get('api_base', 'https://edgemarketing.art/allmusic')
     DL_DIR = cfg.get('dl_dir', os.path.expanduser('~/Descargas'))
@@ -46,6 +48,7 @@ class ThumbLoader:
     def __init__(self, size=(48, 48)):
         self.size = size
         self.cache = {}
+        self.MAX_CACHE = 100
 
     def get(self, url, callback):
         if url in self.cache:
@@ -60,16 +63,19 @@ class ThumbLoader:
                 try:
                     r = requests.get(attempt_url, headers=self.HEADERS, timeout=8)
                     if r.status_code == 200 and len(r.content) > 100:
-                        tmp = '/tmp/am_thumb_' + str(hash(attempt_url)) + '.jpg'
+                        tmp = os.path.join(tempfile.gettempdir(), 'am_thumb_' + secrets.token_hex(8) + '.jpg')
                         with open(tmp, 'wb') as f:
                             f.write(r.content)
                         pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp, self.size[0], self.size[1], True)
                         try: os.remove(tmp)
-                        except: pass
+                        except Exception: pass
                         break
-                except:
+                except Exception:
                     continue
             self.cache[url] = pix
+            if len(self.cache) > self.MAX_CACHE:
+                oldest = next(iter(self.cache))
+                self.cache.pop(oldest, None)
             if pix:
                 GLib.idle_add(callback, pix)
         threading.Thread(target=load, daemon=True).start()
@@ -309,7 +315,7 @@ class Player:
             ok, dur = self.pipeline.query_duration(Gst.Format.TIME)
             if ok:
                 return dur / Gst.SECOND
-        except:
+        except Exception:
             pass
         return 0
 
@@ -318,7 +324,7 @@ class Player:
             ok, pos = self.pipeline.query_position(Gst.Format.TIME)
             if ok:
                 return pos / Gst.SECOND
-        except:
+        except Exception:
             pass
         return 0
 
@@ -889,7 +895,7 @@ class MiniApp(Gtk.Window):
             os.makedirs(CFG_DIR, exist_ok=True)
             with open(CFG_FILE, 'w') as f:
                 json.dump({'x': x, 'y': y, 'api_base': API_BASE, 'dl_dir': DL_DIR}, f)
-        except:
+        except Exception:
             pass
 
     def load_config(self):
@@ -906,7 +912,7 @@ class MiniApp(Gtk.Window):
                     API_BASE = d['api_base']
                 if 'dl_dir' in d:
                     DL_DIR = d['dl_dir']
-        except:
+        except Exception:
             pass
 
     def do_delete_event(self, *args):

@@ -19,7 +19,7 @@ import os
 
 RADIO = os.environ.get('RADIO_URL', 'http://127.0.0.1:2426')
 MASTER_URL = os.environ.get('MASTER_URL', 'https://edgemarketing.art/allmusic')
-MASTER_ADMIN_KEY = os.environ.get('ALLMUSIC_ADMIN_KEY', '')
+MODERATOR_KEY = os.environ.get('MODERATOR_KEY', '') or os.environ.get('ALLMUSIC_ADMIN_KEY', '')
 LIVE_STREAM_URL = os.environ.get('LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3')
 HA_URL = os.environ.get('HA_URL', 'http://127.0.0.1:8124')
 HA_TOKEN_PATH = '/dev/shm/ha_token.txt'
@@ -74,7 +74,7 @@ def radio_post(path, payload=None):
 
 
 def publish_master(now, track, playing, elapsed):
-    if not MASTER_ADMIN_KEY or not track:
+    if not MODERATOR_KEY or not track:
         return
     public_track = dict(track)
     public_track['elapsed'] = max(0, elapsed or public_track.get('elapsed') or 0)
@@ -90,7 +90,7 @@ def publish_master(now, track, playing, elapsed):
     req = urllib.request.Request(
         MASTER_URL + '/radio/master',
         data=json.dumps(payload).encode(),
-        headers={'Content-Type': 'application/json', 'X-Admin-Key': MASTER_ADMIN_KEY},
+        headers={'Content-Type': 'application/json', 'X-Moderator-Key': MODERATOR_KEY},
         method='POST',
     )
     with urllib.request.urlopen(req, timeout=15) as r:

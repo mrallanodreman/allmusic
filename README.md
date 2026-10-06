@@ -32,6 +32,33 @@ radio/atico-player.py -> media_player.atico (bocina del Atico)
 Atico y la web suenan la **misma** cola: el master local lidera desde la web, que es
 donde viven los pedidos de los oyentes.
 
+## Seguridad y decisiones clave (auditoría 2026-10)
+
+- **Sin endpoints de admin**: todo acceso de moderación es solo servidor↔servidor
+  con `MODERATOR_KEY` (header `X-Moderator-Key`). `ALLMUSIC_ADMIN_KEY` queda como
+  alias deprecado. Endpoints `/admin/*`, `/radio/blacklist`, `GET /users` retirados (404).
+- **Subidas de audio**: whitelist de extensiones + firma (magic bytes) + límite de
+  tamaño. Segunda capa: VirusTotal por SHA-256. Detalle solo en logs; el usuario
+  recibe mensajes de validación útiles sin revelar internas.
+- **Auth artistas**: JWT HS256 (30 min) firmado con `JWT_SECRET`, bcrypt (legacy
+  SHA-256 se migra al primer login), rate limit 5/min en login/register.
+- **"Nunca Confiar en el Usuario"**: rate limiting por IP en todos los endpoints
+  sensibles. Solo clientes marcados (≥6 intentos sensibles/60s o 429) reciben
+  fingerprint silencioso (pantalla+tz+idioma+UA+geo IP), retenido **máx. 15 días**
+  y borrado automático. Clientes normales no se capturan.
+- **Errores interno-only**: `str(e)` nunca llega al usuario; respuestas genéricas
+  + logs detallados. `/status` solo devuelve `{'status':'running'}`.
+- **Cabeceras**: CSP, HSTS, nosniff, frame-deny, Referrer-Policy en todas las rutas.
+- **Caché delimitada**: conversión TTL 30 min / 200 entradas; búsquedas TTL 5 min / 100;
+  JSON DB con caché por `mtime`; miniaturas desktop ≤100.
+- **Tests**: `backend/tests/test_security.py` (auth, rate limit, validación, headers).
+
+## Variables de entorno
+
+Ver `.env.example`. Obligatorias en producción: `MODERATOR_KEY`, `JWT_SECRET`,
+`RAPIDAPI_KEY`, `VIRUSTOTAL_API_KEY`. Sin ellas, los endpoints afectados fallan
+de forma segura (fail-closed).
+
 ## Runtime vs repo
 
 - El backend/radio se despliega en Railway con `Dockerfile` + `start.sh`

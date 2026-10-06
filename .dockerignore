@@ -7,3 +7,10 @@ venv
 .env
 *.log
 node_modules
+desktop/
+radio/
+*.bak
+.bak_*
+data/
+.env.*
+!.env.example

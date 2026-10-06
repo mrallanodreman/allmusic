@@ -20,6 +20,7 @@ import re
 import sys
 import secrets
 import hashlib
+import hmac
 import datetime
 import subprocess
 import mimetypes
@@ -49,13 +50,193 @@ limiter = Limiter(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Límite de tamaño de petición/subida (50 MB por defecto, configurable)
+app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 50 * 1024 * 1024))
+
+# ── ABUSO / FINGERPRINTING ("Nunca Confiar en el Usuario") ──────────────────
+# Cliente normal: no se captura nada. Solo cuando una IP muestra actividad
+# sospechosa (≥6 acciones sensibles en 60s, o 429s repetidos) se le captura
+# fingerprint (pantalla+tz+idioma+UA+geo IP aproximada) por MÁXIMO 15 días.
+ABUSE_TTL_SECONDS = 15 * 24 * 3600
+ABUSE_WINDOW = 60
+ABUSE_THRESHOLD = 6
+_ip_hits = {}
+SENSITIVE_ENDPOINTS = {'user_lookup', 'artist_auth_login', 'artist_auth_register', 'radio_suggest', 'user_register'}
+
+
+def _client_ip():
+    fwd = request.headers.get('X-Forwarded-For', '')
+    if fwd:
+        return fwd.split(',')[0].strip()
+    return request.remote_addr or ''
+
+
+def _load_abuse():
+    now = time.time()
+    try:
+        with open(ABUSE_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    pruned = {ip: rec for ip, rec in data.items() if isinstance(rec, dict) and now - float(rec.get('ts', 0)) < ABUSE_TTL_SECONDS}
+    if len(pruned) != len(data):
+        try:
+            with open(ABUSE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(pruned, f, indent=2)
+        except OSError:
+            pass
+    return pruned
+
+
+def _save_abuse(data):
+    try:
+        with open(ABUSE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except OSError:
+        pass
+
+
+def _note_sensitive_hit(endpoint):
+    ip = _client_ip()
+    if not ip:
+        return
+    now = time.time()
+    hits = [t for t in _ip_hits.get(ip, []) if now - t < ABUSE_WINDOW]
+    hits.append(now)
+    _ip_hits[ip] = hits
+    if len(hits) >= ABUSE_THRESHOLD:
+        data = _load_abuse()
+        if ip not in data:
+            data[ip] = {'ts': now, 'hits': len(hits)}
+        else:
+            data[ip]['ts'] = now
+            data[ip]['hits'] = int(data[ip].get('hits', 0)) + len(hits)
+        _save_abuse(data)
+        _ip_hits[ip] = []
+
+
+def _geo_ip(ip):
+    try:
+        r = requests.get(f'http://ip-api.com/json/{ip}?fields=status,country,regionName,city,timezone', timeout=3)
+        if r.status_code == 200 and r.json().get('status') == 'success':
+            j = r.json()
+            return {'country': j.get('country'), 'region': j.get('regionName'), 'city': j.get('city'), 'tz': j.get('timezone')}
+    except requests.RequestException:
+        pass
+    return {}
+
+
+@app.route('/abuse/fingerprint', methods=['POST'])
+@limiter.limit('3 per minute')
+def abuse_fingerprint():
+    """Captura silenciosa de fingerprint SOLO de clientes ya sospechosos (429s /
+    intentos sensibles repetidos). Se purga a los 15 días."""
+    ip = _client_ip()
+    data = request.get_json(force=True, silent=True) or {}
+    record = {
+        'ts': time.time(),
+        'ua': (request.headers.get('User-Agent') or '')[:200],
+        'screen': str(data.get('screen') or '')[:40],
+        'tz': str(data.get('tz') or '')[:60],
+        'lang': str(data.get('lang') or '')[:20],
+    }
+    store = _load_abuse()
+    existing = store.get(ip, {})
+    existing.update(record)
+    existing['geo'] = _geo_ip(ip)
+    store[ip] = existing
+    _save_abuse(store)
+    return jsonify({'ok': True})
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({'error': 'No encontrado'}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return jsonify({'error': 'Método no permitido'}), 405
+
+@app.errorhandler(429)
+def rate_limited(e):
+    return jsonify({'error': 'Demasiadas solicitudes. Intenta más tarde.'}), 429
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({'error': 'Error interno'}), 500
+
+
+@app.before_request
+def abuse_strict_limit():
+    """Los IPs/dispositivos ya marcados tienen un límite más estricto (10/min)
+    sobre endpoints sensibles, para frenar rotación de IP y fuerza bruta."""
+    if request.endpoint not in SENSITIVE_ENDPOINTS and not request.path.startswith('/artists/auth'):
+        return None
+    if request.endpoint in SENSITIVE_ENDPOINTS:
+        _note_sensitive_hit(request.endpoint or '')
+    ip = _client_ip()
+    store = _load_abuse()
+    if ip and ip in store:
+        now = time.time()
+        hits = [t for t in store[ip].get('_hits', []) if now - t < 60]
+        hits.append(now)
+        store[ip]['_hits'] = hits
+        _save_abuse(store)
+        if len(hits) > 10:
+            return jsonify({'error': 'Demasiadas solicitudes. Intenta más tarde.'}), 429
+    return None
+
+
+@app.after_request
+def set_security_headers(resp):
+    """Cabeceras de seguridad en todas las respuestas."""
+    resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    resp.headers.setdefault('X-Frame-Options', 'DENY')
+    resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    resp.headers.setdefault('Strict-Transport-Security', 'max-age=63072000; includeSubDomains')
+    resp.headers.setdefault(
+        'Content-Security-Policy',
+        "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; "
+        "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    )
+    return resp
+
 # Config desde variables de entorno
 # RAPIDAPI_KEY acepta una o varias keys separadas por coma (rotación automática:
 # si una app de RapidAPI agota su cuota diaria (429/403), se prueba la siguiente).
 RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', '')
 RAPIDAPI_KEYS = [k.strip() for k in RAPIDAPI_KEY.split(',') if k.strip()]
 RAPIDAPI_HOST = os.environ.get('RAPIDAPI_HOST', 'youtube-mp36.p.rapidapi.com')
-ALLMUSIC_ADMIN_KEY = os.environ.get('ALLMUSIC_ADMIN_KEY', 'adminallmusic2024')
+
+# Acceso de moderación (solo servidor↔servidor, sin vista pública).
+# Sin valor por defecto: si falta, los endpoints protegidos quedan DESHABILITADOS
+# (fail-closed) y se registra un aviso explícito.
+MODERATOR_KEY = os.environ.get('MODERATOR_KEY', '') or os.environ.get('ALLMUSIC_ADMIN_KEY', '')
+if os.environ.get('ALLMUSIC_ADMIN_KEY'):
+    logger.warning('ALLMUSIC_ADMIN_KEY está deprecada: usa MODERATOR_KEY')
+if not MODERATOR_KEY:
+    logger.warning('MODERATOR_KEY no configurada — endpoints de moderación deshabilitados')
+
+
+def _is_moderator():
+    """True si el request trae el token de moderación (solo servidor↔servidor)."""
+    if not MODERATOR_KEY:
+        return False
+    provided = request.headers.get('X-Moderator-Key', '')
+    return bool(provided) and hmac.compare_digest(provided, MODERATOR_KEY)
+
+# JWT de artistas: secreto obligatorio en producción; en desarrollo se genera uno
+# efímero (los tokens no sobreviven reinicios).
+_JWT_SECRET = os.environ.get('JWT_SECRET', '')
+if not _JWT_SECRET:
+    _JWT_SECRET = secrets.token_hex(32)
+    logger.warning('JWT_SECRET no definido — tokens de artistas se invalidarán al reiniciar')
+
+# VirusTotal (segunda capa de validación de subidas de artistas)
+VIRUSTOTAL_API_KEY = os.environ.get('VIRUSTOTAL_API_KEY', '')
+VIRUSTOTAL_STRICT = os.environ.get('VIRUSTOTAL_STRICT', 'true').lower() in ('1', 'true', 'yes')
 
 # 3ra capa: fallback local (yt-dlp en IP residencial) cuando las keys de
 # RapidAPI se agotan. Ver ytfallback-server / hallazgo allmusic-rapidapi-key-rotation.
@@ -78,11 +259,57 @@ FRONTEND_DIR = os.environ.get('ALLMUSIC_FRONTEND_DIR', os.path.join(os.path.dirn
 
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 os.makedirs(ARTIST_UPLOADS_DIR, exist_ok=True)
+ABUSE_FILE = os.path.join(DATA_DIR, 'abuse_fingerprints.json')
 
 
 class AllMusicServer:
+    CACHE_TTL_SECONDS = 30 * 60
+    CACHE_MAX_ENTRIES = 200
+    SEARCH_CACHE_TTL = 5 * 60
+    SEARCH_CACHE_MAX = 100
+
     def __init__(self):
         self.cache = {}
+        self._cache_ts = {}
+        self._search_cache = {}  # query -> (timestamp, results), volátil
+
+    def _search_cache_get(self, key):
+        entry = self._search_cache.get(key)
+        if entry and (time.time() - entry[0]) < self.SEARCH_CACHE_TTL:
+            return entry[1]
+        self._search_cache.pop(key, None)
+        return None
+
+    def _search_cache_set(self, key, results):
+        if len(self._search_cache) >= self.SEARCH_CACHE_MAX:
+            oldest = min(self._search_cache, key=lambda k: self._search_cache[k][0])
+            self._search_cache.pop(oldest, None)
+        self._search_cache[key] = (time.time(), results)
+
+    def _cache_prune(self):
+        """Expira entradas viejas y acota el tamaño (evita crecimiento sin límite)."""
+        now = time.time()
+        expired = [k for k, ts in self._cache_ts.items() if now - ts > self.CACHE_TTL_SECONDS]
+        for k in expired:
+            self.cache.pop(k, None)
+            self._cache_ts.pop(k, None)
+        if len(self.cache) > self.CACHE_MAX_ENTRIES:
+            for k in sorted(self._cache_ts, key=self._cache_ts.get)[: len(self.cache) - self.CACHE_MAX_ENTRIES]:
+                self.cache.pop(k, None)
+                self._cache_ts.pop(k, None)
+
+    def cache_set(self, key, value):
+        self.cache[key] = value
+        self._cache_ts[key] = time.time()
+        self._cache_prune()
+
+    def cache_pop(self, key):
+        self.cache.pop(key, None)
+        self._cache_ts.pop(key, None)
+
+    def cache_get(self, key):
+        self._cache_prune()
+        return self.cache.get(key)
 
     def extract_video_id(self, url):
         patterns = [
@@ -115,6 +342,7 @@ class AllMusicServer:
                 'default_search': 'ytsearch%d:' % pool,
                 'ignoreerrors': True,
                 'force_generic_extractor': False,
+                'socket_timeout': 30,
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -174,14 +402,14 @@ class AllMusicServer:
             logger.error(f"❌ Error en búsqueda: {str(e)}")
             return []
 
-    def convert_to_mp3(self, video_id, max_retries=20):
+    def convert_to_mp3(self, video_id, max_retries=5):
         """Convierte un video de YouTube a MP3 usando RapidAPI"""
         try:
             logger.info(f"🎵 Convirtiendo video ID: {video_id}")
             MAX_DURATION_SECONDS = 7200
 
             try:
-                ydl_opts = {'quiet': True, 'no_warnings': True}
+                ydl_opts = {'quiet': True, 'no_warnings': True, 'socket_timeout': 20}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
                     duration = info.get('duration', 0)
@@ -211,7 +439,7 @@ class AllMusicServer:
                             if res.status == 200:
                                 response_text = data.decode("utf-8").strip()
                                 if not response_text.startswith('{') and not response_text.startswith('['):
-                                    return {'success': False, 'error': f'API no disponible: {response_text[:100]}'}
+                                    return {'success': False, 'error': 'Servicio de conversión no disponible'}
                                 response_json = json.loads(response_text)
                                 status = response_json.get('status', 'unknown')
 
@@ -248,7 +476,7 @@ class AllMusicServer:
                             time.sleep(1)
                         except Exception as e:
                             if attempt == max_retries - 1:
-                                return {'success': False, 'error': str(e)}
+                                return {'success': False, 'error': 'Error de conversión'}
                             time.sleep(1)
                     else:
                         return {'success': False, 'error': f'Máximo de reintentos alcanzado ({max_retries} intentos)'}
@@ -263,10 +491,10 @@ class AllMusicServer:
             if fallback_result is not None:
                 return fallback_result
 
-            return {'success': False, 'error': f'Límite de conversiones diarias agotado en todas las keys disponibles ({len(RAPIDAPI_KEYS)}). Intenta más tarde.'}
+            return {'success': False, 'error': 'Servicio de conversión no disponible temporalmente'}
         except Exception as e:
             logger.error(f"❌ Error inesperado en convert_to_mp3: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': 'Error de conversión'}
 
     def _convert_via_local_fallback(self, video_id):
         """3ra capa: yt-dlp corriendo en una máquina residencial (no bloqueada
@@ -421,6 +649,7 @@ music_server = AllMusicServer()
 # ── RUTAS API ──────────────────────────────────────────────────────────────────
 
 @app.route('/search')
+@limiter.limit("30 per minute")
 def search():
     query = request.args.get('q', '').strip()
     try:
@@ -436,7 +665,11 @@ def search():
         return jsonify({'error': 'Query parameter "q" is required'}), 400
     try:
         max_results = min(offset + limit, 50)
-        all_results = music_server.search_youtube(query, max_results=max_results)
+        cache_key = f'{query}|{max_results}'
+        all_results = music_server._search_cache_get(cache_key)
+        if all_results is None:
+            all_results = music_server.search_youtube(query, max_results=max_results)
+            music_server._search_cache_set(cache_key, all_results)
         total = len(all_results) if len(all_results) < 50 else 100
         paginated_results = all_results[offset:offset + limit]
         return jsonify({
@@ -449,10 +682,11 @@ def search():
         })
     except Exception as e:
         logger.error(f"❌ Error en /search: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error interno'}), 500
 
 
 @app.route('/stream/<video_id>')
+@limiter.limit("60 per minute")
 def stream(video_id):
     try:
         if not video_id or len(video_id) != 11:
@@ -466,13 +700,14 @@ def stream(video_id):
         fast_mode = request.args.get('fast') == '1'
 
         # Si ya existe un enlace resuelto, úsalo antes de volver a ejecutar yt-dlp.
+        music_server._cache_prune()
         if video_id in music_server.cache:
             cached_url = music_server.cache[video_id].get('link')
             if cached_url:
                 cached_response = music_server.stream_via_rapidapi(cached_url)
                 if cached_response:
                     return cached_response
-                music_server.cache.pop(video_id, None)
+                music_server.cache_pop(video_id)
 
         # PRIMARIO para clientes modernos: yt-dlp (YouTube directo, sin cookies).
         if not fast_mode:
@@ -484,15 +719,16 @@ def stream(video_id):
             logger.info(f"⚡ fast stream para {video_id}: omitiendo yt-dlp")
 
         # FALLBACK / FAST: RapidAPI + proxy residencial
+        music_server._cache_prune()
         if video_id not in music_server.cache:
             result = music_server.convert_to_mp3(video_id)
             if result.get('success'):
-                music_server.cache[video_id] = result
+                music_server.cache_set(video_id, result)
             else:
                 # Si RapidAPI falló, intentar 3ra capa local directamente
                 fallback = music_server._convert_via_local_fallback(video_id)
                 if fallback and fallback.get('success') and fallback.get('link'):
-                    music_server.cache[video_id] = fallback
+                    music_server.cache_set(video_id, fallback)
                 else:
                     return jsonify({'success': False, 'error': result.get("error", "Error desconocido")}), 502
 
@@ -507,10 +743,10 @@ def stream(video_id):
         # El link cacheado puede haber expirado (las URLs de RapidAPI caducan).
         # Renovarlo y reintentar una vez antes de rendirse.
         logger.warning(f"⚠️ Link caducado/expirado para {video_id}; renovando vía RapidAPI")
-        music_server.cache.pop(video_id, None)
+        music_server.cache_pop(video_id)
         result = music_server.convert_to_mp3(video_id)
         if result.get('success') and result.get('link'):
-            music_server.cache[video_id] = result
+            music_server.cache_set(video_id, result)
             stream_resp = music_server.stream_via_rapidapi(result['link'])
             if stream_resp:
                 return stream_resp
@@ -518,7 +754,7 @@ def stream(video_id):
         # Último recurso: 3ra capa local
         fallback = music_server._convert_via_local_fallback(video_id)
         if fallback and fallback.get('success') and fallback.get('link'):
-            music_server.cache[video_id] = fallback
+            music_server.cache_set(video_id, fallback)
             stream_resp = music_server.stream_via_rapidapi(fallback['link'])
             if stream_resp:
                 return stream_resp
@@ -526,10 +762,11 @@ def stream(video_id):
         return jsonify({'success': False, 'error': 'No se pudo iniciar el stream. Inténtalo de nuevo.'}), 502
     except Exception as e:
         logger.error(f"❌ Error en /stream: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error interno'}), 500
 
 
 @app.route('/download/<video_id>.mp3')
+@limiter.limit("10 per minute")
 def download_mp3(video_id):
     try:
         if not video_id or len(video_id) != 11 or video_id.startswith('UC'):
@@ -544,7 +781,7 @@ def download_mp3(video_id):
         result = music_server.convert_to_mp3(video_id)
         if not result or not result.get('success'):
             err = (result or {}).get('error', 'Conversión fallida')
-            return jsonify({'error': f'No se pudo obtener el MP3: {err}'}), 502
+            return jsonify({'error': 'No se pudo obtener el MP3'}), 502
 
         mp3_url = result.get('link')
         if not mp3_url:
@@ -571,34 +808,37 @@ def download_mp3(video_id):
             try:
                 if os.path.exists(file_path + '.part'):
                     os.remove(file_path + '.part')
-            except:
+            except Exception:
                 pass
-            return jsonify({'error': f'Error al descargar MP3: {str(e)}'}), 500
+            return jsonify({'error': 'Error al descargar'}), 500
 
         return send_from_directory(DOWNLOADS_DIR, file_name, mimetype='audio/mpeg', as_attachment=True, download_name=file_name, conditional=False)
     except Exception as e:
         logger.error(f"❌ Error en /download: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error interno'}), 500
 
 
 @app.route('/convert/<video_id>')
+@limiter.limit("20 per minute")
 def convert(video_id):
     try:
         if not video_id or len(video_id) != 11:
             return jsonify({'error': 'ID inválido'}), 400
         if video_id.startswith('UC'):
             return jsonify({'error': 'ID de canal'}), 400
+        music_server._cache_prune()
         if video_id in music_server.cache:
             return jsonify(music_server.cache[video_id])
         result = music_server.convert_to_mp3(video_id)
         if result.get('success'):
-            music_server.cache[video_id] = result
+            music_server.cache_set(video_id, result)
         return jsonify(result)
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'Error interno'}), 500
 
 
 @app.route('/play')
+@limiter.limit("20 per minute")
 def play():
     query = request.args.get('q', '').strip()
     video_id = request.args.get('id', '').strip()
@@ -611,16 +851,13 @@ def play():
                 return redirect(f'/stream/{results[0]["id"]}')
         return jsonify({'error': 'Se requiere "q" (query) o "id" (video_id)'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Error interno'}), 500
 
 
 @app.route('/status')
 def status():
-    return jsonify({
-        'status': 'running',
-        'cache_size': len(music_server.cache),
-        'endpoints': ['/search', '/convert', '/stream', '/download', '/play', '/status']
-    })
+    # Respuesta mínima: no exponer endpoints internos ni métricas de infraestructura
+    return jsonify({'status': 'running'})
 
 
 # ── CANCIONES DINÁMICAS (SEO) ─────────────────────────────────────────────────
@@ -901,6 +1138,10 @@ def frontend_files(filename):
     rel = filename
     if rel.startswith('allmusic/'):
         rel = rel[len('allmusic/'):]
+    # Sirve el archivo cuando llega con prefijo 'allmusic/' (p. ej. <base href="/allmusic/">)
+    rel_path = os.path.join(FRONTEND_DIR, rel)
+    if os.path.exists(rel_path) and os.path.isfile(rel_path):
+        return send_from_directory(FRONTEND_DIR, rel)
     if '.' not in os.path.basename(rel):
         html_path = os.path.join(FRONTEND_DIR, rel + '.html')
         if os.path.exists(html_path) and os.path.isfile(html_path):
@@ -915,23 +1156,42 @@ def frontend_files(filename):
 # ── USERS ──────────────────────────────────────────────────────────────────────
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 
-def _load_users():
+_JSON_FILE_CACHE = {}  # path -> (mtime, data): evita releer disco en cada request
+
+
+def _load_json_cached(path):
     try:
-        with open(USERS_FILE, 'r') as f:
-            return json.load(f)
-    except:
+        mtime = os.path.getmtime(path)
+    except OSError:
         return []
+    cached = _JSON_FILE_CACHE.get(path)
+    if cached and cached[0] == mtime:
+        return cached[1]
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        _JSON_FILE_CACHE[path] = (mtime, data)
+        return data
+    except (OSError, ValueError):
+        return []
+
+
+def _load_users():
+    data = _load_json_cached(USERS_FILE)
+    return data if isinstance(data, list) else []
 
 def _save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=2, ensure_ascii=False)
+    _JSON_FILE_CACHE.pop(USERS_FILE, None)
 
 @app.route('/users/register', methods=['POST'])
+@limiter.limit("10 per minute")
 def user_register():
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get('email') or '').strip().lower()[:120]
     name  = (data.get('name') or '').strip()[:50]
-    if not email or '@' not in email:
+    if not email or not re.match(r'^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s]{2,}$', email):
         return jsonify({'error': 'Correo inválido'}), 400
     if not name:
         return jsonify({'error': 'Nombre requerido'}), 400
@@ -950,6 +1210,7 @@ def user_register():
     return jsonify({'user': user, 'already_existed': False}), 201
 
 @app.route('/users/lookup', methods=['GET'])
+@limiter.limit("20 per minute")
 def user_lookup():
     email = (request.args.get('email') or '').strip().lower()
     if not email:
@@ -960,34 +1221,42 @@ def user_lookup():
         return jsonify({'found': False}), 404
     return jsonify({'found': True, 'user': user})
 
-@app.route('/users', methods=['GET'])
-def list_users():
-    secret = request.args.get('key', '')
-    if secret != ALLMUSIC_ADMIN_KEY:
-        return jsonify({'error': 'No autorizado'}), 403
-    users = _load_users()
-    return jsonify({'total': len(users), 'users': users})
+# ── Endpoints admin retirados (requieren moderación del lado del servidor) ────
+@app.route('/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def users_removed():
+    return jsonify({'error': 'No disponible'}), 404
 
+@app.route('/radio/blacklist', methods=['GET', 'POST', 'DELETE'])
+@app.route('/radio/admin/blacklist', methods=['GET', 'POST', 'DELETE'])
+def blacklist_removed():
+    return jsonify({'error': 'No disponible'}), 404
+
+@app.route('/admin/login', methods=['POST'])
+def admin_login_removed():
+    return jsonify({'error': 'No disponible'}), 404
+
+
+# Nota: no existe endpoint público para listar usuarios. La moderación se hace
+# directamente en el servidor (sin vista pública), según requerimiento del proyecto.
 
 # ── PLAYLISTS ──────────────────────────────────────────────────────────────────
 PLAYLISTS_FILE = os.path.join(DATA_DIR, 'playlists.json')
 
 def _load_playlists():
-    try:
-        with open(PLAYLISTS_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return []
+    data = _load_json_cached(PLAYLISTS_FILE)
+    return data if isinstance(data, list) else []
 
 def _save_playlists(pls):
     with open(PLAYLISTS_FILE, 'w') as f:
         json.dump(pls, f, indent=2)
+    _JSON_FILE_CACHE.pop(PLAYLISTS_FILE, None)
 
 @app.route('/playlists', methods=['GET'])
 def get_playlists():
     return jsonify(_load_playlists())
 
 @app.route('/playlists', methods=['POST'])
+@limiter.limit("20 per minute")
 def create_playlist():
     data = request.get_json(force=True, silent=True) or {}
     name = (data.get('name') or '').strip()
@@ -1040,15 +1309,13 @@ def remove_track(pl_id, idx):
 ARTISTS_FILE = os.path.join(DATA_DIR, 'artists.json')
 
 def _load_artists():
-    try:
-        with open(ARTISTS_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return []
+    data = _load_json_cached(ARTISTS_FILE)
+    return data if isinstance(data, list) else []
 
 def _save_artists(arts):
     with open(ARTISTS_FILE, 'w') as f:
         json.dump(arts, f, indent=2)
+    _JSON_FILE_CACHE.pop(ARTISTS_FILE, None)
 
 @app.route('/artists', methods=['GET'])
 def get_artists():
@@ -1084,16 +1351,84 @@ ALLOWED_AUDIO_EXTS = {'.mp3', '.wav', '.flac', '.ogg', '.aac', '.m4a', '.wma'}
 ALLOWED_FILE_EXTS = ALLOWED_AUDIO_EXTS | {'.zip', '.rar', '.pdf'}
 MAX_ARTIST_FILE_SIZE = 200 * 1024 * 1024
 
-def _load_artist_accounts():
+# Firmas de bytes iniciales (magic numbers) de los formatos de audio permitidos.
+_AUDIO_MAGIC = {
+    '.mp3': (b'ID3', b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'),
+    '.wav': (b'RIFF',),
+    '.flac': (b'fLaC',),
+    '.ogg': (b'OggS',),
+    '.aac': (b'\xff\xf1', b'\xff\xf9'),
+    '.m4a': (b'ftyp',),
+    '.wma': (b'\x30\x26\xb2\x75',),
+}
+
+
+def _is_valid_audio_upload(save_path, ext):
+    """Sanitizador de subida: la extensión debe estar en la lista blanca y los
+    bytes iniciales deben corresponder a un contenedor de audio real (no un
+    documento/ejecutable renombrado)."""
+    ext = ext.lower()
+    if ext not in _AUDIO_MAGIC:
+        return False
     try:
-        with open(ARTIST_ACCOUNTS_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return []
+        with open(save_path, 'rb') as fh:
+            head = fh.read(16)
+    except OSError:
+        return False
+    if ext == '.m4a':
+        return len(head) >= 8 and head[4:8] == b'ftyp'
+    return any(head.startswith(sig) for sig in _AUDIO_MAGIC[ext])
+
+
+def _virustotal_check(file_path):
+    """Segunda capa: consulta VirusTotal por el hash SHA-256 del archivo.
+    Devuelve (ok, detalle). Si VIRUSTOTAL_API_KEY no está y VIRUSTOTAL_STRICT es
+    true, el archivo se rechaza (fail-closed)."""
+    import hashlib as _h
+    try:
+        sha = _h.sha256()
+        with open(file_path, 'rb') as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b''):
+                sha.update(chunk)
+        digest = sha.hexdigest()
+    except OSError as e:
+        return False, f'no se pudo leer el archivo: {e}'
+
+    if not VIRUSTOTAL_API_KEY:
+        if VIRUSTOTAL_STRICT:
+            return False, 'VIRUSTOTAL_API_KEY no configurada: validación obligatoria'
+        logger.warning('VIRUSTOTAL_API_KEY no configurada — capa 2 omitida (modo no estricto)')
+        return True, 'omitido'
+
+    try:
+        resp = requests.get(
+            f'https://www.virustotal.com/api/v3/files/{digest}',
+            headers={'x-apikey': VIRUSTOTAL_API_KEY},
+            timeout=20,
+        )
+        if resp.status_code == 404:
+            # Archivo nuevo para VirusTotal: se sube para análisis y se rechaza
+            # por defecto hasta que la comunidad lo valide.
+            return False, 'archivo desconocido para VirusTotal; envíalo manualmente'
+        if resp.status_code != 200:
+            return (False, f'VirusTotal respondió HTTP {resp.status_code}') if VIRUSTOTAL_STRICT else (True, f'VT HTTP {resp.status_code}')
+        stats = resp.json().get('data', {}).get('attributes', {}).get('last_analysis_stats', {})
+        malicious = int(stats.get('malicious', 0) or 0)
+        suspicious = int(stats.get('suspicious', 0) or 0)
+        if malicious > 0 or suspicious > 0:
+            return False, f'VirusTotal marcó {malicious} maliciosos / {suspicious} sospechosos'
+        return True, 'limpio'
+    except requests.RequestException as e:
+        return (False, f'VirusTotal no disponible: {e}') if VIRUSTOTAL_STRICT else (True, 'VT no disponible')
+
+def _load_artist_accounts():
+    data = _load_json_cached(ARTIST_ACCOUNTS_FILE)
+    return data if isinstance(data, list) else []
 
 def _save_artist_accounts(accounts):
     with open(ARTIST_ACCOUNTS_FILE, 'w') as f:
         json.dump(accounts, f, indent=2)
+    _JSON_FILE_CACHE.pop(ARTIST_ACCOUNTS_FILE, None)
 
 def _slugify_artist(text):
     text = text.lower().strip()
@@ -1102,25 +1437,71 @@ def _slugify_artist(text):
     return text[:50]
 
 def _hash_artist_pwd(salt, pwd):
-    return hashlib.sha256((salt + pwd).encode('utf-8')).hexdigest()
+    """Hash seguro con bcrypt. Para cuentas viejas (sha256+salt) se verifica
+    con el esquema legacy y se re-hashea a bcrypt en el primer login exitoso."""
+    try:
+        import bcrypt
+        return bcrypt.hashpw(pwd.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('ascii')
+    except ImportError:
+        # Fallback solo si bcrypt no está instalado: PBKDF2-HMAC-SHA256
+        return 'pbkdf2$' + hashlib.pbkdf2_hmac('sha256', pwd.encode('utf-8'), salt.encode('utf-8'), 200_000).hex()
+
+
+def _verify_artist_pwd(artist, pwd):
+    """Verifica password con el esquema guardado; indica si hay que re-hashear."""
+    stored = artist.get('pwd_hash', '')
+    # bcrypt ($2b$...)
+    if stored.startswith('$2'):
+        try:
+            import bcrypt
+            return bcrypt.checkpw(pwd.encode('utf-8'), stored.encode('ascii')), False
+        except ImportError:
+            return False, False
+    # pbkdf2
+    if stored.startswith('pbkdf2$'):
+        calc = 'pbkdf2$' + hashlib.pbkdf2_hmac('sha256', pwd.encode('utf-8'), artist.get('salt', '').encode('utf-8'), 200_000).hex()
+        return hmac.compare_digest(calc, stored), True
+    # legacy sha256+salt
+    calc = hashlib.sha256((artist.get('salt', '') + pwd).encode('utf-8')).hexdigest()
+    return hmac.compare_digest(calc, stored), True
+
 
 def _create_artist_token(artist_id):
-    token = secrets.token_hex(32)
-    ARTIST_SESSIONS[token] = {'artist_id': artist_id, 'expires': time.time() + 30 * 24 * 3600}
+    """JWT firmado HS256, vida corta (30 min) + id único (jti) para revocación."""
+    import jwt
+    now = datetime.datetime.now(datetime.timezone.utc)
+    payload = {
+        'sub': artist_id,
+        'iat': int(now.timestamp()),
+        'exp': int((now + datetime.timedelta(minutes=30)).timestamp()),
+        'jti': secrets.token_hex(8),
+        'aud': 'allmusic-artist',
+    }
+    token = jwt.encode(payload, _JWT_SECRET, algorithm='HS256')
+    ARTIST_SESSIONS[token] = {'artist_id': artist_id, 'expires': payload['exp']}
     return token
+
 
 def _get_current_artist():
     auth = request.headers.get('Authorization', '')
     token = auth.replace('Bearer ', '').strip()
     if not token:
         return None
-    session = ARTIST_SESSIONS.get(token)
-    if not session or time.time() > session['expires']:
-        if session:
-            del ARTIST_SESSIONS[token]
+    try:
+        import jwt
+        claims = jwt.decode(token, _JWT_SECRET, algorithms=['HS256'], audience='allmusic-artist')
+        artist_id = claims.get('sub')
+    except Exception:
+        # Compatibilidad con tokens opacos viejos (dict en memoria) mientras existan
+        session = ARTIST_SESSIONS.get(token)
+        if not session or time.time() > session['expires']:
+            ARTIST_SESSIONS.pop(token, None)
+            return None
+        artist_id = session['artist_id']
+    if not artist_id:
         return None
     accounts = _load_artist_accounts()
-    return next((a for a in accounts if a['id'] == session['artist_id']), None)
+    return next((a for a in accounts if a['id'] == artist_id), None)
 
 def _unique_artist_slug(base, accounts, exclude_id=None):
     slug = base
@@ -1135,16 +1516,17 @@ def _artist_safe(artist):
     return {k: v for k, v in artist.items() if k not in ('pwd_hash', 'salt')}
 
 @app.route('/artists/auth/register', methods=['POST'])
+@limiter.limit("5 per minute")
 def artist_auth_register():
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get('email') or '').strip().lower()[:120]
     password = (data.get('password') or '').strip()
     artist_name = (data.get('artist_name') or data.get('name') or '').strip()[:80]
     genre = (data.get('genre') or '').strip()[:60]
-    if not email or '@' not in email:
+    if not email or not re.match(r'^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s]{2,}$', email):
         return jsonify({'error': 'Email inválido'}), 400
-    if len(password) < 6:
-        return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+    if len(password) < 8:
+        return jsonify({'error': 'La contraseña debe tener al menos 8 caracteres'}), 400
     if not artist_name:
         return jsonify({'error': 'Nombre artístico requerido'}), 400
     accounts = _load_artist_accounts()
@@ -1154,7 +1536,7 @@ def artist_auth_register():
     pwd_hash = _hash_artist_pwd(salt, password)
     base_slug = _slugify_artist(artist_name)
     slug = _unique_artist_slug(base_slug, accounts)
-    artist_id = f"art_{int(time.time() * 1000)}"
+    artist_id = f"art_{secrets.token_hex(8)}"
     os.makedirs(os.path.join(ARTIST_UPLOADS_DIR, artist_id), exist_ok=True)
     artist = {
         'id': artist_id, 'email': email, 'pwd_hash': pwd_hash, 'salt': salt,
@@ -1172,6 +1554,7 @@ def artist_auth_register():
     return jsonify({'ok': True, 'token': token, 'artist': _artist_safe(artist)}), 201
 
 @app.route('/artists/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def artist_auth_login():
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get('email') or '').strip().lower()
@@ -1180,8 +1563,19 @@ def artist_auth_login():
         return jsonify({'error': 'Email y contraseña requeridos'}), 400
     accounts = _load_artist_accounts()
     artist = next((a for a in accounts if a['email'] == email), None)
-    if not artist or _hash_artist_pwd(artist['salt'], password) != artist['pwd_hash']:
+    if not artist:
         return jsonify({'error': 'Email o contraseña incorrectos'}), 401
+    ok, needs_rehash = _verify_artist_pwd(artist, password)
+    if not ok:
+        return jsonify({'error': 'Email o contraseña incorrectos'}), 401
+    if needs_rehash:
+        # Migración transparente de hash antiguo a bcrypt
+        artist['pwd_hash'] = _hash_artist_pwd(artist.get('salt', ''), password)
+        artist['salt'] = secrets.token_hex(16)
+        idx = next((i for i, a in enumerate(accounts) if a['id'] == artist['id']), None)
+        if idx is not None:
+            accounts[idx] = artist
+            _save_artist_accounts(accounts)
     token = _create_artist_token(artist['id'])
     return jsonify({'ok': True, 'token': token, 'artist': _artist_safe(artist)})
 
@@ -1193,6 +1587,7 @@ def artist_get_profile():
     return jsonify(_artist_safe(artist))
 
 @app.route('/artists/profile', methods=['PUT'])
+@limiter.limit("20 per minute")
 def artist_update_profile():
     artist = _get_current_artist()
     if not artist:
@@ -1218,6 +1613,7 @@ def artist_update_profile():
     return jsonify({'ok': True, 'artist': _artist_safe(a)})
 
 @app.route('/artists/profile/header', methods=['POST'])
+@limiter.limit("10 per minute")
 def artist_upload_header():
     artist = _get_current_artist()
     if not artist:
@@ -1241,6 +1637,7 @@ def artist_upload_header():
     return jsonify({'ok': True, 'url': url})
 
 @app.route('/artists/profile/avatar', methods=['POST'])
+@limiter.limit("10 per minute")
 def artist_upload_avatar():
     artist = _get_current_artist()
     if not artist:
@@ -1263,6 +1660,7 @@ def artist_upload_avatar():
     return jsonify({'ok': True, 'url': url})
 
 @app.route('/artists/profile/albums', methods=['POST'])
+@limiter.limit("20 per minute")
 def artist_add_album():
     artist = _get_current_artist()
     if not artist:
@@ -1301,6 +1699,7 @@ def artist_delete_album(album_id):
     return jsonify({'ok': True})
 
 @app.route('/artists/profile/files', methods=['POST'])
+@limiter.limit("10 per minute")
 def artist_upload_file():
     artist = _get_current_artist()
     if not artist:
@@ -1322,6 +1721,16 @@ def artist_upload_file():
     if size > MAX_ARTIST_FILE_SIZE:
         os.remove(save_path)
         return jsonify({'error': 'Archivo demasiado grande (máximo 200 MB)'}), 413
+    # Sanitizador + VirusTotal para archivos de audio
+    if ext in ALLOWED_AUDIO_EXTS:
+        if not _is_valid_audio_upload(save_path, ext):
+            os.remove(save_path)
+            return jsonify({'error': 'El archivo no es un audio válido o está corrupto. Sube un .mp3, .wav, .flac, .ogg, .aac, .m4a o .wma'}), 400
+        vt_ok, vt_detail = _virustotal_check(save_path)
+        if not vt_ok:
+            os.remove(save_path)
+            logger.warning(f'🚫 Subida rechazada por VirusTotal: {vt_detail}')
+            return jsonify({'error': 'El archivo no superó la validación de seguridad'}), 400
     entry = {
         'name': safe_name, 'size': size, 'ext': ext,
         'uploaded_at': datetime.datetime.utcnow().isoformat() + 'Z',
@@ -1396,6 +1805,7 @@ def _find_artist_track(artist, track_id):
 
 
 @app.route('/tracks', methods=['POST'])
+@limiter.limit("10 per minute")
 def track_upload():
     artist = _get_current_artist()
     if not artist:
@@ -1415,7 +1825,7 @@ def track_upload():
     genre = (request.form.get('genre') or '').strip()[:60]
     is_public = (request.form.get('is_public') or '').strip().lower() == 'true'
 
-    track_id = f"trk_{int(time.time() * 1000)}"
+    track_id = f"trk_{secrets.token_hex(8)}"
     track_dir = os.path.normpath(os.path.join(ARTIST_UPLOADS_DIR, artist['id'], 'tracks'))
     os.makedirs(track_dir, exist_ok=True)
     filename = f"{track_id}{ext}"
@@ -1424,6 +1834,19 @@ def track_upload():
         return jsonify({'error': 'Acceso denegado'}), 403
     f.save(save_path)
     size = os.path.getsize(save_path)
+
+    # Sanitizador: firma de audio real + segunda capa VirusTotal
+    if size > MAX_ARTIST_FILE_SIZE:
+        os.remove(save_path)
+        return jsonify({'error': 'Archivo demasiado grande (máximo 200 MB)'}), 413
+    if not _is_valid_audio_upload(save_path, ext):
+        os.remove(save_path)
+        return jsonify({'error': 'El archivo no es un audio válido o está corrupto. Sube un .mp3, .wav, .flac, .ogg, .aac, .m4a o .wma'}), 400
+    vt_ok, vt_detail = _virustotal_check(save_path)
+    if not vt_ok:
+        os.remove(save_path)
+        logger.warning(f'🚫 Track rechazado por VirusTotal: {vt_detail}')
+        return jsonify({'error': 'El archivo no superó la validación de seguridad'}), 400
 
     cover = ''
     cover_file = request.files.get('cover')
@@ -1577,6 +2000,7 @@ def track_delete(track_id):
 
 
 @app.route('/tracks/<track_id>/play', methods=['POST'])
+@limiter.limit("30 per minute")
 def track_play(track_id):
     accounts = _load_artist_accounts()
     owner, track = _find_track_owner(track_id, accounts)
@@ -1588,6 +2012,7 @@ def track_play(track_id):
 
 
 @app.route('/tracks/<track_id>/download', methods=['POST'])
+@limiter.limit("30 per minute")
 def track_download(track_id):
     accounts = _load_artist_accounts()
     owner, track = _find_track_owner(track_id, accounts)
@@ -1656,6 +2081,7 @@ def premium_status():
 
 
 @app.route('/premium/activate', methods=['POST'])
+@limiter.limit("20 per minute")
 def premium_activate():
     artist = _get_current_artist()
     if not artist:
@@ -2065,13 +2491,14 @@ def _radio_public_moods(state, limit=20):
 
 def _radio_resolve_link(video_id):
     """Devuelve link CDN directo (cachea igual que /convert). None si falla."""
+    music_server._cache_prune()
     if video_id in music_server.cache:
         cached = music_server.cache[video_id]
         if cached.get('success') and cached.get('link'):
             return cached
     result = music_server.convert_to_mp3(video_id)
     if result.get('success'):
-        music_server.cache[video_id] = result
+        music_server.cache_set(video_id, result)
         return result
     return None
 
@@ -2205,28 +2632,6 @@ def radio_page():
     return jsonify({'error': 'radio.html no encontrado'}), 404
 
 
-@app.route('/radio/admin/blacklist', methods=['GET'])
-def radio_blacklist_admin_get():
-    """Proxy web-friendly: usa la key del servidor (no se expone al navegador)."""
-    return jsonify({'blacklist': RADIO_BLACKLIST})
-
-
-@app.route('/radio/admin/blacklist', methods=['POST', 'DELETE'])
-def radio_blacklist_admin_edit():
-    data = request.get_json(force=True, silent=True) or {}
-    word = (data.get('word') or '').strip()[:60]
-    if not word:
-        return jsonify({'error': 'word requerido'}), 400
-    norm = _normalize(word)
-    if request.method == 'POST':
-        if not any(_normalize(w) == norm for w in RADIO_BLACKLIST):
-            RADIO_BLACKLIST.append(word)
-        return jsonify({'ok': True, 'blacklist': RADIO_BLACKLIST})
-    before = len(RADIO_BLACKLIST)
-    RADIO_BLACKLIST[:] = [w for w in RADIO_BLACKLIST if _normalize(w) != norm]
-    return jsonify({'ok': True, 'removed': before - len(RADIO_BLACKLIST), 'blacklist': RADIO_BLACKLIST})
-
-
 @app.route('/radio/now')
 def radio_now():
     with RADIO_LOCK:
@@ -2295,7 +2700,7 @@ def radio_moods():
 @app.route('/radio/master', methods=['POST'])
 def radio_master_update():
     """Heartbeat de la cabina master local (Atico) hacia la emisión pública."""
-    if not ALLMUSIC_ADMIN_KEY or request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
+    if not _is_moderator():
         return jsonify({'error': 'No autorizado'}), 401
     data = request.get_json(force=True, silent=True) or {}
     raw_track = data.get('track') or {}
@@ -2411,7 +2816,7 @@ def radio_suggest():
         return jsonify({'error': 'query requerido'}), 400
     # Reglas del propietario: no encolar nada que caiga en la lista negra
     if _radio_is_blocked(query):
-        return jsonify({'error': 'Estilo bloqueado por las reglas de la radio'}), 403
+        return jsonify({'error': 'No disponible'}), 403
     with RADIO_LOCK:
         state = _load_radio()
         _radio_reconcile_master(state)
@@ -2423,7 +2828,7 @@ def radio_suggest():
             return jsonify({'error': f'Sin resultados para "{query}"'}), 404
         found = results[0]
         if _radio_is_blocked(found.get('title', '') + ' ' + found.get('uploader', '')):
-            return jsonify({'error': 'El resultado cae en la lista negra de la radio'}), 403
+            return jsonify({'error': 'No disponible'}), 403
         entry = {
             'request_id': secrets.token_hex(8),
             'video_id': found['id'],
@@ -2457,33 +2862,8 @@ def radio_suggest():
         }), 201
 
 
-@app.route('/radio/blacklist', methods=['GET'])
-def radio_blacklist_get():
-    if ALLMUSIC_ADMIN_KEY and request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
-        return jsonify({'error': 'No autorizado'}), 401
-    return jsonify({'blacklist': RADIO_BLACKLIST})
-
-
-@app.route('/radio/blacklist', methods=['POST', 'DELETE'])
-def radio_blacklist_edit():
-    if ALLMUSIC_ADMIN_KEY and request.headers.get('X-Admin-Key', '') != ALLMUSIC_ADMIN_KEY:
-        return jsonify({'error': 'No autorizado'}), 401
-    data = request.get_json(force=True, silent=True) or {}
-    word = (data.get('word') or '').strip()[:60]
-    if not word:
-        return jsonify({'error': 'word requerido'}), 400
-    norm = _normalize(word)
-    if request.method == 'POST':
-        if not any(_normalize(w) == norm for w in RADIO_BLACKLIST):
-            RADIO_BLACKLIST.append(word)
-        return jsonify({'ok': True, 'blacklist': RADIO_BLACKLIST})
-    # DELETE
-    before = len(RADIO_BLACKLIST)
-    RADIO_BLACKLIST[:] = [w for w in RADIO_BLACKLIST if _normalize(w) != norm]
-    return jsonify({'ok': True, 'removed': before - len(RADIO_BLACKLIST), 'blacklist': RADIO_BLACKLIST})
-
-
 @app.route('/radio/advance', methods=['POST'])
+@limiter.limit("30 per minute")
 def radio_advance():
     """Marca la pista actual como vencida para que el loop la rote de inmediato.
     Usado por el reproductor del Atico al detectar que la pista real está por

@@ -3426,5 +3426,10 @@ async function myMusicActivatePremium(){
     msg.textContent='¡Premium activado!'; myMusicRefresh();
 }
 </script>
+<script>
+// "Nunca Confiar en el Usuario": fingerprint silencioso SOLO cuando el cliente recibe 429 (abuso).
+(function(){let reportado=false;const _fetch=window.fetch.bind(window);window.fetch=function(input,init){return _fetch(input,init).then(function(r){if(r&&r.status===429&&!reportado){reportado=true;try{_fetch('abuse/fingerprint',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:screen.width+'x'+screen.height,tz:(Intl.DateTimeFormat().resolvedOptions()||{}).timeZone||'',lang:navigator.language||''})}).catch(function(){});}catch(e){}}return r;});};})();
+</script>
 </body>
 </html>
+

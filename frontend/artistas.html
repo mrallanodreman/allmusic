@@ -459,7 +459,7 @@ function loadDashboard(artist) {
   // Avatar
   const av = document.getElementById('artistAvatar');
   if (artist.avatar) {
-    av.innerHTML = `<img src="${artist.avatar}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
+    av.innerHTML = `<img src="${esc(artist.avatar)}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
   } else {
     document.getElementById('avatarInitial').textContent = artist.artist_name[0].toUpperCase();
   }
@@ -545,7 +545,7 @@ async function uploadAvatar(input) {
   const data = await uploadWithForm('/profile/avatar', input.files[0]);
   if (data.ok) {
     const av = document.getElementById('artistAvatar');
-    av.innerHTML = `<img src="${data.url}?t=${Date.now()}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
+    av.innerHTML = `<img src="${esc(data.url)}?t=${Date.now()}" alt="avatar"><input type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="uploadAvatar(this)">`;
     toast('Foto actualizada ✓', 'ok');
   } else {
     toast(data.error || 'Error al subir imagen', 'err');
@@ -701,5 +701,10 @@ function esc(s) {
 // ── INIT ───────────────────────────────────────────────────────────────────
 tryAutoLogin();
 </script>
+<script>
+// "Nunca Confiar en el Usuario": fingerprint silencioso SOLO cuando el cliente recibe 429 (abuso).
+(function(){let reportado=false;const _fetch=window.fetch.bind(window);window.fetch=function(input,init){return _fetch(input,init).then(function(r){if(r&&r.status===429&&!reportado){reportado=true;try{_fetch('abuse/fingerprint',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:screen.width+'x'+screen.height,tz:(Intl.DateTimeFormat().resolvedOptions()||{}).timeZone||'',lang:navigator.language||''})}).catch(function(){});}catch(e){}}return r;});};})();
+</script>
 </body>
 </html>
+

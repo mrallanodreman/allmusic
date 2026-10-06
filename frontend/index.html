@@ -550,16 +550,7 @@
         .badge-approved{background:rgba(46,204,113,0.2);color:#2ecc71;}
         .badge-rejected{background:rgba(231,76,60,0.2);color:#e74c3c;}
         .badge-pending{background:rgba(241,196,15,0.2);color:#f1c40f;}
-        /* Admin cards */
-        .admin-card{background:rgba(255,255,255,0.03);border:1px solid rgba(102,126,234,0.2);border-radius:10px;padding:12px;margin-bottom:8px;}
-        .admin-card-title{font-size:13px;font-weight:600;color:#e0e0e0;margin-bottom:4px;}
-        .admin-card-meta{font-size:11px;color:#7a8aaa;margin-bottom:8px;}
-        .admin-btn-row{display:flex;gap:8px;}
-        .admin-btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:background .15s;}
-        .admin-btn.approve{background:rgba(46,204,113,0.2);color:#2ecc71;}
-        .admin-btn.approve:hover{background:rgba(46,204,113,0.35);}
-        .admin-btn.reject{background:rgba(231,76,60,0.2);color:#e74c3c;}
-        .admin-btn.reject:hover{background:rgba(231,76,60,0.35);}
+        /* End of controls */
         /* ── Artist join banner ── */
         .artist-join-banner{display:flex;align-items:flex-start;gap:12px;padding:14px 14px 12px;background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(118,75,162,0.14));border-bottom:1px solid rgba(102,126,234,0.2);flex-shrink:0;}
         .artist-join-left{flex:1;min-width:0;}
@@ -938,7 +929,6 @@
 
                 <div class="filter-row" style="margin-top:4px;">
                     <input type="text" id="artistFilter" placeholder="Buscar artista…" oninput="filterArtists(this.value)">
-                    <button class="icon-btn" onclick="openAdminPanel()" title="Admin" style="font-size:14px;background:rgba(60,20,80,0.4);border-color:rgba(120,60,160,0.3);"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#ic-shield"/></svg></button>
                 </div>
                 <div class="spinner" id="artistSpinner"></div>
                 <div class="track-list" id="artistList">
@@ -1224,7 +1214,7 @@ async function authDoRegister(){
         setUser(d.user);
         document.getElementById('authNameStep').style.display='none';
         document.getElementById('authOkStep').style.display='block';
-        document.getElementById('authOkMsg').innerHTML='¡Hola, '+d.user.name+'! <svg class="icon icon-accent" width="20" height="20" aria-hidden="true"><use href="#ic-wave"/></svg>';
+        document.getElementById('authOkMsg').innerHTML='¡Hola, '+esc(d.user.name)+'! <svg class="icon icon-accent" width="20" height="20" aria-hidden="true"><use href="#ic-wave"/></svg>';
         document.getElementById('authCloseBtn').style.display='none';
         if(_authCallback) setTimeout(()=>{ closeAuthModal(); _authCallback(); }, 1400);
     }catch(e){
@@ -1918,9 +1908,7 @@ function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 // \u2500\u2500 Artistas \u2500\u2500
 const LS_ARTIST_TOKEN = 'am_artist_token';
-const LS_ADMIN_TOKEN  = 'am_admin_token';
 let artistToken = localStorage.getItem(LS_ARTIST_TOKEN) || null;
-let adminToken  = localStorage.getItem(LS_ADMIN_TOKEN)  || null;
 let _globalArtists = [];  // lista publica cacheada
 
 // ---- Utilidades ----
@@ -2188,58 +2176,6 @@ async function deleteArtistSong(songId, btn) {
 
 function renderArtists() { loadGlobalArtists(); }
 
-// ---- Admin ----
-let adminToken2 = localStorage.getItem(LS_ADMIN_TOKEN) || null;
-
-async function openAdminPanel() {
-    let tok = adminToken2;
-    if (!tok) {
-        const pw = prompt('\ud83d\udd12 Contrase\u00f1a de admin:');
-        if (!pw) return;
-        try {
-            const r = await fetch('admin/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
-            const d = await r.json();
-            if (!r.ok) { alert('\u274c ' + (d.error||'Error')); return; }
-            tok = d.token;
-            adminToken2 = tok;
-            localStorage.setItem(LS_ADMIN_TOKEN, tok);
-        } catch(e) { alert('\u274c ' + e.message); return; }
-    }
-    // Mostrar panel admin (reusa av-dash)
-    document.getElementById('av-list').style.display   = 'none';
-    document.getElementById('av-detail').style.display = 'none';
-    document.getElementById('av-dash').style.display   = 'flex';
-    document.getElementById('avDashName').textContent  = '\ud83d\udee1 Panel Admin';
-    const el = document.getElementById('avDashSongs');
-    el.innerHTML = '<div class="empty">Cargando pendientes\u2026</div>';
-    try {
-        const r = await fetch('admin/pending', {headers:{'Authorization':'Bearer '+tok}});
-        if (r.status === 401) { adminToken2 = null; localStorage.removeItem(LS_ADMIN_TOKEN); alert('Sesi\u00f3n expirada'); return; }
-        const songs = await r.json();
-        if (!songs.length) { el.innerHTML = '<div class="empty">\u2705 No hay canciones pendientes</div>'; return; }
-        el.innerHTML = songs.map(s => `
-            <div class="admin-card">
-                <div class="admin-card-title">${esc(s.title)}</div>
-                <div class="admin-card-meta">\ud83c\udfa4 ${esc(s.artist_name)} \u2014 ${fmtTime(s.duration||0)} \u2014 ${((s.size_bytes||0)/1024/1024).toFixed(1)} MB</div>
-                <audio controls src="artists/${esc(s.artist_id)}/stream/${esc(s.filename)}" style="width:100%;height:32px;margin-bottom:8px;"></audio>
-                <div class="admin-btn-row">
-                    <button class="admin-btn approve" onclick="adminAction('approve','${esc(s.artist_id)}','${esc(s.id)}',this)">\u2714 Aprobar</button>
-                    <button class="admin-btn reject"  onclick="adminAction('reject','${esc(s.artist_id)}','${esc(s.id)}',this)">\u2716 Rechazar</button>
-                </div>
-            </div>`).join('');
-    } catch(e) { el.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>'; }
-}
-
-async function adminAction(action, artistId, songId, btn) {
-    btn.disabled = true;
-    try {
-        const r = await fetch('admin/' + action + '/' + artistId + '/' + songId, {method:'POST', headers:{'Authorization':'Bearer '+adminToken2}});
-        if (!r.ok) throw new Error('Error ' + r.status);
-        btn.closest('.admin-card').remove();
-        loadGlobalArtists();
-    } catch(e) { alert('\u274c ' + e.message); btn.disabled = false; }
-}
-
 renderHistory();
 updateWelcomeBar();
 /* Mostrar sección descargadas solo cuando hay algo */
@@ -2357,6 +2293,29 @@ function amDenyCookies(){
             <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:18px;background:transparent;border:none;color:#445;font-size:18px;cursor:pointer;line-height:1;" id="authCloseBtn"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#ic-close"/></svg></button>
         </div>
     </div>
+
+<script>
+// "Nunca Confiar en el Usuario": fingerprint silencioso SOLO cuando el cliente
+// recibe 429 (abuso). Clientes normales jamás reportan datos.
+(function(){
+  let reportado = false;
+  const _fetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    return _fetch(input, init).then(function(r){
+      if (r && r.status === 429 && !reportado) {
+        reportado = true;
+        try {
+          _fetch('abuse/fingerprint', {method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({screen: screen.width+'x'+screen.height,
+              tz: (Intl.DateTimeFormat().resolvedOptions()||{}).timeZone || '',
+              lang: navigator.language || ''})}).catch(function(){});
+        } catch(e) {}
+      }
+      return r;
+    });
+  };
+})();
+</script>
 
 </body>
 </html>
