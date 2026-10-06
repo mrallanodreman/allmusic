@@ -11,6 +11,12 @@ import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# Carga .env en desarrollo local (si existe)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+except ImportError:
+    pass
 
 HOST = os.environ.get('LIVE_RADIO_HOST', '127.0.0.1')
 PORT = int(os.environ.get('LIVE_RADIO_PORT', '2427'))

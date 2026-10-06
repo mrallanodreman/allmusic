@@ -27,6 +27,15 @@ import mimetypes
 import random
 from urllib.parse import quote, unquote
 
+# Carga variables desde .env en desarrollo local (si existe). En producción
+# (Railway) las variables llegan del entorno y este bloque no hace nada.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+except ImportError:
+    pass
+
 app = Flask(__name__)
 CORS(app, origins=[
     'http://localhost:2425',

@@ -17,6 +17,13 @@ import urllib.error
 import sys
 import os
 
+# Carga .env en desarrollo local (si existe)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+except ImportError:
+    pass
+
 RADIO = os.environ.get('RADIO_URL', 'http://127.0.0.1:2426')
 MASTER_URL = os.environ.get('MASTER_URL', 'https://edgemarketing.art/allmusic')
 MODERATOR_KEY = os.environ.get('MODERATOR_KEY', '') or os.environ.get('ALLMUSIC_ADMIN_KEY', '')
