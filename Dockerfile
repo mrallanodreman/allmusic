@@ -23,6 +23,8 @@ RUN groupadd -r app && useradd -r -g app app \
 USER app
 
 ENV ALLMUSIC_DATA_DIR=/app/data
+ENV PORT=2426
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 2426 2427
 
