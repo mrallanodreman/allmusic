@@ -208,7 +208,8 @@ def set_security_headers(resp):
     resp.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; "
-        "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://static.cloudflareinsights.com; "
+        "style-src 'self' 'unsafe-inline'"
     )
     return resp
 

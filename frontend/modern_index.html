@@ -2549,10 +2549,11 @@ let histDownloaded=JSON.parse(localStorage.getItem(LS_DL)||'[]');
 function savePlayed(){localStorage.setItem(LS_PLAYED,JSON.stringify(histPlayed.slice(-50)));}
 function saveDl(){localStorage.setItem(LS_DL,JSON.stringify(histDownloaded.slice(-50)));}
 
-function addToPlayed(title,artist,thumb,src){
+function addToPlayed(title,artist,thumb,src,videoId){
     // Avoid duplicate consecutive
     if(histPlayed.length&&histPlayed[0].title===title)return;
-    histPlayed.unshift({title,artist,thumb,src,ts:Date.now()});
+    if(!videoId&&src&&src.startsWith('stream/'))videoId=src.split('/')[1];
+    histPlayed.unshift({title,artist,thumb,src,videoId:videoId||null,ts:Date.now()});
     if(histPlayed.length>50)histPlayed.pop();
     savePlayed();renderHistory();
 }
@@ -2605,9 +2606,10 @@ function renderHistory(){
     }
 }
 async function playFromHistory(i){
-    const it=histPlayed[i];if(!it||!it.src)return;
+    const it=histPlayed[i];if(!it||!(it.src||it.videoId))return;
     curVideoId=null;
-    const src=it.src.startsWith('stream/')?await resolveDirectSrc(it.src.split('/')[1]):it.src;
+    const srcId=it.videoId||(it.src&&it.src.startsWith('stream/')?it.src.split('/')[1]:null);
+    const src=srcId?await resolveDirectSrc(srcId):it.src;
     audio.src=src;audio.play();
     setInfo(it.title,it.artist||'',it.thumb||'','—','—','—','—',null);
 }
@@ -2871,7 +2873,7 @@ async function playResult(r){
     audio.src=src;
     audio.play();
     setInfo(r.title,r.uploader||'YouTube',r.thumbnail||'','YouTube','—',r.duration?fmtTime(r.duration):'—','—',null);
-    addToPlayed(r.title,r.uploader||'YouTube',r.thumbnail||'',src);
+    addToPlayed(r.title,r.uploader||'YouTube',r.thumbnail||'',src,r.id);
 }
 function dlSearch(i,btn){
     const r=searchResults[i];if(!r)return;
