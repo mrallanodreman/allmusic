@@ -2900,7 +2900,11 @@ def _wsgi_app(environ, start_response):
         environ['PATH_INFO'] = '/'
     elif path.startswith('/allmusic/'):
         environ['PATH_INFO'] = path[len('/allmusic'):]
-    return app(environ, start_response)
+    return _orig_wsgi_app(environ, start_response)
+
+
+_orig_wsgi_app = app.wsgi_app
+app.wsgi_app = _wsgi_app
 
 
 def _start_radio_loop():
@@ -2922,7 +2926,6 @@ if __name__ == '__main__':
     _start_radio_loop()
 
     try:
-        app.wsgi_app = _wsgi_app
         app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
     except KeyboardInterrupt:
         print("\n🛑 Servidor detenido por el usuario")
