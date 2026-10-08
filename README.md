@@ -9,24 +9,24 @@ está aquí y este repo es la fuente de verdad.
 
 | ruta | qué es | dónde corre |
 |---|---|---|
-| `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | Railway, servicio `allmusic-server` |
-| `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | contenedor EdgeRadio **y** `allmusic-radio-live.service` en el VAIO (`:2427`) |
+| `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
+| `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | master activo: `allmusic-radio-live.service` en el VAIO (`:2427`) |
 | `frontend/` | sitio web + assets de la radio (C24, moods, artistas) | servido por el backend |
 | `desktop/allmusic2.py` | mini-player GTK de escritorio (oculto con F9 / launcher) | en el PC del usuario, contra la API |
-| `radio/atico-player.py` | manda el stream a `media_player.atico` vía Home Assistant | `atico-player.service` (solo VAIO) |
+| `radio/atico-player.py` | manda el stream a `media_player.atico_2` vía Home Assistant | `atico-player.service` (solo VAIO) |
 | `radio/AGENTS.md` | doc operativa del pipeline (leer antes de tocar la radio) | — |
-| `start.sh`, `Dockerfile`, `railway.json` | arranque conjunto backend+radio y build/deploy | Railway |
+| `start.sh`, `Dockerfile`, `railway.json` | arranque conjunto backend+radio y build/deploy | `Dockerfile` → Coolify/warmachine (autodeploy desde GitHub); `railway.json` es legacy de Railway |
 
 ## Pipeline de la radio
 
 ```
-Web (Railway · edgemarketing.art/allmusic)   <- fuente de verdad: pedidos + rotación
+Web (edgemarketing.art/allmusic -> túnel CF -> warmachine :2426)  <- fuente de verdad: pedidos + rotación
   v
-backend/radio-live.py (ffmpeg, :2427) -> MP3 continuo
+backend/radio-live.py (VAIO, ffmpeg, :2427) -> MP3 continuo
   v
-Cloudflare Tunnel (edgemail-tunel) -> https://mail.edgemarketing.art/radio/live.mp3
+stream LAN http://192.168.1.2:2427/live.mp3   (público: https://mail.edgemarketing.art/radio/live.mp3, HOY ROTO — ver Estado conocido)
   v
-radio/atico-player.py -> media_player.atico (bocina del Atico)
+radio/atico-player.py -> media_player.atico_2 (bocina del Atico)
 ```
 
 Atico y la web suenan la **misma** cola: el master local lidera desde la web, que es
@@ -59,18 +59,21 @@ Ver `.env.example`. Obligatorias en producción: `MODERATOR_KEY`, `JWT_SECRET`,
 `RAPIDAPI_KEY`, `VIRUSTOTAL_API_KEY`. Sin ellas, los endpoints afectados fallan
 de forma segura (fail-closed).
 
-## Nota operativa: error de Terminal en Coolify (restricción de Cloudflare)
+## Nota operativa: Terminal/Exec en Coolify
 
 Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection lost` / `WebSocket error occurred`:
 
-- Es una restricción de Cloudflare, no del código. El Terminal usa un WebSocket (`wss://`).
-- Soluciones: en Cloudflare **Network → WebSockets: on** y **SSL/TLS → Full (strict)** (evitar “Flexible”).
-- No tocar código de AllMusic para este error.
+- El Terminal usa WebSocket; **primero intentar por IP directa** de warmachine: `http://192.168.1.4:8000` (sin Cloudflare de por medio).
+- Verificado 2026-10-08 en la zona `edgemarketing.art`: **WebSockets: on** y **SSL/TLS: full** ya estaban. No subir a `Full (strict)`: el origen (warmachine) sirve el certificado *default* de Traefik (self-signed) y strict rompería el sitio con 526.
+- Stack de realtime de Coolify (soketi `:6001`) verificado vivo — el WS no lo bloquea nada en infra.
+- Si aun así falla vía Cloudflare, no es el código de AllMusic: revisar en la consola de Coolify los **permisos del usuario/miembro** sobre el recurso `radio` (rol) antes de tocar el backend.
 
 ## Runtime vs repo
 
-- El backend/radio se despliega en Railway con `Dockerfile` + `start.sh`
-  (proyecto `allmusic`, servicio `allmusic-server`, entorno `production`).
+- El backend se despliega en **warmachine (Coolify)** con el `Dockerfile` del repo
+  (autodeploy desde GitHub, servicio app `radio`, `192.168.1.4:2426`). El servicio
+  `allmusic-server` de **Railway quedó sin deploys** (trial vencido 2026-09-10) y
+  `railway.json` queda como legacy.
 - La radio se **ejecuta** en el VAIO desde
   `/run/media/pctorre/HddCompiler/allmusic-radio/` (servicios user systemd
   `allmusic-radio-live` y `atico-player`), no desde este repo: el disco de
@@ -84,12 +87,17 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 - La app de escritorio habla con la API por URL configurable
   (`desktop/config.example.json`).
 
-## Estado conocido
+## Estado conocido (verificado 2026-10-07)
 
-- El *fallback* a la IA local `:2426` (EdgeRadio IA) está muerto en el VAIO: no hay
-  ningún proceso escuchando en ese puerto, aunque `backend/radio-live.py` y
-  `radio-atico.sh` lo referencian.
-- `radio-atico.sh` apunta a `:2426` y a endpoints `/search` y `/convert` que ya no
-  existen; la API de la radio en el VAIO está en `:2427`.
+- `:2426` en el VAIO **sí está vivo** (`allmusic-radio.service`, copia local del
+  backend): `radio-atico.sh` apunta a `127.0.0.1:2426` y `/search` + `/convert`
+  existen y responden. `:2427` es el stream MP3 del master, no una API.
+- `atico-player.service` usa `LIVE_STREAM_URL=http://192.168.1.2:2427/live.mp3`
+  (master LAN del VAIO). Ojo: la IP es por DHCP — si cambia, actualizar la unit.
+  Entidad vieja `media_player.atico` quedó `unavailable` tras el cambio de red;
+  la activa es `media_player.atico_2`.
+- El stream público `https://mail.edgemarketing.art/radio/live.mp3` devuelve 404:
+  la regla del túnel (`mail → 192.168.1.4:2123`) apunta al gateway de warmachine,
+  que no responde.
 - El servicio `allmusic-server` de Railway no tiene despliegues activos.
 - El repo público `mrallanodreman/AllMusic2.0` queda como puntero a este monorepo.
