@@ -202,14 +202,18 @@ def abuse_strict_limit():
 def set_security_headers(resp):
     """Cabeceras de seguridad en todas las respuestas."""
     resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
-    resp.headers.setdefault('X-Frame-Options', 'DENY')
+    # SAMEORIGIN (no DENY): la cabina de IA Radio (radio.html?embedded=1) se
+    # renderiza en un iframe del propio sitio; DENY la volvía blanca.
+    resp.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
     resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
     resp.headers.setdefault('Strict-Transport-Security', 'max-age=63072000; includeSubDomains')
     resp.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; "
         "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://static.cloudflareinsights.com; "
-        "style-src 'self' 'unsafe-inline'"
+        "style-src 'self' 'unsafe-inline'; "
+        "frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com; "
+        "connect-src 'self' https: data: wss:"
     )
     return resp
 
