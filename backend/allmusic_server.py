@@ -2891,6 +2891,18 @@ def radio_advance():
 
 # ── MAIN ───────────────────────────────────────────────────────────────────────
 
+def _wsgi_app(environ, start_response):
+    # Soporta servir la app bajo el prefijo /allmusic (por el proxy). Si la
+    # request viene como /allmusic/<path>, se recorta ese prefijo antes de
+    # que Flask enrutee; así /allmusic/status -> /status, /allmusic/ -> /.
+    path = environ.get('PATH_INFO', '/')
+    if path == '/allmusic':
+        environ['PATH_INFO'] = '/'
+    elif path.startswith('/allmusic/'):
+        environ['PATH_INFO'] = path[len('/allmusic'):]
+    return app(environ, start_response)
+
+
 def _start_radio_loop():
     thread = threading.Thread(target=_radio_loop, daemon=True)
     thread.start()
@@ -2910,6 +2922,7 @@ if __name__ == '__main__':
     _start_radio_loop()
 
     try:
+        app.wsgi_app = _wsgi_app
         app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
     except KeyboardInterrupt:
         print("\n🛑 Servidor detenido por el usuario")
