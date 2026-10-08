@@ -59,6 +59,14 @@ Ver `.env.example`. Obligatorias en producción: `MODERATOR_KEY`, `JWT_SECRET`,
 `RAPIDAPI_KEY`, `VIRUSTOTAL_API_KEY`. Sin ellas, los endpoints afectados fallan
 de forma segura (fail-closed).
 
+## Nota operativa: error de Terminal en Coolify (restricción de Cloudflare)
+
+Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection lost` / `WebSocket error occurred`:
+
+- Es una restricción de Cloudflare, no del código. El Terminal usa un WebSocket (`wss://`).
+- Soluciones: en Cloudflare **Network → WebSockets: on** y **SSL/TLS → Full (strict)** (evitar “Flexible”).
+- No tocar código de AllMusic para este error.
+
 ## Runtime vs repo
 
 - El backend/radio se despliega en Railway con `Dockerfile` + `start.sh`
