@@ -5,6 +5,9 @@ que suena en el Atico. Antes esto vivía en tres sitios (web en `allmusic-backen
 app en el repo público `AllMusic2.0` y la radio sin versionar en disco); ahora todo
 está aquí y este repo es la fuente de verdad.
 
+> 🙋 ¿Eres colaborador? Antes de tocar infra lee el
+> **[Reporte de errores y permisos](#-reporte-de-errores-y-permisos-para-colaboradores)**.
+
 ## Layout
 
 | ruta | qué es | dónde corre |
@@ -96,8 +99,69 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
   (master LAN del VAIO). Ojo: la IP es por DHCP — si cambia, actualizar la unit.
   Entidad vieja `media_player.atico` quedó `unavailable` tras el cambio de red;
   la activa es `media_player.atico_2`.
-- El stream público `https://mail.edgemarketing.art/radio/live.mp3` devuelve 404:
-  la regla del túnel (`mail → 192.168.1.4:2123`) apunta al gateway de warmachine,
-  que no responde.
+- El stream público `https://mail.edgemarketing.art/radio/live.mp3` responde **502 Bad
+  Gateway** (antes 404): la regla del túnel (`mail → 192.168.1.4:2123`) apunta al gateway de
+  warmachine, que no responde. Ver **E1** en el reporte de errores.
 - El servicio `allmusic-server` de Railway no tiene despliegues activos.
 - El repo público `mrallanodreman/AllMusic2.0` queda como puntero a este monorepo.
+
+## 🚨 Reporte de errores y permisos (para colaboradores)
+
+> Verificado **2026-10-09** (web en vivo + API de Coolify).
+> ⚠️ **Sin secretos aquí**: este es un reporte para trabajar, no un volcado de claves.
+> Ningún token/env de producción va en este repo. Si necesitas uno, pídelo por canal privado y
+> rótalo solo en Coolify.
+
+### 🐛 Errores y problemas (estado actual)
+
+| # | Problema | Síntoma | Causa probable | Dónde se arregla | Estado |
+|---|---|---|---|---|---|
+| E1 | Stream público de la radio caído | `https://mail.edgemarketing.art/radio/live.mp3` → **502 Bad Gateway** | Túnel Cloudflare `mail` → `192.168.1.4:2123`; el gateway de warmachine no responde | Cloudflare Tunnel **y** warmachine (SSH) | 🔴 activo |
+| E2 | Cola de radio y master sin conectar | `/allmusic/radio/now` → `playing:true` pero `queue:0`, `top_requested:0`, `master:false`, `master_offline:false` | El master local (VAIO `:2427`) no publica rotación/pedidos; `radio-live.py` fuera o sin feed | VAIO: `allmusic-radio-live.service` + `atico-player.service` | 🔴 activo |
+| E3 | Autodeploy GitHub→Coolify **no dispara** | `git push` a `master` **no** redeploya; hace falta deploy manual por API | Webhook o GitHub App no conectada al servicio `radio`, o sin permisos de deploy | GitHub (webhook/App) + Coolify (dueño del recurso) | 🔴 activo |
+| E4 | Terminal/Exec de Coolify | `Terminal websocket connection lost` / `WebSocket error occurred` | Ya verificado WebSockets:on y SSL:full en CF y soketi vivo → sospecha: **rol del miembro** sobre el recurso `radio` | Coolify (roles) o Terminal por IP directa `http://192.168.1.4:8000` | 🔴 activo |
+| E5 | Cabina de IA Radio (iframe) en blanco | `X-Frame-Options: DENY` bloqueaba el iframe `radio.html?embedded=1` | Cabecera demasiado estricta | Fix `SAMEORIGIN` en `92050aa` — **ya desplegado y verificado** | 🟢 resuelto |
+| E6 | Reproducir desde Historial fallaba | Error `MEDIA_ERR`/JS al reproducir desde Historial; Búsqueda sí funcionaba | El historial guardaba enlaces directos que **expiran** | Fix: guardar `videoId` y resolver enlace fresco (`3077d67`) | 🟢 resuelto |
+| E7 | Errores de consola “violates CSP” (adsense/cloudflareinsights) | Scripts legítimos bloqueados por CSP estricta | CSP nueva demasiado cerrada | Fix: permitir `pagead2.googlesyndication.com` y `static.cloudflareinsights.com` + `frame-src`/`connect-src` | 🟢 resuelto |
+| E8 | Logo SVG roto | `allmusic-logo.svg` no servía | Base href / prefijo `/allmusic/` | Fix de `frontend_files` — 200 `image/svg+xml` | 🟢 resuelto |
+
+Detalle de E2 (verificado en vivo): la API declara `playing:true` pero con cola vacía no hay
+rotación real; el Ático depende del master local, no del contenedor.
+
+### 🔐 Permisos y roles que necesitamos (para editar sin fricción)
+
+"Poder hacer lo que sea sin problemas" = cada colaborador debe tener el rol mínimo **suficiente**
+para diagnosticar y desplegar. Esto NO significa compartir contraseñas: se otorgan **roles** y
+**tokens con scope** (mínimo privilegio).
+
+| Plataforma | Qué necesitamos | Para qué | Rol sugerido |
+|---|---|---|---|
+| GitHub `mrallanodreman/allmusic` | Admin/Maintain para **@TheBooth** y **@Dazm22** | editar settings, webhooks, branch protection, colaboradores, releases | **Admin** |
+| Coolify (proyecto EdgeRadio, servicio `radio`) | Rol **Owner/Admin** del equipo + token de API | deploy/restart, ver logs, editar variables, Terminal/Exec | **Owner** |
+| Cloudflare (zona `edgemarketing.art`) | Edición de zona (no contraseña) | Network → WebSockets, SSL/TLS, arreglar túnel `mail` | **Member (edit)** |
+| warmachine `192.168.1.4` | Acceso **SSH** | revisar gateway `:2123`, Traefik, contenedor, ruta del túnel | usuario admin |
+| VAIO (radio local) | acceso systemd `allmusic-radio-live` / `atico-player` | arreglar stream local `:2427` y la cola | usuario con systemd |
+| RapidAPI / VirusTotal | **ya configuradas** en Coolify (verificado: `/convert` responde) | conversión y sanitizado de subidas | set en Coolify |
+
+⚠️ **Regla de oro:** los secretos viven solo en Coolify (variables del entorno) y en respaldos
+**cifrados**. Si alguien te pide una clave por el repo/issue, no la des por escrito en GitHub.
+
+### 🛠 Guía para ayudar a arreglar (checklist por error)
+
+1. **E1 (stream público):** con acceso al túnel CF y SSH a warmachine, validar que `192.168.1.4:2123`
+   responda y revisar las rutas de Traefik para el host `mail`.
+2. **E2 (cola/master):** en el VAIO: `systemctl --user status allmusic-radio-live` y `atico-player`.
+   Fijar `LIVE_STREAM_URL` (la IP es por **DHCP**; hoy apunta a `192.168.1.2:2427`).
+3. **E3 (autodeploy):** reconectar la GitHub App/webhook en Coolify y probar con un push de prueba;
+   documentar el resultado en el issue #1.
+4. **E4 (Terminal):** subir el rol del miembro en Coolify o probar el Terminal por IP directa
+   (`http://192.168.1.4:8000`) para aislar si es Cloudflare.
+5. Marcar avances en el issue **#1** (issues → commits → pushes).
+
+### 📌 Resumen
+
+- Web y API **operativas**: `/status`, `/search`, `/convert`, `/radio/now`, logo, cabeceras → OK.
+- Tests de seguridad: **11/11 passing**.
+- Quedan **4 errores activos**, todos de **infraestructura** (túnel, master local, autodeploy,
+  rol de Coolify), no de código del backend.
+- La lista de permisos de arriba desbloquea a los colaboradores para resolverlos solos.
