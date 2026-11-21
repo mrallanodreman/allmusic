@@ -1,0 +1,41 @@
+import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
+import { Icon } from './Icons.jsx';
+
+export function QueuePanel({ items }) {
+  const list = Array.isArray(items) ? items.slice(0, 8) : [];
+
+  return (
+    <section className="queue panel" id="cola" aria-labelledby="queue-title">
+      <div className="section-head">
+        <h2 id="queue-title">SIGUIENTE EN LA COLA</h2>
+        <span className="section-head__hint">{list.length} pendientes</span>
+      </div>
+      {list.length === 0 ? (
+        <p className="empty" role="status">
+          <Icon name="list" className="icon" />
+          Cola vacía · pedí la primera canción
+        </p>
+      ) : (
+        <ol className="queue__list">
+          {list.map((item, index) => {
+            const title = normalizeText(item?.title, 90) || 'Sin título';
+            const artist = normalizeText(item?.artist, 60);
+            const cover = safeUrl(item?.thumbnail);
+            const minutes = Number(item?.eta_minutes);
+            return (
+              <li className="queue__item" key={normalizeText(item?.request_id, 60) || normalizeText(item?.video_id, 60) || index}>
+                <span className="queue__pos">{String(index + 1).padStart(2, '0')}</span>
+                {cover ? <img className="queue__thumb" src={cover} alt="" loading="lazy" /> : <span className="queue__thumb queue__thumb--empty" />}
+                <span className="queue__text">
+                  <strong title={title}>{title}</strong>
+                  {artist ? <small title={artist}>{artist}</small> : null}
+                </span>
+                <span className="queue__eta">{[0, 1, 2].includes(minutes) ? `~${minutes} min` : formatTime(item?.eta_seconds)}</span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </section>
+  );
+}

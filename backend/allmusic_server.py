@@ -270,6 +270,10 @@ DATA_DIR = os.environ.get('ALLMUSIC_DATA_DIR', os.path.join(BASE_DIR, 'data'))
 DOWNLOADS_DIR = os.path.join(DATA_DIR, 'downloads')
 ARTIST_UPLOADS_DIR = os.path.join(DATA_DIR, 'artist_uploads')
 FRONTEND_DIR = os.environ.get('ALLMUSIC_FRONTEND_DIR', os.path.join(os.path.dirname(BASE_DIR), 'frontend'))
+# Build de la UI React (IA Radio). Si no existe, /radio sirve el dashboard legacy.
+REACT_DIST_DIR = os.environ.get(
+    'ALLMUSIC_REACT_DIST_DIR', os.path.join(os.path.dirname(BASE_DIR), 'frontend-react', 'dist')
+)
 
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 os.makedirs(ARTIST_UPLOADS_DIR, exist_ok=True)
@@ -2632,18 +2636,50 @@ def _radio_loop():
         time.sleep(RADIO_QUEUE_REVIEW_SECONDS)
 
 
+def _no_cache(resp):
+    """La UI de radio cambia con cada deploy: nunca cachear HTML ni assets."""
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+
+
 @app.route('/radio')
 def radio_page():
-    """Sección de radio en la web de AllMusic: dashboard del IA Radio 24/7."""
+    """IA Radio 24/7. Sirve el build React; si no hay build, usa el dashboard legacy."""
+    react_index = os.path.join(REACT_DIST_DIR, 'index.html')
+    if os.path.isfile(react_index):
+        return _no_cache(send_from_directory(REACT_DIST_DIR, 'index.html'))
     path = os.path.join(FRONTEND_DIR, 'radio.html')
-    if os.path.exists(path):
-        resp = send_from_directory(FRONTEND_DIR, 'radio.html')
-        # Nunca cachear el HTML de la radio: cada cambio de UI debe verse al toque.
-        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        resp.headers['Pragma'] = 'no-cache'
-        resp.headers['Expires'] = '0'
-        return resp
+    if os.path.isfile(path):
+        return _no_cache(send_from_directory(FRONTEND_DIR, 'radio.html'))
+    return jsonify({'error': 'Radio no disponible'}), 404
+
+
+@app.route('/radio-legacy')
+def radio_legacy_page():
+    """Dashboard histórico de la radio, siempre disponible como respaldo."""
+    path = os.path.join(FRONTEND_DIR, 'radio.html')
+    if os.path.isfile(path):
+        return _no_cache(send_from_directory(FRONTEND_DIR, 'radio.html'))
     return jsonify({'error': 'radio.html no encontrado'}), 404
+
+
+@app.route('/assets/<path:filename>')
+@app.route('/allmusic/assets/<path:filename>')
+def react_assets(filename):
+    """Assets del SPA React (JS/CSS/PNG). Recurre a frontend/assets si no están en el build."""
+    rel = os.path.normpath(os.path.join('assets', filename))
+    # Bloquear cualquier intento de salir del directorio de assets.
+    if rel.startswith('..') or os.path.isabs(rel):
+        return jsonify({'error': 'Acceso denegado'}), 403
+    react_path = os.path.join(REACT_DIST_DIR, rel)
+    if os.path.isfile(react_path):
+        return _no_cache(send_from_directory(REACT_DIST_DIR, rel))
+    legacy_path = os.path.join(FRONTEND_DIR, rel)
+    if os.path.isfile(legacy_path):
+        return send_from_directory(FRONTEND_DIR, rel)
+    return jsonify({'error': 'Asset no encontrado'}), 404
 
 
 @app.route('/radio/now')

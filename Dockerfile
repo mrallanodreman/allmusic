@@ -1,3 +1,14 @@
+FROM node:20-alpine AS react-build
+
+WORKDIR /build
+COPY frontend-react/package.json frontend-react/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+# publicDir de Vite es ../public, que desde /build resuelve a /public
+COPY public/ /public/
+COPY frontend-react/ ./
+RUN npm run build
+
+
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -16,6 +27,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 
+# Build de la UI React (IA Radio)
+COPY --from=react-build /build/dist/ ./frontend-react-dist/
+
 # Usuario no-root
 RUN groupadd -r app && useradd -r -g app app \
     && mkdir -p /app/data \
@@ -23,6 +37,7 @@ RUN groupadd -r app && useradd -r -g app app \
 USER app
 
 ENV ALLMUSIC_DATA_DIR=/app/data
+ENV ALLMUSIC_REACT_DIST_DIR=/app/frontend-react-dist
 ENV PORT=2426
 ENV PYTHONUNBUFFERED=1
 
