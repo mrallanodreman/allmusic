@@ -29,7 +29,6 @@ export function LegacyDecorLayer({ enabled, live }) {
           className={clsx('legacy-decor__item', `decor-${id}`)}
           src={uiAsset(file)}
           alt=""
-          loading="lazy"
           decoding="async"
         />
       ))}

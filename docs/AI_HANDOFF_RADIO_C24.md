@@ -170,7 +170,7 @@ Verificación mínima esperada en `report.json`:
 ```json
 {
   "brokenImages": [],
-  "images": 28,
+  "images": 26,
   "decor": {
     "enabled": true,
     "live": true,
@@ -189,8 +189,8 @@ Verificación mínima esperada en `report.json`:
 ```
 
 Los contadores son datos reales: pueden variar. Lo que no debe cambiar es
-`brokenImages: []` y `images: 28` (14 PNG del artboard + 12 recortes RETRO;
-los 2 restantes son portada/fallback del player).
+`brokenImages: []` y `images: 26` (14 PNG del artboard + 12 recortes RETRO).
+Con moods que traen portada/recortes extra puede subir a 28.
 
 ---
 
@@ -207,6 +207,9 @@ pierda la esencia"*. Se resolvió sin tocar datos ni endpoints:
 - Se posicionan en los márgenes del artboard (`legacy-decor`, `z-index: 10`) con
   `pointer-events: none`, opacidades bajas y rotaciones suaves. El REC y el
   ON AIR responden a `data.now.playing` (clase `is-live`), no a texto quemado.
+- **No usar `loading="lazy"` aquí**: BrowserOS abre pestañas en segundo plano y
+  los PNG diferidos no cargan (el inspector daba 2 imágenes rotas en producción).
+  Carga normal + `decoding="async"` deja las 28 imágenes en `naturalWidth > 0`.
 - El botón `RETRO` (`DecorToggle`, `left: 59.2% / top: 1%`) alterna el estado
   `legacyDecor` con `aria-pressed` y mantiene el foco visible
   (`:focus-visible`). Es decoración: el toggle no altera la radio.
@@ -229,7 +232,8 @@ y las transiciones quedan congeladas en `currentTime: 0`; hay que llamar
 
 El inspector (`scripts/inspect_radio_ui.py`) ya reporta el bloque `decor` con
 `items: 12` y `toggleText: "RETRO · calcomanías clásicas"`. En la inspección
-local no hubo `brokenImages` y se contaron 28 imágenes cargadas.
+local no hubo `brokenImages` y se contaron 26 imágenes cargadas (28 con moods
+que agregan portada/recortes).
 
 ---
 
