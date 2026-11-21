@@ -118,7 +118,7 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 |---|---|---|---|---|---|
 | E1 | Stream público de la radio caído | `https://mail.edgemarketing.art/radio/live.mp3` → **502 Bad Gateway** | Túnel Cloudflare `mail` → `192.168.1.4:2123`; el gateway de warmachine no responde | Cloudflare Tunnel **y** warmachine (SSH) | 🔴 activo |
 | E2 | Cola de radio y master sin conectar | `/allmusic/radio/now` → `playing:true` pero `queue:0`, `top_requested:0`, `master:false`, `master_offline:false` | El master local (VAIO `:2427`) no publica rotación/pedidos; `radio-live.py` fuera o sin feed | VAIO: `allmusic-radio-live.service` + `atico-player.service` | 🔴 activo |
-| E3 | Autodeploy GitHub→Coolify **no dispara** | `git push` a `master` **no** redeploya; hace falta deploy manual por API | Webhook o GitHub App no conectada al servicio `radio`, o sin permisos de deploy | GitHub (webhook/App) + Coolify (dueño del recurso) | 🔴 activo |
+| E3 | Autodeploy GitHub→Coolify **no dispara** | `git push` a `master` no redeployaba | Webhook apuntaba al dominio viejo `.art` (502) y GitHub no tenía el secreto que Coolify exige (`webhook.github.signature_failed`) | Fix 2026-11-21: URL → `app.edgemarketing.tech` y secreto alineado con `manual_webhook_secret_github` de `radio`; verificado `webhook.deployment.queued` | 🟢 resuelto |
 | E4 | Terminal/Exec de Coolify | `Terminal websocket connection lost` / `WebSocket error occurred` | Ya verificado WebSockets:on y SSL:full en CF y soketi vivo → sospecha: **rol del miembro** sobre el recurso `radio` | Coolify (roles) o Terminal por IP directa `http://192.168.1.4:8000` | 🔴 activo |
 | E5 | Cabina de IA Radio (iframe) en blanco | `X-Frame-Options: DENY` bloqueaba el iframe `radio.html?embedded=1` | Cabecera demasiado estricta | Fix `SAMEORIGIN` en `92050aa` — **ya desplegado y verificado** | 🟢 resuelto |
 | E6 | Reproducir desde Historial fallaba | Error `MEDIA_ERR`/JS al reproducir desde Historial; Búsqueda sí funcionaba | El historial guardaba enlaces directos que **expiran** | Fix: guardar `videoId` y resolver enlace fresco (`3077d67`) | 🟢 resuelto |
@@ -152,8 +152,8 @@ para diagnosticar y desplegar. Esto NO significa compartir contraseñas: se otor
    responda y revisar las rutas de Traefik para el host `mail`.
 2. **E2 (cola/master):** en el VAIO: `systemctl --user status allmusic-radio-live` y `atico-player`.
    Fijar `LIVE_STREAM_URL` (la IP es por **DHCP**; hoy apunta a `192.168.1.2:2427`).
-3. **E3 (autodeploy):** reconectar la GitHub App/webhook en Coolify y probar con un push de prueba;
-   documentar el resultado en el issue #1.
+3. **E3 (autodeploy):** resuelto 2026-11-21. Webhook `693647409` → `https://app.edgemarketing.tech/webhooks/source/github/events/manual`
+   con el mismo secreto que Coolify; un push de prueba encoló `webhook.deployment.queued` para `radio`.
 4. **E4 (Terminal):** subir el rol del miembro en Coolify o probar el Terminal por IP directa
    (`http://192.168.1.4:8000`) para aislar si es Cloudflare.
 5. Marcar avances en el issue **#1** (issues → commits → pushes).
@@ -162,6 +162,6 @@ para diagnosticar y desplegar. Esto NO significa compartir contraseñas: se otor
 
 - Web y API **operativas**: `/status`, `/search`, `/convert`, `/radio/now`, logo, cabeceras → OK.
 - Tests de seguridad: **11/11 passing**.
-- Quedan **4 errores activos**, todos de **infraestructura** (túnel, master local, autodeploy,
-  rol de Coolify), no de código del backend.
+- Quedan **3 errores activos**, todos de **infraestructura** (túnel, master local y rol de Coolify),
+  no de código del backend. El autodeploy quedó restablecido el 2026-11-21.
 - La lista de permisos de arriba desbloquea a los colaboradores para resolverlos solos.
