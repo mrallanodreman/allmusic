@@ -15,9 +15,6 @@ está aquí y este repo es la fuente de verdad.
 | `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4/.5:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
 | `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | master activo: `allmusic-radio-live.service` en el VAIO (`:2427`) |
 | `frontend/` | sitio web + assets de la radio (C24, moods, artistas) | servido por el backend |
-| `frontend-react/` | UI React de Radio IA (artboard C24) servida en `/radio` | build de Vite dentro del contenedor Coolify |
-| `docs/AI_HANDOFF_RADIO_C24.md` | handoff para otra IA: qué se hizo, cómo inspeccionar visualmente y cómo publicar | — |
-| `scripts/inspect_radio_ui.py` | captura + OCR + ASCII + geometría del DOM para verificar la UI sin ver imágenes | se corre contra `192.168.1.5:2426` |
 | `desktop/allmusic2.py` | mini-player GTK de escritorio (oculto con F9 / launcher) | en el PC del usuario, contra la API |
 | `radio/atico-player.py` | manda el stream a `media_player.atico_2` vía Home Assistant | `atico-player.service` (solo VAIO) |
 | `radio/AGENTS.md` | doc operativa del pipeline (leer antes de tocar la radio) | — |

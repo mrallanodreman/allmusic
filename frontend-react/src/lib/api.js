@@ -59,7 +59,3 @@ export function postSuggestion(query, { signal, reason = 'web' } = {}) {
     },
   });
 }
-
-export function postAdvance({ signal } = {}) {
-  return requestJson('/radio/advance', { method: 'POST', signal, body: {} });
-}

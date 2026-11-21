@@ -35,12 +35,9 @@ export function formatTime(seconds) {
   const n = Number(seconds);
   if (!Number.isFinite(n) || n < 0) return '--:--';
   const total = Math.floor(n);
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const secs = total % 60;
-  const mm = String(minutes).padStart(2, '0');
-  const ss = String(secs).padStart(2, '0');
-  return `${hours > 0 ? `${hours}:` : ''}${mm}:${ss}`;
+  const mm = String(Math.floor(total / 60)).padStart(2, '0');
+  const ss = String(total % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
 }
 
 export function moodSlug(value) {

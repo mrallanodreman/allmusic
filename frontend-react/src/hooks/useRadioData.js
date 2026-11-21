@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchNow, postAdvance, postSuggestion } from '../lib/api.js';
+import { fetchNow, postSuggestion } from '../lib/api.js';
 import { isSafeRequestText, normalizeText } from '../lib/safe.js';
 
 const EMPTY = { queue: [], history: [], top_requested: [], moods: [] };
@@ -13,7 +13,6 @@ export function useRadioData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [advancing, setAdvancing] = useState(false);
   const [ticketsUsed, setTicketsUsed] = useState(0);
   const [notice, setNotice] = useState('');
   const mounted = useRef(true);
@@ -82,34 +81,15 @@ export function useRadioData() {
     [pending, refresh]
   );
 
-  const advance = useCallback(async () => {
-    if (advancing) return { ok: false };
-    setAdvancing(true);
-    try {
-      const result = await postAdvance();
-      await refresh();
-      return { ok: true, result };
-    } catch (err) {
-      if (mounted.current) {
-        setNotice(normalizeText(err?.message, 120) || 'No se pudo avanzar la pista.');
-      }
-      return { ok: false };
-    } finally {
-      if (mounted.current) setAdvancing(false);
-    }
-  }, [advancing, refresh]);
-
   return {
     now,
     loading,
     error,
     pending,
-    advancing,
     ticketsUsed,
     notice,
     refresh,
     submit,
-    advance,
     queue: asArray(now?.queue, 20),
     history: asArray(now?.history, 10),
     topRequested: asArray(now?.top_requested, 10),
