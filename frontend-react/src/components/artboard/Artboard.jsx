@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { normalizeText } from '../../lib/safe.js';
 import { inferMood } from '../../lib/mood.js';
 import { BackgroundLayers, MoodArtStack } from './Layers.jsx';
+import { LegacyDecorLayer, DecorToggle } from './LegacyDecor.jsx';
 import { ArtboardNav, BroadcastRuntime, Toast } from './Chrome.jsx';
 import {
   NowPanel,
@@ -22,6 +23,8 @@ export function Artboard({
   onListen,
   onAdvance,
   onRefresh,
+  legacyDecor,
+  onToggleDecor,
   listening,
   advancing,
   audioRef,
@@ -48,6 +51,7 @@ export function Artboard({
       aria-label="C24 Radio 24/7"
     >
       <BackgroundLayers />
+      <LegacyDecorLayer enabled={legacyDecor} live={live} />
 
       <ArtboardNav
         onListen={onListen}
@@ -56,6 +60,7 @@ export function Artboard({
         listening={listening}
         advancing={advancing}
       />
+      <DecorToggle enabled={legacyDecor} onToggle={onToggleDecor} />
 
       <NowPanel now={data.now} live={live} />
       <RequestPanel

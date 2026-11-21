@@ -36,6 +36,8 @@ SELECTORS = [
     ".radio-artboard",
     ".artboard-nav",
     ".artboard-layers",
+    ".legacy-decor",
+    ".hit-decor",
     ".mood-art-stack",
     ".dynamic-cover",
     ".dynamic-live-copy",
@@ -74,6 +76,17 @@ return {
   artboard: (() => {
     const el = q('.radio-artboard');
     return el ? { mood: el.dataset.mood || '', className: el.className } : null;
+  })(),
+  decor: (() => {
+    const layer = q('.legacy-decor');
+    const toggle = q('.hit-decor');
+    return {
+      enabled: Boolean(layer && layer.classList.contains('is-on')),
+      live: Boolean(layer && layer.classList.contains('is-live')),
+      items: document.querySelectorAll('.legacy-decor__item').length,
+      togglePressed: toggle ? toggle.getAttribute('aria-pressed') : null,
+      toggleText: (toggle?.innerText || '').trim(),
+    };
   })(),
   boxes: Object.fromEntries(%s.map((s) => [s, box(s)])),
   images: Array.from(document.images).map((img) => ({
@@ -227,6 +240,7 @@ def main():
         "title": report.get("title"),
         "viewport": report.get("viewport"),
         "artboard": report.get("artboard"),
+        "decor": report.get("decor"),
         "content": report.get("content"),
         "brokenImages": [
             img["src"] for img in report.get("images", []) if not img["loaded"]

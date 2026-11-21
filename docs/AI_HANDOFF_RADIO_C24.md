@@ -10,10 +10,11 @@ publicar. Es un resumen de trabajo hecho, no una autorización para ampliar scop
 
 ## 1. Estado actual en una frase
 
-La UI React de Radio IA vuelve a reproducir el collage histórico del artboard C24
-(con sus 9 PNG en capas, moods, cola, historial, top 10, ticker y reloj) usando
-datos reales de `/radio/now`; está compilada y desplegada en Coolify. Queda
-confirmación visual del cliente.
+La UI React de Radio IA reproduce el collage histórico del artboard C24 (9 PNG en
+capas, moods, cola, historial, top 10, ticker y reloj) usando datos reales de
+`/radio/now`, y suma una capa RETRO opcional con los 12 stickers/tapes legacy y
+un toggle accesible. Está compilada; queda confirmación visual del cliente y el
+push de este último cambio.
 
 ---
 
@@ -67,8 +68,9 @@ solo esos dos estaban corruptos.
 |---|---|
 | `frontend/radio.html` | **Fuente de verdad visual**. Artboard, posiciones CSS, capas y reglas de mood (`renderMood()`, ~líneas 1034-1072). No se modificó. |
 | `frontend/assets/radio/c24/` | 9 PNG del collage C24 + carpeta `mood/` con los 4 recortes de botones/label. |
-| `frontend/assets/radio-ui/` | stickers, tapes, banner, emblemas y textura halftone. |
-| `frontend-react/src/App.jsx` | Orquesta datos, audio, texto del pedido, chips de mood y toast. Los chips **precargan** el input y enfocan el campo, igual que el legacy. |
+| `frontend/assets/radio-ui/` | stickers, tapes, banner, emblemas y textura halftone (12 PNG). Antes existían pero la UI React no los usaba: ahora se renderizan en la capa RETRO. |
+| `frontend-react/src/components/artboard/LegacyDecor.jsx` | Capa opcional de los 12 recortes legacy + botón `RETRO` con `aria-pressed`. Usa `clsx` y `uiAsset`. |
+| `frontend-react/src/App.jsx` | Orquesta datos, audio, texto del pedido, chips de mood, toast y el estado `legacyDecor` (default `true`). Los chips **precargan** el input y enfocan el campo, igual que el legacy. |
 | `frontend-react/src/components/artboard/Artboard.jsx` | Compone el `<main class="radio-artboard">`, calcula `live`, `mood`, `ticker` y las clases condicionales (`has-*-data`, `mood-has-overlay`). |
 | `frontend-react/src/components/artboard/Layers.jsx` | `<img>` de las capas PNG y del stack de mood (`aria-hidden`). |
 | `frontend-react/src/components/artboard/Chrome.jsx` | Nav de hotspots, botones escuchar/avanzar/actualizar, reloj, ticker, badge (oculto a propósito) y toast. |
@@ -168,7 +170,13 @@ Verificación mínima esperada en `report.json`:
 ```json
 {
   "brokenImages": [],
-  "images": 14,
+  "images": 28,
+  "decor": {
+    "enabled": true,
+    "live": true,
+    "items": 12,
+    "togglePressed": "true"
+  },
   "content": {
     "mood": "CANAL 24 MIX",
     "requestPlaceholder": "PIDE UNA CANCIÓN O UN MOOD...",
@@ -181,7 +189,47 @@ Verificación mínima esperada en `report.json`:
 ```
 
 Los contadores son datos reales: pueden variar. Lo que no debe cambiar es
-`brokenImages: []` y `images: 14`.
+`brokenImages: []` y `images: 28` (14 PNG del artboard + 12 recortes RETRO;
+los 2 restantes son portada/fallback del player).
+
+---
+
+## 5b. Capa RETRO (visuales legacy adicionales)
+
+Pedido del usuario: *"hacerla más funcional, agregale más modelos como el
+anterior... CSS y funciones de librerías como tree para que sea interactivo y no
+pierda la esencia"*. Se resolvió sin tocar datos ni endpoints:
+
+- `LegacyDecor.jsx` renderiza los **12 PNG** que ya existían en
+  `public/assets/radio-ui/` y que la UI React no usaba: halftone, logo Canal 24,
+  tapes EN VIVO / CANAL 24 MIX / REQUEST LINE, badge REC, ojo colage, STAY TUNED,
+  banner TOP 10, ON AIR, crosshair y emblema IA Radio.
+- Se posicionan en los márgenes del artboard (`legacy-decor`, `z-index: 10`) con
+  `pointer-events: none`, opacidades bajas y rotaciones suaves. El REC y el
+  ON AIR responden a `data.now.playing` (clase `is-live`), no a texto quemado.
+- El botón `RETRO` (`DecorToggle`, `left: 59.2% / top: 1%`) alterna el estado
+  `legacyDecor` con `aria-pressed` y mantiene el foco visible
+  (`:focus-visible`). Es decoración: el toggle no altera la radio.
+- Transiciones solo de `opacity`, `scale` y `visibility`, con identidad explícita
+  (`translate: 0; rotate: 0deg; scale: 1`) y `@media (prefers-reduced-motion:
+  reduce)` global. El pulso del REC se activa solo con
+  `prefers-reduced-motion: no-preference`.
+- Se usó `clsx@2.1.1` para las clases condicionales. "tree" no coincide con
+  ninguna dependencia instalada; se aclaró con el usuario antes de implementar.
+
+Verificación del toggle (importante: BrowserOS abre la pestaña en segundo plano
+y las transiciones quedan congeladas en `currentTime: 0`; hay que llamar
+`document.getAnimations().forEach(a => a.finish())` antes de leer
+`getComputedStyle`):
+
+| Estado | `aria-pressed` | `opacity` | `visibility` | `scale` |
+|---|---|---|---|---|
+| ON (default) | `true` | `1` | `visible` | `1` |
+| OFF | `false` | `0` | `hidden` | `0.985` |
+
+El inspector (`scripts/inspect_radio_ui.py`) ya reporta el bloque `decor` con
+`items: 12` y `toggleText: "RETRO · calcomanías clásicas"`. En la inspección
+local no hubo `brokenImages` y se contaron 28 imágenes cargadas.
 
 ---
 
@@ -193,7 +241,7 @@ Build:
 cd /mnt/sda1/repos/allmusic/frontend-react
 npm ci
 npm run build
-# resultado esperado: 43 módulos, dist/assets/index-*.js ~161 kB, index-*.css ~12.7 kB
+# resultado esperado: 44 módulos, dist/assets/index-*.js ~163 kB, index-*.css ~14.9 kB
 ```
 
 Escaneo de patrones prohibidos:
@@ -231,6 +279,9 @@ radio en vivo) ya ejecutadas:
 5. Escuchar → alterna aria-label y `is-listening` sin errores.
 6. Con `/radio/now` simulado en modo jazz → `mood-value` = `JAZZ LATE`, chip
    activo = `Pedir mood JAZZ LATE`, `data-mood="jazz"`, portada y progreso 25%.
+7. Click en `RETRO` → `aria-pressed` pasa de `true` a `false`, la capa queda en
+   `opacity: 0 / visibility: hidden` (forzar `getAnimations().finish()` en
+   BrowserOS) y un segundo click la restaura. No se envió ningún POST.
 
 Para repetirlas, inyectar un stub de `window.fetch` desde
 `scripts/inspect_radio_ui.py` (o desde el MCP: `evaluate`) y nunca contra la

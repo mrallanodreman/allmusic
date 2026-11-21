@@ -593,6 +593,96 @@ a { color: inherit; }
   to { transform: translateX(-200%); }
 }
 
+/* ── Calcomanías del modelado anterior (capa opcional) ──────────────────── */
+.legacy-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  /* Identidad explícita: evita que el estado cambie el stacking context. */
+  translate: 0;
+  rotate: 0deg;
+  scale: 1;
+  transition: opacity 260ms ease, scale 260ms ease, visibility 260ms;
+}
+.legacy-decor.is-off {
+  opacity: 0;
+  visibility: hidden;
+  scale: 0.985;
+}
+.legacy-decor__item {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Textura: va debajo de los datos, encima del papel del artboard. */
+.decor-halftone {
+  left: 0;
+  top: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+}
+
+/* Esquina superior izquierda / cabecera del hero. */
+.decor-logo      { left: 0.6%;  top: 1.2%;  width: 15.5%; height: 4.2%; rotate: -2deg; opacity: 0.85; }
+.decor-tape-live { left: 20.2%; top: 1.4%;  width: 13.5%; height: 3.4%; rotate: 1.5deg; opacity: 0.8; }
+.decor-tape-mix  { left: 19.2%; top: 16.2%; width: 19.5%; height: 3.1%; rotate: -1deg; opacity: 0.75; }
+.decor-rec       { left: 30.6%; top: 45.6%; width: 3.2%;  height: 2.4%; opacity: 0.9; }
+.decor-tape-request { left: 19.2%; top: 59.6%; width: 19.5%; height: 2.2%; rotate: 0.8deg; opacity: 0.7; }
+
+/* Laterales: zonas sin datos dinámicos. */
+.decor-eye  { left: 1.2%; top: 53.5%; width: 15.6%; height: 5.2%; rotate: -3deg; opacity: 0.35; }
+.decor-stay { left: 1.0%; top: 82.6%; width: 15.8%; height: 5.4%; rotate: 2deg; opacity: 0.7; }
+
+/* Panel superior y esquinas del top 10. */
+.decor-top-banner { left: 59.2%; top: 13.2%; width: 17.5%; height: 3.6%; rotate: -1.5deg; opacity: 0.8; }
+.decor-on-air     { left: 76.5%; top: 2.6%;  width: 8.5%;  height: 7.5%; rotate: 3deg; opacity: 0.85; }
+.decor-crosshair  { left: 89.0%; top: 59.2%; width: 7%;    height: 5.5%; rotate: -6deg; opacity: 0.22; }
+.decor-emblem     { left: 55.6%; top: 62.6%; width: 2.6%;  height: 4.2%; rotate: 4deg; opacity: 0.45; }
+
+/* El REC y el ON AIR siguen la señal real, no un valor quemado. */
+.legacy-decor:not(.is-live) .decor-rec,
+.legacy-decor:not(.is-live) .decor-on-air { opacity: 0.4; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .legacy-decor.is-live .decor-rec {
+    animation: decorRecPulse 1.8s ease-in-out infinite;
+  }
+}
+@keyframes decorRecPulse {
+  0%, 100% { scale: 1; opacity: 0.9; }
+  50% { scale: 1.14; opacity: 1; }
+}
+
+/* Interruptor nativo con estado aria-pressed; texto visible incluido en el nombre. */
+.hit-decor {
+  left: 59.2%;
+  top: 1.0%;
+  z-index: 24;
+  width: 5.4%;
+  height: 4.4%;
+  display: grid;
+  place-items: center;
+  color: #f5f5f3;
+  background: rgba(5, 5, 5, 0.72);
+  border: 1px solid rgba(21, 220, 231, 0.55);
+  font-family: var(--font-display);
+  font-size: clamp(9px, 0.78vw, 13px);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.hit-decor:hover:not(:disabled) { border-color: var(--cyan); background: rgba(5, 5, 5, 0.88); }
+.hit-decor.is-on { border-color: var(--pink); color: #fff; }
+.hit-decor:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
 /* ── Avisos y estados de carga ──────────────────────────────────────────── */
 .toast {
   position: fixed;

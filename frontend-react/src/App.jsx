@@ -8,6 +8,7 @@ export default function App() {
   const audio = useAudioStream(data.now?.stream_url);
   const [requestText, setRequestText] = useState('');
   const [hint, setHint] = useState('');
+  const [legacyDecor, setLegacyDecor] = useState(true);
   const requestRef = useRef(null);
 
   // Igual que el panel histórico: el chip prepara el pedido, no lo envía.
@@ -42,6 +43,8 @@ export default function App() {
       onListen={audio.toggle}
       onAdvance={data.advance}
       onRefresh={data.refresh}
+      legacyDecor={legacyDecor}
+      onToggleDecor={() => setLegacyDecor((value) => !value)}
       listening={audio.listening}
       advancing={data.advancing}
       audioRef={audio.audioRef}
