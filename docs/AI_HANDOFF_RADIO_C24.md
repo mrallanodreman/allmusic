@@ -69,7 +69,8 @@ solo esos dos estaban corruptos.
 | `frontend/radio.html` | **Fuente de verdad visual**. Artboard, posiciones CSS, capas y reglas de mood (`renderMood()`, ~líneas 1034-1072). No se modificó. |
 | `frontend/assets/radio/c24/` | 9 PNG del collage C24 + carpeta `mood/` con los 4 recortes de botones/label. |
 | `frontend/assets/radio-ui/` | stickers, tapes, banner, emblemas y textura halftone (12 PNG). Antes existían pero la UI React no los usaba: ahora se renderizan en la capa RETRO. |
-| `frontend-react/src/components/artboard/LegacyDecor.jsx` | Capa opcional de los 12 recortes legacy + botón `RETRO` con `aria-pressed`. Usa `clsx` y `uiAsset`. |
+| `frontend-react/src/components/artboard/LegacyDecor.jsx` | Capa opcional RETRO: 2 láminas con los 12 recortes legacy + botón con `aria-pressed`. Usa `clsx` y `uiAsset`. |
+| `scripts/build_retro_decor.py` | Regenera `retro_static.png` y `retro_signal.png` aplicando la misma geometría CSS con PIL. Ejecutar si cambias posiciones/rotaciones. |
 | `frontend-react/src/App.jsx` | Orquesta datos, audio, texto del pedido, chips de mood, toast y el estado `legacyDecor` (default `true`). Los chips **precargan** el input y enfocan el campo, igual que el legacy. |
 | `frontend-react/src/components/artboard/Artboard.jsx` | Compone el `<main class="radio-artboard">`, calcula `live`, `mood`, `ticker` y las clases condicionales (`has-*-data`, `mood-has-overlay`). |
 | `frontend-react/src/components/artboard/Layers.jsx` | `<img>` de las capas PNG y del stack de mood (`aria-hidden`). |
@@ -170,11 +171,12 @@ Verificación mínima esperada en `report.json`:
 ```json
 {
   "brokenImages": [],
-  "images": 26,
+  "images": 16,
   "decor": {
     "enabled": true,
     "live": true,
-    "items": 12,
+    "sheets": 2,
+    "bakedStickers": 12,
     "togglePressed": "true"
   },
   "content": {
@@ -189,8 +191,8 @@ Verificación mínima esperada en `report.json`:
 ```
 
 Los contadores son datos reales: pueden variar. Lo que no debe cambiar es
-`brokenImages: []` y `images: 26` (14 PNG del artboard + 12 recortes RETRO).
-Con moods que traen portada/recortes extra puede subir a 28.
+`brokenImages: []` y `images: 16` (14 PNG del artboard + 2 láminas RETRO).
+Con moods que traen portada extra puede subir a 18.
 
 ---
 
@@ -200,23 +202,27 @@ Pedido del usuario: *"hacerla más funcional, agregale más modelos como el
 anterior... CSS y funciones de librerías como tree para que sea interactivo y no
 pierda la esencia"*. Se resolvió sin tocar datos ni endpoints:
 
-- `LegacyDecor.jsx` renderiza los **12 PNG** que ya existían en
-  `public/assets/radio-ui/` y que la UI React no usaba: halftone, logo Canal 24,
-  tapes EN VIVO / CANAL 24 MIX / REQUEST LINE, badge REC, ojo colage, STAY TUNED,
-  banner TOP 10, ON AIR, crosshair y emblema IA Radio.
-- Se posicionan en los márgenes del artboard (`legacy-decor`, `z-index: 10`) con
-  `pointer-events: none`, opacidades bajas y rotaciones suaves. El REC y el
-  ON AIR responden a `data.now.playing` (clase `is-live`), no a texto quemado.
-- **No usar `loading="lazy"` aquí**: BrowserOS abre pestañas en segundo plano y
-  los PNG diferidos no cargan (el inspector daba 2 imágenes rotas en producción).
-  Carga normal + `decoding="async"` deja las 28 imágenes en `naturalWidth > 0`.
+- Son los **12 PNG** que ya existían en `public/assets/radio-ui/` y que la UI
+  React no usaba: halftone, logo Canal 24, tapes EN VIVO / CANAL 24 MIX /
+  REQUEST LINE, badge REC, ojo colage, STAY TUNED, banner TOP 10, ON AIR,
+  crosshair y emblema IA Radio.
+- `scripts/build_retro_decor.py` hornea su geometría (porcentajes sobre 1672×940,
+  `object-fit: contain`, rotación y opacidad) en **dos láminas**:
+  `retro_static.png` (10 recortes, ~74 kB) y `retro_signal.png` (REC + ON AIR,
+  ~21 kB). Antes eran 19 MB en 12 peticiones; ahora son 95 kB en 2.
+- **Motivo del horneado:** el rate limiter de Flask (30 req/s, 200/min) devolvía
+  429 y algunos stickers no aparecían en producción. Con 2 láminas no se
+  satura el burst inicial. No se tocó el backend.
+- Las láminas van en `legacy-decor` (`z-index: 10`, `pointer-events: none`).
+  El REC y el ON AIR siguen a `data.now.playing` (clase `is-live`) mediante la
+  opacidad de `retro_signal.png`, no a texto quemado.
 - El botón `RETRO` (`DecorToggle`, `left: 59.2% / top: 1%`) alterna el estado
   `legacyDecor` con `aria-pressed` y mantiene el foco visible
   (`:focus-visible`). Es decoración: el toggle no altera la radio.
 - Transiciones solo de `opacity`, `scale` y `visibility`, con identidad explícita
   (`translate: 0; rotate: 0deg; scale: 1`) y `@media (prefers-reduced-motion:
-  reduce)` global. El pulso del REC se activa solo con
-  `prefers-reduced-motion: no-preference`.
+  reduce)` global. El pulso de la lámina de señal (REC + ON AIR) se activa solo
+  con `prefers-reduced-motion: no-preference`.
 - Se usó `clsx@2.1.1` para las clases condicionales. "tree" no coincide con
   ninguna dependencia instalada; se aclaró con el usuario antes de implementar.
 
@@ -230,10 +236,10 @@ y las transiciones quedan congeladas en `currentTime: 0`; hay que llamar
 | ON (default) | `true` | `1` | `visible` | `1` |
 | OFF | `false` | `0` | `hidden` | `0.985` |
 
-El inspector (`scripts/inspect_radio_ui.py`) ya reporta el bloque `decor` con
-`items: 12` y `toggleText: "RETRO · calcomanías clásicas"`. En la inspección
-local no hubo `brokenImages` y se contaron 26 imágenes cargadas (28 con moods
-que agregan portada/recortes).
+El inspector (`scripts/inspect_radio_ui.py`) reporta el bloque `decor` con
+`sheets: 2`, `bakedStickers: 12` y `toggleText: "RETRO · calcomanías clásicas"`.
+En la inspección local no hubo `brokenImages` y se contaron 16 imágenes cargadas
+(14 del artboard + 2 láminas; con moods que agregan portada puede subir a 18).
 
 ---
 
@@ -245,7 +251,7 @@ Build:
 cd /mnt/sda1/repos/allmusic/frontend-react
 npm ci
 npm run build
-# resultado esperado: 44 módulos, dist/assets/index-*.js ~163 kB, index-*.css ~14.9 kB
+# resultado esperado: 44 módulos, dist/assets/index-*.js ~162 kB, index-*.css ~13.9 kB
 ```
 
 Escaneo de patrones prohibidos:

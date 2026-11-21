@@ -83,7 +83,8 @@ return {
     return {
       enabled: Boolean(layer && layer.classList.contains('is-on')),
       live: Boolean(layer && layer.classList.contains('is-live')),
-      items: document.querySelectorAll('.legacy-decor__item').length,
+      sheets: document.querySelectorAll('.legacy-decor__sheet').length,
+      bakedStickers: 12,
       togglePressed: toggle ? toggle.getAttribute('aria-pressed') : null,
       toggleText: (toggle?.innerText || '').trim(),
     };
@@ -109,6 +110,24 @@ return {
   },
 };
 """ % json.dumps(SELECTORS)
+
+# En producción los PNG decorativos son grandes (~19 MB en total). Si se mide
+# justo después de abrir la pestaña, algunos todavía están en flight y el
+# reporte marca falsos "brokenImages". Esperarlos (con techo) antes de medir.
+WAIT_IMAGES_JS = r"""
+const imgs = [...document.images];
+await Promise.race([
+  Promise.all(imgs.map((img) => img.complete ? null : new Promise((resolve) => {
+    img.addEventListener('load', resolve, { once: true });
+    img.addEventListener('error', resolve, { once: true });
+  }))),
+  new Promise((resolve) => setTimeout(resolve, 8000)),
+]);
+return {
+  total: imgs.length,
+  loaded: imgs.filter((img) => img.complete && img.naturalWidth > 0).length,
+};
+"""
 
 
 def mcp_call(name, args):
@@ -209,6 +228,9 @@ def main():
     page = int(match.group(1))
 
     try:
+        image_wait = parse_eval(result_text(mcp_call("evaluate", {
+            "page": page, "code": WAIT_IMAGES_JS,
+        })))
         shot = mcp_call("screenshot", {
             "page": page,
             "format": "png",
@@ -221,6 +243,7 @@ def main():
     finally:
         mcp_call("tabs", {"action": "close", "page": page})
 
+    report["imageWait"] = image_wait
     (out / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False))
 
     ocr = run_tool("tesseract", [str(png), "stdout"])
@@ -241,6 +264,7 @@ def main():
         "viewport": report.get("viewport"),
         "artboard": report.get("artboard"),
         "decor": report.get("decor"),
+        "imageWait": report.get("imageWait"),
         "content": report.get("content"),
         "brokenImages": [
             img["src"] for img in report.get("images", []) if not img["loaded"]

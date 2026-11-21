@@ -1,37 +1,29 @@
 import clsx from 'clsx';
 import { uiAsset } from '../../lib/assets.js';
 
-/** Recortes del modelado anterior que ya existían en public/ pero no se usaban. */
-const DECOR = [
-  { id: 'halftone', file: 'texture_halftone_overlay.png' },
-  { id: 'logo', file: 'sticker_canal_24.png' },
-  { id: 'tape-live', file: 'tape_en_vivo.png' },
-  { id: 'tape-mix', file: 'tape_canal_24_mix.png' },
-  { id: 'rec', file: 'badge_rec_dot.png' },
-  { id: 'tape-request', file: 'tape_request_line.png' },
-  { id: 'eye', file: 'graphic_eye_collage.png' },
-  { id: 'stay', file: 'sticker_stay_tuned.png' },
-  { id: 'top-banner', file: 'banner_top_10.png' },
-  { id: 'on-air', file: 'sticker_on_air.png' },
-  { id: 'crosshair', file: 'emblem_target_crosshair.png' },
-  { id: 'emblem', file: 'emblem_ia_radio.png' },
-];
-
+/**
+ * Capa RETRO: 12 recortes del modelado anterior horneados en dos láminas por
+ * `scripts/build_retro_decor.py`. Dos peticiones en vez de 12 evitan que el
+ * rate limiter de Flask (30 req/s) descarte stickers en la carga inicial.
+ */
 export function LegacyDecorLayer({ enabled, live }) {
   return (
     <div
       className={clsx('legacy-decor', enabled ? 'is-on' : 'is-off', live && 'is-live')}
       aria-hidden="true"
     >
-      {DECOR.map(({ id, file }) => (
-        <img
-          key={id}
-          className={clsx('legacy-decor__item', `decor-${id}`)}
-          src={uiAsset(file)}
-          alt=""
-          decoding="async"
-        />
-      ))}
+      <img
+        className="legacy-decor__sheet decor-static"
+        src={uiAsset('retro_static.png')}
+        alt=""
+        decoding="async"
+      />
+      <img
+        className="legacy-decor__sheet decor-signal"
+        src={uiAsset('retro_signal.png')}
+        alt=""
+        decoding="async"
+      />
     </div>
   );
 }
