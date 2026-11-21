@@ -12,7 +12,7 @@ está aquí y este repo es la fuente de verdad.
 
 | ruta | qué es | dónde corre |
 |---|---|---|
-| `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
+| `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4/.5:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
 | `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | master activo: `allmusic-radio-live.service` en el VAIO (`:2427`) |
 | `frontend/` | sitio web + assets de la radio (C24, moods, artistas) | servido por el backend |
 | `desktop/allmusic2.py` | mini-player GTK de escritorio (oculto con F9 / launcher) | en el PC del usuario, contra la API |
@@ -20,10 +20,47 @@ está aquí y este repo es la fuente de verdad.
 | `radio/AGENTS.md` | doc operativa del pipeline (leer antes de tocar la radio) | — |
 | `start.sh`, `Dockerfile`, `railway.json` | arranque conjunto backend+radio y build/deploy | `Dockerfile` → Coolify/warmachine (autodeploy desde GitHub); `railway.json` es legacy de Railway |
 
+## Hosting y despliegue (fuente de verdad)
+
+**La web se hostea en Coolify, no en checkouts locales ni en Railway.** El repositorio
+de GitHub `mrallanodreman/allmusic` (rama `master`) se conecta a Coolify mediante
+webhook; cada push despliega el app `radio` (id `10`, UUID
+`9bzhluyvn5v7u8eyro5nllul`) en warmachine como contenedor `allmusic-radio :2426`.
+
+```
+GitHub mrallanodreman/allmusic (master)
+  └─ push ──> webhook 693647409
+               URL  https://app.edgemarketing.tech/webhooks/source/github/events/manual
+               secreto compartido con Coolify (manual_webhook_secret_github del app radio)
+                  └─> Coolify: queue_application_deployment("radio")
+                        └─> Dockerfile multi-stage -> contenedor allmusic-radio :2426
+                              └─> túnel Cloudflare ~/.cloudflared/edgemarketing-web.yml
+                                    hostname edgemarketing.tech / www
+                                    path ^/allmusic(?:/.*)?$ -> http://192.168.1.5:2426
+```
+
+Si GitHub devuelve 200 pero no se despliega, revisar el audit de Coolify:
+`webhook.github.signature_failed` = el secreto del hook no coincide con el de Coolify;
+`webhook.deployment.queued` = ok. Comprobar con
+`GET /repos/mrallanodreman/allmusic/hooks/693647409/deliveries`.
+
+"Radio IA" **no es un subdominio**: es la pestaña del reproductor en
+`edgemarketing.tech/allmusic/` que carga un iframe `./radio?embedded=1` servido por
+este mismo backend. Rutas: `/radio` (UI React), `/radio-legacy` (dashboard anterior),
+`/radio/now` (datos reales), `/assets/*` (JS/CSS/PNG del build).
+
+Los checkouts del sitio EdgeMarketing que definen `ALLMUSIC_UPSTREAM` apuntando a
+`allmusic-server-production.up.railway.app` **no están en la ruta pública de
+`/allmusic`**: ese túnel va directo al backend de Coolify. Railway está retirado;
+no hace falta editar esos checkouts para publicar cambios de AllMusic.
+
+Verificación tras un push: el audit debe mostrar `webhook.deployment.queued` y
+`curl http://192.168.1.5:2426/radio` debe servir `id="root"` y `assets/index-*.js`.
+
 ## Pipeline de la radio
 
 ```
-Web (edgemarketing.art/allmusic -> túnel CF -> warmachine :2426)  <- fuente de verdad: pedidos + rotación
+Web (edgemarketing.tech/allmusic -> túnel CF -> Coolify :2426)  <- fuente de verdad: pedidos + rotación
   v
 backend/radio-live.py (VAIO, ffmpeg, :2427) -> MP3 continuo
   v
