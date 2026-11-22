@@ -3,7 +3,7 @@ import { Icon } from './Icons.jsx';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/radio-ui/${name}`;
 
-export function HeaderBanner({ live }) {
+export function HeaderBanner({ live, children }) {
   const [clock, setClock] = useState(() => new Date());
 
   useEffect(() => {
@@ -19,6 +19,7 @@ export function HeaderBanner({ live }) {
         <img className="masthead__logo" src={asset('sticker_canal_24.png')} alt="Canal 24" />
         <span className="masthead__stereo">ESTÉREO · SEÑAL PRINCIPAL</span>
       </div>
+      <div className="masthead__request">{children}</div>
       <div className="masthead__onair">
         <img src={asset('sticker_on_air.png')} alt="On air, live from the attic" />
       </div>

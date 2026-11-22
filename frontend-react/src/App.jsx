@@ -35,7 +35,9 @@ export default function App() {
     <div className="app" data-mood={activeMood || 'default'}>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <DecorLayer />
-      <HeaderBanner live={Boolean(data.now?.playing)} />
+      <HeaderBanner live={Boolean(data.now?.playing)}>
+        <RequestBar pending={data.pending} notice={data.notice} onSubmit={data.submit} />
+      </HeaderBanner>
 
       <div className="layout">
         <Sidebar ticketsUsed={data.ticketsUsed} />
@@ -48,13 +50,6 @@ export default function App() {
           ) : null}
 
           <PlayerStage now={data.now} playing={playing} onToggle={togglePlay} />
-          <RequestBar pending={data.pending} notice={data.notice} onSubmit={data.submit} />
-          <MoodBoard
-            moods={data.moods}
-            activeMood={activeMood}
-            onSelect={handleMood}
-            pending={data.pending}
-          />
 
           <div className="content__grid">
             <QueuePanel items={data.queue} />
@@ -64,8 +59,14 @@ export default function App() {
           {data.loading ? <p className="loading" role="status">Sintonizando señal…</p> : null}
         </main>
 
-        <aside className="rail" aria-label="Ranking de pedidos">
+        <aside className="rail" aria-label="Ranking de pedidos y moods">
           <TopRequested items={data.topRequested} />
+          <MoodBoard
+            moods={data.moods}
+            activeMood={activeMood}
+            onSelect={handleMood}
+            pending={data.pending}
+          />
         </aside>
       </div>
 
