@@ -30,7 +30,7 @@ export function HeaderBanner({ live, children }) {
 
       <div className="masthead__inner">
         <div className="masthead__brand">
-          <img className="masthead__logo" src={asset('sticker_canal_24.png')} alt="Canal 24" />
+          <img className="masthead__logo" src={asset('buena-musica-logo.png')} alt="Buena Música" />
           <div className="masthead__brand-copy">
             <span className="masthead__brand-kicker">ESTÉREO / ÁTICO</span>
             <strong>LA MÚSICA<br />NO DUERME.</strong>

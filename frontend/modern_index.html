@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0d0d1a">
     <meta name="application-name" content="AllMusic">
     <link rel="canonical" href="https://edgemarketing.art/allmusic/">
-    <link rel="icon" type="image/svg+xml" href="assets/allmusic-logo.svg">
+    <link rel="icon" type="image/png" href="assets/buena-musica-logo.png">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="AllMusic">
@@ -62,12 +62,12 @@
             position:relative;z-index:20;
         }
         .am-brand{
-            min-height:72px;display:flex;align-items:center;padding:10px 16px;
+            min-height:112px;display:flex;align-items:center;padding:8px 16px;
             border-bottom:1px solid rgba(102,126,234,0.15);
             background:linear-gradient(90deg,rgba(102,126,234,.08),rgba(118,75,162,.04));
             flex-shrink:0;text-decoration:none;
         }
-        .am-brand img{width:238px;max-width:100%;height:52px;object-fit:contain;object-position:left center;}
+        .am-brand img{width:238px;max-width:100%;height:96px;object-fit:contain;object-position:left center;}
         .tabs{display:flex;border-bottom:1px solid rgba(102,126,234,0.15);flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
         .tabs::-webkit-scrollbar{display:none;}
         .tab-btn{
@@ -683,7 +683,7 @@
         }
         body.radio-active .am-brand img{
             width:244px;
-            height:64px;
+            height:95px;
             object-fit:contain;
             object-position:left center;
             filter:contrast(1.08) brightness(1.08);
@@ -1459,8 +1459,8 @@
                 border-bottom:2px solid #ed1687!important;
                 box-shadow:0 6px 0 #f2dc00;
             }
-            body.radio-active .am-brand{min-height:70px;padding:8px 14px;}
-            body.radio-active .am-brand img{width:190px;height:50px;}
+            body.radio-active .am-brand{min-height:96px;padding:8px 14px;}
+            body.radio-active .am-brand img{width:190px;height:82px;}
             body.radio-active .tabs{display:grid;grid-template-columns:repeat(5,1fr);padding:6px;gap:3px;}
             body.radio-active .tab-btn{justify-content:center;gap:4px;padding:8px 3px;font-size:9px;text-align:center;}
             body.radio-active .tab-btn .icon{width:18px;height:18px;flex-basis:18px;}
@@ -2128,8 +2128,8 @@ body.radio-active .radio-integrated-frame{
 
     <!-- ══ LEFT PANEL ══ -->
     <div class="left-panel">
-        <a class="am-brand" href="./" aria-label="AllMusic PRO — Inicio">
-            <img src="assets/allmusic-logo.svg" alt="AllMusic PRO">
+        <a class="am-brand" href="./" aria-label="Buena Música — Inicio">
+            <img src="assets/buena-musica-logo.png" alt="Buena Música" decoding="async" fetchpriority="high">
         </a>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('history')"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> Historial</button>
