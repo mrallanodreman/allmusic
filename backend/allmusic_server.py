@@ -2182,14 +2182,19 @@ RADIO_LIVE_UPSTREAM = os.environ.get('RADIO_LIVE_UPSTREAM', 'http://192.168.1.5:
 def _radio_live_stream_url():
     """URL del stream para clientes web.
 
-    Prioridad:
-    1) RADIO_LIVE_STREAM_URL explícita (si no es un valor legacy roto conocido).
-    2) Proxy same-origin servido por este backend (/radio/live.mp3), que evita
-       DNS/CORS/mixed-content y mantiene el stream accesible desde la UI.
+    Usa proxy same-origin por defecto (/radio/live.mp3) para evitar DNS/CORS.
+    Si se configura RADIO_LIVE_STREAM_URL con una URL explícita no-legacy, se
+    respeta. El valor legacy roto conocido se ignora.
     """
     url = _RADIO_LIVE_STREAM_URL_RAW
-    if url == 'https://mail.edgemarketing.art/live.mp3':
-        url = 'https://mail.edgemarketing.art/radio/live.mp3'
+    legacy_broken = {
+        'https://mail.edgemarketing.art/live.mp3',
+        'https://mail.edgemarketing.art/radio/live.mp3',
+        'http://mail.edgemarketing.art/live.mp3',
+        'http://mail.edgemarketing.art/radio/live.mp3',
+    }
+    if url in legacy_broken:
+        url = ''
     if url:
         return url
     prefix = '/allmusic' if request.path.startswith('/allmusic') else ''
@@ -2774,21 +2779,32 @@ def radio_live_proxy():
     """Proxy same-origin del stream de radio. Evita que la UI dependa de DNS
     público o CORS del upstream; el upstream real se configura por
     RADIO_LIVE_UPSTREAM (default: http://192.168.1.5:2427/live.mp3)."""
-    upstream = RADIO_LIVE_UPSTREAM
-    if not (upstream.startswith('http://') or upstream.startswith('https://')):
-        return jsonify({'error': 'RADIO_LIVE_UPSTREAM inválido'}), 500
-    headers = {}
-    ua = request.headers.get('User-Agent')
-    if ua:
-        headers['User-Agent'] = ua[:200]
-    rng = request.headers.get('Range')
-    if rng:
-        headers['Range'] = rng
-    try:
-        req = urllib.request.Request(upstream, headers=headers)
-        upstream_resp = urllib.request.urlopen(req, timeout=15)
-    except Exception as exc:
-        logger.warning(f"Radio live proxy error: {exc}")
+    candidates = []
+    for value in (RADIO_LIVE_UPSTREAM, 'http://192.168.1.5:2427/live.mp3', 'http://127.0.0.1:2427/live.mp3'):
+        value = (value or '').strip()
+        if value and value not in candidates:
+            candidates.append(value)
+    upstream_resp = None
+    last_exc = None
+    for upstream in candidates:
+        if not (upstream.startswith('http://') or upstream.startswith('https://')):
+            continue
+        headers = {}
+        ua = request.headers.get('User-Agent')
+        if ua:
+            headers['User-Agent'] = ua[:200]
+        rng = request.headers.get('Range')
+        if rng:
+            headers['Range'] = rng
+        try:
+            req = urllib.request.Request(upstream, headers=headers)
+            upstream_resp = urllib.request.urlopen(req, timeout=15)
+            break
+        except Exception as exc:
+            last_exc = exc
+            logger.warning(f"Radio live proxy error con {upstream}: {exc}")
+    if upstream_resp is None:
+        logger.warning(f"Radio live proxy sin upstream disponible: {last_exc}")
         return jsonify({'error': 'Stream de radio no disponible'}), 502
 
     def generate():
