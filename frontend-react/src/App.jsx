@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useRadioData } from './hooks/useRadioData.js';
+import { useAudioStream } from './hooks/useAudioStream.js';
 import { moodSlug, normalizeText } from './lib/safe.js';
 import { DecorLayer } from './components/DecorLayer.jsx';
 import { HeaderBanner } from './components/HeaderBanner.jsx';
@@ -14,8 +15,8 @@ import { NowPlayingBar } from './components/NowPlayingBar.jsx';
 
 export default function App() {
   const data = useRadioData();
+  const audio = useAudioStream(data.now?.stream_url);
   const [activeMood, setActiveMood] = useState('');
-  const [playing, setPlaying] = useState(true);
 
   const handleMood = useCallback(
     (label) => {
@@ -28,8 +29,6 @@ export default function App() {
     },
     [data.submit]
   );
-
-  const togglePlay = useCallback(() => setPlaying((value) => !value), []);
 
   return (
     <div className="app" data-mood={activeMood || 'default'}>
@@ -49,7 +48,17 @@ export default function App() {
             </div>
           ) : null}
 
-          <PlayerStage now={data.now} playing={playing} onToggle={togglePlay} />
+          <PlayerStage
+            now={data.now}
+            playing={audio.listening}
+            onToggle={audio.toggle}
+            volume={audio.volume}
+            onVolume={audio.setVolume}
+            onSkip={data.advance}
+            advancing={data.advancing}
+            audioError={audio.error}
+            hasStream={audio.hasStream}
+          />
 
           <div className="content__grid">
             <QueuePanel items={data.queue} />
@@ -72,10 +81,16 @@ export default function App() {
 
       <NowPlayingBar
         now={data.now}
-        playing={playing}
-        onToggle={togglePlay}
+        playing={audio.listening}
+        onToggle={audio.toggle}
+        volume={audio.volume}
+        onVolume={audio.setVolume}
+        onSkip={data.advance}
+        advancing={data.advancing}
         activeMood={activeMood}
+        hasStream={audio.hasStream}
       />
+      <audio ref={audio.audioRef} preload="none" />
     </div>
   );
 }

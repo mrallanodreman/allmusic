@@ -4,7 +4,17 @@ import { formatTime, safeUrl } from '../lib/safe.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/radio-ui/${name}`;
 
-export function PlayerStage({ now, playing, onToggle }) {
+export function PlayerStage({
+  now,
+  playing,
+  onToggle,
+  volume,
+  onVolume,
+  onSkip,
+  advancing,
+  audioError,
+  hasStream,
+}) {
   const track = now?.track;
   const title = track?.title || 'Sin pista en el aire';
   const artist = track?.artist || 'La cabina está armando la rotación';
@@ -13,6 +23,7 @@ export function PlayerStage({ now, playing, onToggle }) {
   const duration = Number(track?.duration) || 0;
   const progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
   const live = Boolean(now?.playing);
+  const volumePct = Math.round((Number(volume) || 0) * 100);
 
   return (
     <section className="stage panel" id="reproductor" aria-labelledby="stage-title">
@@ -69,13 +80,38 @@ export function PlayerStage({ now, playing, onToggle }) {
                 type="button"
                 className="control"
                 onClick={onToggle}
+                disabled={!hasStream}
                 aria-label={playing ? 'Pausar transmisión' : 'Reproducir transmisión'}
               >
                 <Icon name={playing ? 'pause' : 'play'} className="icon" />
               </button>
+              <button
+                type="button"
+                className="control control--skip"
+                onClick={onSkip}
+                disabled={advancing || !live}
+                aria-label="Solicitar siguiente tema"
+                title="Solicitar siguiente tema"
+              >
+                <Icon name="skip" className="icon" />
+              </button>
+              <label className="stage__volume" aria-label="Volumen">
+                <Icon name={volumePct === 0 ? 'mute' : 'volume'} className="icon" />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={volumePct}
+                  onChange={(e) => onVolume(Number(e.target.value) / 100)}
+                />
+                <span className="stage__volume-value">{volumePct}%</span>
+              </label>
               <Equalizer active={playing} />
             </div>
-            <p className="stage__signal">CANAL 24 · {live ? 'TRANSMISIÓN CONTINUA' : 'SEÑAL EN ESPERA'}</p>
+            <p className="stage__signal">
+              {audioError || (advancing ? 'SOLICITANDO SIGUIENTE…' : `CANAL 24 · ${live ? 'TRANSMISIÓN CONTINUA' : 'SEÑAL EN ESPERA'}`)}
+            </p>
           </div>
         </div>
       </div>
