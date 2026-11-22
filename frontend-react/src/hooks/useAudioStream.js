@@ -9,6 +9,7 @@ export function useAudioStream(streamUrl) {
   const [volume, setVolumeState] = useState(() => {
     try {
       const raw = window.localStorage.getItem('ia-radio-volume');
+      if (raw === null || raw === '') return 0.8;
       const n = Number(raw);
       return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0.8;
     } catch {

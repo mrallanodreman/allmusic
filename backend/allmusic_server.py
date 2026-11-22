@@ -2175,7 +2175,19 @@ RADIO_SEED_MOODS = [
 # playlists largas. Las canciones suenan completas.
 RADIO_MAX_TRACK_SECONDS = 3600
 RADIO_MASTER_TTL_SECONDS = 15
-RADIO_LIVE_STREAM_URL = os.environ.get('RADIO_LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3')
+_RADIO_LIVE_STREAM_URL_RAW = os.environ.get('RADIO_LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3').strip()
+
+
+def _radio_live_stream_url():
+    """URL pública del stream. Normaliza valores legacy rotos conocidos."""
+    url = _RADIO_LIVE_STREAM_URL_RAW
+    # Deploys antiguos podían dejar /live.mp3 sin el prefijo /radio.
+    if url == 'https://mail.edgemarketing.art/live.mp3':
+        return 'https://mail.edgemarketing.art/radio/live.mp3'
+    return url
+
+
+RADIO_LIVE_STREAM_URL = _radio_live_stream_url()
 
 RADIO_FALLBACK_QUERIES = RADIO_SEED_MOODS
 
