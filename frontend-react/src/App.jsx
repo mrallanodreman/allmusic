@@ -15,6 +15,7 @@ import { toPersonalTrack } from './lib/libraryApi.js';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
 import { NewShit } from './components/NewShit.jsx';
+import { CommunityCarousel } from './components/CommunityCarousel.jsx';
 import { TopRequested } from './components/TopRequested.jsx';
 import { QueuePanel } from './components/QueuePanel.jsx';
 import { HistoryPanel } from './components/HistoryPanel.jsx';
@@ -327,6 +328,7 @@ export default function App() {
             audioError={audio.error}
             analyserRef={meter.analyserRef}
           />
+          <CommunityCarousel />
         </aside>
       </div>
 
