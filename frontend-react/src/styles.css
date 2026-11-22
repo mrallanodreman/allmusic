@@ -711,11 +711,13 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .loading { font-family: var(--font-mono); color: var(--cyan); text-align: center; }
 
 /* --- Reproductor --- */
-.stage { padding-top: 44px; }
+/* El talón vive fuera del panel, en la capa superior y a la derecha del cuadro. */
+.stage-shell { position: relative; }
 .stage__tape {
-  position: absolute; top: -26px; left: 18px;
-  width: min(62%, 380px);
-  transform: rotate(-3deg);
+  position: absolute; top: -34px; right: -12px;
+  z-index: 3;
+  width: min(26%, 190px);
+  transform: rotate(4deg);
   pointer-events: none;
 }
 .stage__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -1041,6 +1043,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .rail { grid-column: 1; }
 }
 @media (max-width: 620px) {
+  .stage__tape { right: 0; width: min(38%, 150px); top: -24px; }
   .stage__body { grid-template-columns: 1fr; }
   .stage__cover-wrap { justify-items: start; }
   .stage__cover { width: min(78vw, 240px); }
