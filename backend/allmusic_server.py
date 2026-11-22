@@ -2199,7 +2199,10 @@ def _radio_live_stream_url():
         url = ''
     if url:
         return url
-    prefix = '/allmusic' if request.path.startswith('/allmusic') else ''
+    # SCRIPT_NAME lo setea el middleware /allmusic; request.script_root lo refleja.
+    prefix = (request.environ.get('SCRIPT_NAME') or request.script_root or '').rstrip('/')
+    if not prefix and request.path.startswith('/allmusic'):
+        prefix = '/allmusic'
     return f'{prefix}/radio/live.mp3'
 
 
@@ -3042,8 +3045,10 @@ def _wsgi_app(environ, start_response):
     # que Flask enrutee; así /allmusic/status -> /status, /allmusic/ -> /.
     path = environ.get('PATH_INFO', '/')
     if path == '/allmusic':
+        environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/allmusic'
         environ['PATH_INFO'] = '/'
     elif path.startswith('/allmusic/'):
+        environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/allmusic'
         environ['PATH_INFO'] = path[len('/allmusic'):]
     return _orig_wsgi_app(environ, start_response)
 
