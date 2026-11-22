@@ -489,24 +489,63 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   display: flex;
   flex-direction: column;
   color: #f2efe9;
-  padding: 11px 10px 14px;
-  border: 1px solid rgba(217,229,229,.27);
-  background:
-    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.018) 3px 4px),
-    linear-gradient(rgba(4,6,7,.93), rgba(4,6,7,.96)),
-    url('./assets/fondopagina.webp') center / auto 100% no-repeat;
-  box-shadow: inset 1px 0 rgba(255,255,255,.14), 5px 7px rgba(0,0,0,.65);
+  /*
+   * Papel editorial pegado sobre muro: la textura del sidebar es independiente
+   * del wallpaper general. Los 8 recortes WebP tienen canal alfa real.
+   */
+  padding: 18px 14px 20px;
+  overflow: visible;
+  border: 0;
+  background-color: #08090b;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.022) 3px 4px),
+    linear-gradient(180deg, rgba(4,6,7,.38), rgba(4,6,7,.54)),
+    url('./assets/radio-ui/sidebar-grunge.webp');
+  background-size: auto, auto, cover;
+  background-position: left top, center, center center;
+  background-repeat: repeat, no-repeat, no-repeat;
+  box-shadow: 7px 8px 0 rgba(0,0,0,.66);
   isolation: isolate;
 }
-.sidebar::before {
+
+/* Tirillas independientes y bordes irregulares, sin tapar ni interceptar
+   enlaces, contador, formulario de búsqueda o controles de reproducción. */
+.sidebar::before,
+.sidebar::after {
   content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: repeating-linear-gradient(90deg, transparent 0 29px, rgba(190,220,225,.07) 29px 30px);
+  inset: -9px;
   pointer-events: none;
-  opacity: .35;
+  z-index: 2;
+  background-repeat: no-repeat;
 }
+.sidebar::before {
+  background-image:
+    url('./assets/radio-ui/sidebar-paper-top.webp'),
+    url('./assets/radio-ui/sidebar-paper-bottom.webp'),
+    url('./assets/radio-ui/sidebar-paper-left.webp'),
+    url('./assets/radio-ui/sidebar-paper-right.webp');
+  background-position: center top, center bottom, left center, right center;
+  background-size:
+    calc(100% - 15px) 15px,
+    calc(100% - 15px) 15px,
+    16px calc(100% - 15px),
+    16px calc(100% - 15px);
+  opacity: .90;
+}
+.sidebar::after {
+  background-image:
+    url('./assets/radio-ui/sidebar-paper-tl.webp'),
+    url('./assets/radio-ui/sidebar-paper-tr.webp'),
+    url('./assets/radio-ui/sidebar-paper-bl.webp'),
+    url('./assets/radio-ui/sidebar-paper-br.webp');
+  background-position: left top, right top, left bottom, right bottom;
+  background-size: 50px 50px, 50px 50px, 50px 50px, 50px 50px;
+  opacity: .72;
+}
+/* El contenido está por delante de los recortes; especialmente la navegación
+   debe permanecer clicable en todos los tamaños. */
+.sidebar > * { position: relative; z-index: 3; }
 .sidebar__identity {
   display: flex; align-items: center; justify-content: space-between; gap: 5px;
   padding: 2px 2px 10px;
@@ -540,6 +579,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .sidebar__broadcast { padding: 15px 5px 5px; }
 .sidebar__master { display: flex; align-items: center; gap: 8px; }
 .sidebar__master-ticket {
+  position: relative;
+  background-image: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.045) 3px 4px);
   display: block; flex: 1 1 auto;
   padding: 8px 8px 7px; color: #090b08;
   background: #eed009;
@@ -666,6 +707,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .sidebar__caption { text-align: left; }
 }
 @media (max-width: 540px) {
+  .sidebar::after { background-size: 42px 42px, 42px 42px, 42px 42px, 42px 42px; }
   .sidebar__nav { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .sidebar__link { font-size: 11px; }
   .sidebar__station { white-space: normal; }
