@@ -2781,73 +2781,75 @@ def radio_moods():
 @app.route('/radio/live.mp3')
 @app.route('/allmusic/radio/live.mp3')
 def radio_live_proxy():
-    """Proxy same-origin del stream de radio. Evita que la UI dependa de DNS
-    público o CORS del upstream; el upstream real se configura por
+    """Proxy same-origin del stream de radio. Evita mixed-content en HTTPS y
+    dependencia de DNS/CORS del upstream. El upstream real se configura por
     RADIO_LIVE_UPSTREAM (default: http://192.168.1.5:2427/live.mp3)."""
     candidates = []
     for value in (
         RADIO_LIVE_UPSTREAM,
         'http://192.168.1.5:2427/live.mp3',
+        'http://127.0.0.1:2427/live.mp3',
         'http://192.168.1.6:2427/live.mp3',
         'http://192.168.1.2:2427/live.mp3',
-        'http://127.0.0.1:2427/live.mp3',
         'http://host.docker.internal:2427/live.mp3',
         'http://172.17.0.1:2427/live.mp3',
         'http://172.18.0.1:2427/live.mp3',
         'http://172.19.0.1:2427/live.mp3',
         'http://172.20.0.1:2427/live.mp3',
         'http://172.21.0.1:2427/live.mp3',
-        'http://172.22.0.1:2427/live.mp3',
-        'http://172.23.0.1:2427/live.mp3',
     ):
         value = (value or '').strip()
-        if value and value not in candidates:
+        if value and value not in candidates and (value.startswith('http://') or value.startswith('https://')):
             candidates.append(value)
+
+    req_headers = {'Accept': '*/*', 'Connection': 'close'}
+    ua = request.headers.get('User-Agent')
+    if ua:
+        req_headers['User-Agent'] = ua[:200]
+    rng = request.headers.get('Range')
+    if rng:
+        req_headers['Range'] = rng
+    icy = request.headers.get('Icy-MetaData')
+    if icy:
+        req_headers['Icy-MetaData'] = icy
+
     upstream_resp = None
     last_exc = None
     for upstream in candidates:
-        if not (upstream.startswith('http://') or upstream.startswith('https://')):
-            continue
-        headers = {'Accept': '*/*'}
-        ua = request.headers.get('User-Agent')
-        if ua:
-            headers['User-Agent'] = ua[:200]
-        rng = request.headers.get('Range')
-        if rng:
-            headers['Range'] = rng
-        icy = request.headers.get('Icy-MetaData')
-        if icy:
-            headers['Icy-MetaData'] = icy
         try:
-            req = urllib.request.Request(upstream, headers=headers)
-            upstream_resp = urllib.request.urlopen(req, timeout=15)
+            r = requests.get(upstream, headers=req_headers, stream=True, timeout=(4, 20))
+            if r.status_code >= 400:
+                r.close()
+                last_exc = RuntimeError(f'HTTP {r.status_code}')
+                continue
+            upstream_resp = r
             break
         except Exception as exc:
             last_exc = exc
             logger.warning(f"Radio live proxy error con {upstream}: {exc}")
+
     if upstream_resp is None:
         logger.warning(f"Radio live proxy sin upstream disponible: {last_exc}")
         return jsonify({'error': 'Stream de radio no disponible', 'detail': str(last_exc)[:200]}), 502
 
     def generate():
         try:
-            while True:
-                chunk = upstream_resp.read(8192)
-                if not chunk:
-                    break
-                yield chunk
+            for chunk in upstream_resp.iter_content(chunk_size=8192):
+                if chunk:
+                    yield chunk
         finally:
             try:
                 upstream_resp.close()
             except Exception:
                 pass
 
-    status = getattr(upstream_resp, 'status', 200)
+    status = upstream_resp.status_code
     content_type = upstream_resp.headers.get('Content-Type', 'audio/mpeg')
     resp = Response(stream_with_context(generate()), status=status, content_type=content_type)
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
     resp.headers['Accept-Ranges'] = upstream_resp.headers.get('Accept-Ranges', 'none')
-    for header in ('Content-Range', 'Content-Length', 'ICY-Name', 'icy-name', 'ICY-MetaInt', 'icy-metaint'):
+    resp.headers['X-Accel-Buffering'] = 'no'
+    for header in ('Content-Range', 'Content-Length', 'ICY-Name', 'icy-name', 'ICY-MetaInt', 'icy-metaint', 'icy-br', 'Icy-Br'):
         value = upstream_resp.headers.get(header)
         if value:
             resp.headers[header] = value
