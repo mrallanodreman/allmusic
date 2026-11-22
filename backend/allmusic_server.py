@@ -2745,6 +2745,7 @@ def radio_now():
             'playing': False,
             'master': bool(master),
             'master_offline': master_offline,
+            'stream_url': _radio_live_stream_url(),
             'queue': public_queue[:20],
             'history': state.get('history', [])[:10],
             'top_requested': _radio_top_requested(state),
@@ -2784,6 +2785,14 @@ def radio_live_proxy():
     """Proxy same-origin del stream de radio. Evita mixed-content en HTTPS y
     dependencia de DNS/CORS del upstream. El upstream real se configura por
     RADIO_LIVE_UPSTREAM (default: http://192.168.1.5:2427/live.mp3)."""
+    try:
+        return _radio_live_proxy_impl()
+    except Exception as exc:
+        logger.exception("Radio live proxy error inesperado")
+        return jsonify({'error': 'Stream de radio no disponible', 'detail': str(exc)[:200]}), 502
+
+
+def _radio_live_proxy_impl():
     candidates = []
     for value in (
         RADIO_LIVE_UPSTREAM,
