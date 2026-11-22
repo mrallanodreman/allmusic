@@ -106,7 +106,7 @@ export function useAudioStream(streamUrl) {
     if (!audio) return;
     if (modeRef.current === 'personal') {
       const track = selectionRef.current;
-      const src = track && getTrackStreamUrl(track.id);
+      const src = track && (safeUrl(track.directSrc) || getTrackStreamUrl(track.id));
       if (!src) {
         setError('Seleccioná una canción en el buscador.');
         return;
@@ -138,7 +138,10 @@ export function useAudioStream(streamUrl) {
 
   const playTrack = useCallback((result) => {
     const id = normalizeText(result?.id, 16);
-    const src = getTrackStreamUrl(id);
+    // Los recomendados traen su propio asset local; las búsquedas siguen por
+    // el proxy /stream del backend. Nunca se acepta una URL sin validar.
+    const directSrc = safeUrl(result?.directSrc);
+    const src = directSrc || getTrackStreamUrl(id);
     if (!src) {
       setError('La canción seleccionada no tiene un identificador válido.');
       return false;
@@ -148,6 +151,7 @@ export function useAudioStream(streamUrl) {
       title: normalizeText(result?.title, 160) || 'Sin título',
       artist: normalizeText(result?.uploader || result?.artist, 100) || 'YouTube',
       thumbnail: safeUrl(result?.thumbnail),
+      directSrc,
       duration: Number.isFinite(Number(result?.duration)) ? Math.max(0, Number(result.duration)) : 0,
     };
     modeRef.current = 'personal';

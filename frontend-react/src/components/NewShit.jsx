@@ -3,9 +3,13 @@ import { Icon } from './Icons.jsx';
 import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/newshit/${name}`;
+// safeUrl solo acepta https absoluto o rutas relativas seguras; dejamos la
+// ruta same-origin para que valide igual en local (http) y en producción.
+const assetHref = (name) => new URL(asset(name), window.location.href).pathname;
 
-// Cada recomendado lleva un tema real del catálogo de AllMusic. El ID es de
-// YouTube y se reproduce por /stream/<id>, el mismo proxy que usa el buscador.
+// Cada recomendado lleva un tema real del catálogo de AllMusic. El audio y la
+// carátula son assets locales: suenan aunque el proveedor de conversión del
+// backend esté sin cuota. El ID de YouTube queda como identificador editorial.
 const ARTISTS = [
   {
     name: 'Razimbrain',
@@ -15,6 +19,8 @@ const ARTISTS = [
     title: 'APNEA',
     artist: 'Razimbrein',
     duration: 245,
+    directSrc: assetHref('apnea.m4a'),
+    thumbnail: assetHref('apnea-art.webp'),
     image: asset('razimbrain.webp'),
     alt: 'Retrato editorial de Razimbrain con bandana y audífonos',
     summary:
@@ -28,6 +34,8 @@ const ARTISTS = [
     title: 'SÓLIDO',
     artist: 'VITTORIO',
     duration: 142,
+    directSrc: assetHref('solido.m4a'),
+    thumbnail: assetHref('solido-art.webp'),
     image: asset('vittorio.webp'),
     alt: 'Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito',
     summary:
@@ -160,6 +168,7 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
             >
               <Icon name={sounding ? 'pause' : 'play'} />
             </button>
+            <img className="newshit__art" src={artist.thumbnail} alt="" width="32" height="32" />
             <span className="newshit__meta">
               <strong>{isThisTrack ? artist.title : artist.name}</strong>
               <small>{isThisTrack ? `${artist.artist} · SONANDO` : artist.tag}</small>

@@ -1647,6 +1647,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .newshit__play:focus-visible { outline: 2px solid var(--magenta); outline-offset: 2px; }
 .newshit__play:disabled { opacity: .45; cursor: not-allowed; }
 .newshit__play.is-playing { background: var(--magenta); color: var(--paper); }
+.newshit__art {
+  width: 32px; height: 32px; flex: none; object-fit: cover;
+  border: 2px solid var(--ink); transform: rotate(-3deg);
+}
 .newshit__meta { min-width: 0; flex: 1; display: grid; }
 .newshit__meta strong { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .newshit__meta small { font: 700 8px/1.2 var(--font-mono); letter-spacing: .04em; opacity: .7; }
