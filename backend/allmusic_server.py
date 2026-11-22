@@ -25,6 +25,7 @@ import datetime
 import subprocess
 import mimetypes
 import random
+import urllib.request
 from urllib.parse import quote, unquote
 
 # Carga variables desde .env en desarrollo local (si existe). En producción
