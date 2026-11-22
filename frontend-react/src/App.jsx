@@ -9,6 +9,7 @@ import { PlayerStage } from './components/PlayerStage.jsx';
 import { TrackSearchPanel } from './components/TrackSearchPanel.jsx';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
+import { NewShit } from './components/NewShit.jsx';
 import { TopRequested } from './components/TopRequested.jsx';
 import { QueuePanel } from './components/QueuePanel.jsx';
 import { HistoryPanel } from './components/HistoryPanel.jsx';
@@ -114,13 +115,18 @@ export default function App() {
           {data.loading ? <p className="loading" role="status">Sintonizando señal…</p> : null}
         </main>
 
-        <aside className="rail" aria-label="Ranking de pedidos y moods">
+        <aside className="rail" aria-label="Ranking, moods y recomendados">
           <TopRequested items={data.topRequested} />
           <MoodBoard
             moods={data.moods}
             activeMood={activeMood}
             onSelect={handleMood}
             pending={data.pending}
+          />
+          <NewShit
+            playing={audio.listening}
+            onToggle={audio.toggle}
+            hasStream={audio.hasStream}
           />
         </aside>
       </div>
