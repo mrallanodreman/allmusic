@@ -16,8 +16,16 @@
     <link rel="icon" type="image/png" href="./assets/radio-ui/buena-musica-logo.png" />
     <title>AllMusic · Canal 24 | Radio IA, Playlists, Tu Música</title>
   </head>
-  <body>
+  <body style="margin:0;background:#090a0c;color:#f7f1e8">
     <div id="root"></div>
+    <!-- Respaldo visible si la hoja de estilos o el módulo JS no llegan. -->
+    <div id="allmusic-boot" role="status" style="font-family:Arial,sans-serif;position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;background:#090a0c;color:#f7f1e8;text-align:center;padding:25px;z-index:2">
+      <strong style="font-size:clamp(36px,8vw,64px);font-weight:900;letter-spacing:-.045em">CANAL <span style="color:#f41689">24</span> / ALLMUSIC</strong>
+      <span style="font:700 13px monospace;letter-spacing:.15em;color:#f4d500">CARGANDO LA CABINA…</span>
+      <p style="font-size:12px;line-height:1.6;max-width:400px;margin:0;color:#c8c5c0">Si el reproductor no aparece, podés utilizar la versión anterior sin perder tu música.</p>
+      <a href="/allmusic/classic" style="display:inline-block;padding:12px 16px;font:900 12px monospace;background:#f4d500;color:#090a0c;text-decoration:none">ABRIR VERSIÓN CLÁSICA</a>
+    </div>
+    <noscript>Para utilizar AllMusic se necesita JavaScript. <a href="/allmusic/classic">Abrir sitio clásico</a>.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

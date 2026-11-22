@@ -3120,8 +3120,14 @@ def _wsgi_app(environ, start_response):
     # que Flask enrutee; así /allmusic/status -> /status, /allmusic/ -> /.
     path = environ.get('PATH_INFO', '/')
     if path == '/allmusic':
-        environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/allmusic'
-        environ['PATH_INFO'] = '/'
+        # El navegador resuelve assets relativos de /allmusic como /assets,
+        # fuera del prefijo. Nunca entregar aquí index.html sin slash.
+        start_response('308 Permanent Redirect', [
+            ('Location', '/allmusic/'),
+            ('Content-Length', '0'),
+            ('Cache-Control', 'no-store'),
+        ])
+        return [b'']
     elif path.startswith('/allmusic/'):
         environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/allmusic'
         environ['PATH_INFO'] = path[len('/allmusic'):]

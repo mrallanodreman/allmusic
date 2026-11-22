@@ -12,7 +12,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,6 +37,32 @@ jobs:
           assert js, 'No se generó JavaScript para la portada'
           print('Build React OK:', len(js), 'bundles')
           PY
+      - name: Verify public asset paths and slashless URL
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('frontend-react/dist/index.html').read_text()
+          assert 'src="/allmusic/assets/' in html, 'JS no apunta a /allmusic/assets'
+          assert 'href="/allmusic/assets/' in html, 'CSS no apunta a /allmusic/assets'
+          assert 'id="allmusic-boot"' in html, 'No hay respaldo visible'
+          print('Rutas de los bundles correctas')
+          PY
+      - name: Install headless browser for runtime smoke
+        working-directory: frontend-react
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Browser smoke for new AllMusic
+        run: |
+          python3 frontend-react/scripts/smoke_server.py > /tmp/allmusic-smoke.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8123/allmusic/ >/dev/null; then break; fi
+            sleep 1
+          done
+          cd frontend-react
+          node scripts/smoke_browser.mjs
       - name: Compile Flask backend (syntax)
         run: python3 -m py_compile backend/allmusic_server.py
       - name: Assert entry points and migration features
@@ -52,5 +78,6 @@ jobs:
               assert name in app, f'Componente ausente: {name}'
           assert "onOpenLibrary?.(link.id)" in side
           assert "window.parent.switchTab" not in side
+          assert "308 Permanent Redirect" in api
           print('Rutas y biblioteca migradas OK')
           PY
