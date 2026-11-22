@@ -45,10 +45,6 @@ export function useAudioStream(streamUrl) {
   const attemptPlay = useCallback((sequence) => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.volume === 0) {
-      audio.volume = 0.8;
-      setVolumeState(0.8);
-    }
     setError('');
     const attempt = audio.play();
     if (attempt && typeof attempt.then === 'function') {

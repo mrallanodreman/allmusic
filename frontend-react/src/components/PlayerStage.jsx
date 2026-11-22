@@ -1,4 +1,5 @@
 import { Icon } from './Icons.jsx';
+import { VolumeFader } from './VolumeFader.jsx';
 import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 import { formatTime, safeUrl } from '../lib/safe.js';
 
@@ -33,7 +34,6 @@ export function PlayerStage({
   const duration = personal ? Number(personalDuration) || 0 : Number(track?.duration) || 0;
   const progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
   const live = Boolean(now?.playing);
-  const volumePct = Math.round((Number(volume) || 0) * 100);
 
   return (
     <div className="stage-shell">
@@ -140,18 +140,7 @@ export function PlayerStage({
                   <Icon name="radio" className="icon" />
                   <span className="control__caption">RADIO</span>
                 </button>
-                <label className="stage__volume" aria-label="Volumen">
-                  <Icon name={volumePct === 0 ? 'mute' : 'volume'} className="icon" />
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={volumePct}
-                    onChange={(event) => onVolume(Number(event.target.value) / 100)}
-                  />
-                  <span className="stage__volume-value">{volumePct}%</span>
-                </label>
+                <VolumeFader volume={volume} onVolume={onVolume} />
               </div>
               <p className="stage__signal" role="status">
                 {audioError || (personal

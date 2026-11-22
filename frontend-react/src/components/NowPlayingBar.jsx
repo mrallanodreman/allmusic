@@ -1,4 +1,5 @@
 import { Icon } from './Icons.jsx';
+import { VolumeFader } from './VolumeFader.jsx';
 import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
 
@@ -31,7 +32,6 @@ export function NowPlayingBar({
   const elapsed = personal ? Number(personalElapsed) || 0 : Number(track?.elapsed) || 0;
   const duration = personal ? Number(personalDuration) || 0 : Number(track?.duration) || 0;
   const progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
-  const volumePct = Math.round((Number(volume) || 0) * 100);
 
   return (
     <div className="nowbar" role="region" aria-label="Barra de reproducción">
@@ -94,17 +94,7 @@ export function NowPlayingBar({
         <span className="nowbar__time">
           {formatTime(elapsed)} / {duration > 0 ? formatTime(duration) : '--:--'}
         </span>
-        <label className="nowbar__volume" aria-label="Volumen">
-          <Icon name={volumePct === 0 ? 'mute' : 'volume'} className="icon" />
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="1"
-            value={volumePct}
-            onChange={(event) => onVolume(Number(event.target.value) / 100)}
-          />
-        </label>
+        <VolumeFader volume={volume} onVolume={onVolume} compact />
         {!personal && activeMood ? <span className="nowbar__mood">{activeMood}</span> : null}
       </div>
     </div>

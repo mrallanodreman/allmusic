@@ -874,16 +874,289 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .control:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .control:disabled { opacity: 0.45; cursor: not-allowed; }
 .control--skip { width: 50px; height: 50px; font-size: 22px; background: var(--paper); }
-.stage__volume {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-  background: var(--paper); color: var(--ink);
-  border: 2px solid var(--ink); padding: 6px 8px;
-  box-shadow: 2px 2px 0 var(--ink);
-}
-.stage__volume input[type="range"] { width: 110px; accent-color: var(--magenta); cursor: pointer; }
-.stage__volume-value { min-width: 3.2ch; text-align: right; }
 
+
+
+/* -------------------------------------------------------------------------
+   Canal 24 / VOL 01 -- fader vertical de mesa de sonido
+   Adaptación responsive del control "Radio" de kalikapurnabinsanghaclub.
+   https://uiverse.io/kalikapurnabinsanghaclub/grumpy-dodo-60 (MIT)
+   ------------------------------------------------------------------------- */
+.snd-regulator-context {
+  --snd-metal: #d4d9df;
+  --snd-track: #0c0e13;
+  --snd-accent: var(--yellow);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 0;
+  isolation: isolate;
+}
+.snd-fader-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 90px;
+  min-width: 90px;
+  padding: 11px 9px 8px;
+  color: #e8e8e8;
+  background: linear-gradient(145deg, #232329, #1e1e24);
+  border: 2px solid #080a0c;
+  border-radius: 11px;
+  box-shadow:
+    inset 1px 1px rgba(255,255,255,.10),
+    inset -2px -2px rgba(0,0,0,.40),
+    3px 4px 0 #08090a;
+}
+.snd-fader-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(232,232,232,.14);
+}
+.snd-fader-label {
+  font: 900 10px/1.1 var(--font-mono);
+  color: #e8e8e8;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.snd-fader-status {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 5px rgba(0,229,255,.5);
+}
+.snd-fader-container {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 125px;
+  margin: 2px 0 1px;
+  overflow: visible;
+}
+.snd-fader-container::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 112px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(90deg,#080a0e 0%, #090a0d 45%, #454953 50%, #080a0e 57%, #12141a 100%);
+  box-shadow: inset 1px 0 #000, 1px 0 rgba(255,255,255,.1);
+  border: 1px solid #0a0b0d;
+}
+.snd-fader-ruler {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 10px;
+  opacity: .72;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(232,232,232,.8) 0 1px,
+    transparent 1px 12px
+  );
+  pointer-events: none;
+}
+.snd-fader-ruler--left { left: 1px; }
+.snd-fader-ruler--right { right: 1px; }
+.snd-audio-fader {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  width: 112px;
+  height: 9px;
+  padding: 0;
+  margin: 0;
+  background: linear-gradient(
+    to right,
+    var(--snd-accent) 0%,
+    var(--snd-accent) var(--fader-pct),
+    #101216 var(--fader-pct),
+    #101216 100%
+  );
+  border: 1px solid #000;
+  border-radius: 1px;
+  box-shadow: 0 1px 3px #000;
+  cursor: pointer;
+  z-index: 2;
+  touch-action: none;
+  outline: none;
+}
+.snd-audio-fader::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  height: 9px;
+  border: none;
+  background: transparent;
+}
+.snd-audio-fader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 25px;
+  margin-top: -9px;
+  border: 2px solid #050507;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    #e9edf1 0%, #b9c1cc 24%, #eeeeef 47%,
+    #777f89 49%, #434952 53%, #bdc6cd 77%, #ebebed 100%
+  );
+  box-shadow: 1px 1px 1px #080808, -1px 0 1px rgba(255,255,255,.4);
+}
+.snd-audio-fader::-moz-range-track {
+  height: 9px;
+  border: none;
+  background: transparent;
+}
+.snd-audio-fader::-moz-range-thumb {
+  width: 28px;
+  height: 23px;
+  border: 2px solid #050507;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    #e9edf1 0%, #b9c1cc 24%, #eeeeef 47%,
+    #777f89 49%, #434952 53%, #bdc6cd 77%, #ebebed 100%
+  );
+  box-shadow: 1px 1px 1px #080808, -1px 0 1px rgba(255,255,255,.4);
+}
+.snd-audio-fader:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 5px;
+}
+.snd-fader-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border-top: 1px solid rgba(232,232,232,.14);
+  padding-top: 7px;
+}
+.snd-fader-mute {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+  padding: 3px;
+  background: #0c1014;
+  border: 1px solid #535c68;
+  border-radius: 4px;
+  color: var(--cyan);
+  cursor: pointer;
+}
+.snd-fader-mute[aria-pressed="true"] {
+  color: var(--magenta);
+  border-color: var(--magenta);
+}
+.snd-fader-mute:hover { border-color: var(--yellow); }
+.snd-fader-mute:focus-visible,
+.snd-fader-trigger:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.snd-fader-mute .icon { width: 17px; height: 17px; fill: none; }
+.snd-fader-readout {
+  color: var(--snd-accent);
+  font: 900 15px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.snd-fader-readout small {
+  font: 900 8px/1 var(--font-mono);
+  margin-left: 1px;
+}
+.snd-fader-footnote {
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  font: 800 7px/1.15 var(--font-mono);
+  white-space: nowrap;
+  letter-spacing: -.025em;
+  color: rgba(232,232,232,.48);
+}
+
+/* En la consola principal se muestra el fader completo. */
+.snd-regulator-context--main { align-self: center; }
+.snd-regulator-context--main .snd-fader-panel {
+  box-shadow: 3px 3px 0 var(--magenta), inset 1px 1px rgba(255,255,255,.10);
+}
+
+/* En la barra inferior, botón compacto + consola desplegable hacia arriba. */
+.snd-regulator-context--compact { z-index: 12; }
+.snd-fader-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 48px;
+  height: 48px;
+  border-radius: 5px;
+  border: 2px solid var(--paper);
+  background: linear-gradient(145deg,#232329,#151519);
+  color: var(--paper);
+  box-shadow: 2px 2px 0 var(--magenta);
+  cursor: pointer;
+}
+.snd-fader-trigger .icon { width: 20px; height: 20px; }
+.snd-fader-trigger span {
+  font: 800 9px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.snd-fader-trigger:hover,
+.snd-fader-trigger--open {
+  background: #2d3339;
+  border-color: var(--cyan);
+}
+.snd-fader-popover {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  right: 0;
+  z-index: 20;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.7));
+}
+.snd-fader-popover::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  bottom: -11px;
+  border: 6px solid transparent;
+  border-top-color: #232329;
+  pointer-events: none;
+}
+.snd-fader-popover .snd-fader-panel {
+  box-shadow: 3px 3px 0 var(--cyan), inset 1px 1px rgba(255,255,255,.10);
+}
+
+@media (max-width: 620px) {
+  .snd-regulator-context--main .snd-fader-panel {
+    width: 77px;
+    min-width: 77px;
+    padding: 8px 6px;
+  }
+  .snd-regulator-context--main .snd-fader-container { height: 111px; }
+  .snd-regulator-context--main .snd-fader-container::before { height: 95px; }
+  .snd-regulator-context--main .snd-audio-fader { width: 96px; }
+  .snd-regulator-context--main .snd-fader-ruler { top: 8px; bottom: 8px; }
+  .snd-fader-trigger { width: 43px; height: 43px; }
+}
+@media (max-width: 390px) {
+  .snd-fader-trigger { width: 37px; height: 40px; }
+  .snd-fader-trigger .icon { width: 17px; height: 17px; }
+}
 
 /* --- Reproductor dual: Play / Pausa + Buscar + Radio --- */
 .stage__personal-badge {
@@ -935,7 +1208,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .control--transport, .control--search, .control--radio { width: 55px; height: 55px; }
   .control--transport .icon, .control--search .icon, .control--radio .icon { width: 21px; height: 21px; }
   .stage__controls .equalizer { display: none; }
-  .stage__volume input[type="range"] { width: min(20vw, 95px); }
 }
 
 /* --- Buscador de música personal: aparece bajo el reproductor --- */
@@ -1520,16 +1792,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .nowbar__play:hover:not(:disabled), .nowbar__skip:hover:not(:disabled) { background: var(--cyan); transform: scale(1.05); }
 .nowbar__play:disabled, .nowbar__skip:disabled { opacity: .45; cursor: not-allowed; }
-.nowbar__volume { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; font-family: var(--font-mono); font-size: 10px; color: var(--paper); }
-.nowbar__volume .icon { width: 16px; height: 16px; fill: currentColor; }
-.nowbar__volume input[type="range"] { width: 90px; accent-color: var(--yellow); cursor: pointer; }
 .nowbar__cover { width: 44px; height: 44px; object-fit: cover; border: 2px solid var(--paper); flex: none; }
 .nowbar__rec { width: 70px; flex: none; }
 .nowbar__info { min-width: 0; flex: 1; display: grid; }
 .nowbar__label { font-family: var(--font-mono); font-size: 10px; color: var(--yellow); letter-spacing: 0.1em; }
 .nowbar__info strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nowbar__time, .nowbar__mood { font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
-@media (max-width: 980px) { .nowbar__volume { display: none; } }
 @media (max-width: 760px) { .nowbar__time { display: none; } }
 .nowbar__mood { background: var(--accent); color: var(--paper); padding: 3px 8px; border: 2px solid var(--paper); text-transform: uppercase; }
 .nowbar__stream { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--ink); background: var(--cyan); border: 2px solid var(--paper); padding: 6px 10px; text-decoration: none; white-space: nowrap; }
