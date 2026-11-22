@@ -70,7 +70,6 @@ export function PlayerStage({
                 <span className="stage__cover-fallback" aria-hidden="true">C24</span>
               )}
               <Equalizer active={playing} wave />
-              <span className="stage__frame" aria-hidden="true" />
             </div>
             <figcaption className="stage__cover-caption">
               <span>{personal ? 'ALLMUSIC' : 'CANAL 24'}</span>

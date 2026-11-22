@@ -818,13 +818,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .stage__cover img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.12) contrast(1.06); }
 .stage__cover-fallback { font-family: var(--font-display); font-size: clamp(46px, 8vw, 84px); color: var(--yellow); }
-.stage__frame {
-  position: absolute; inset: 9px;
-  border: 2px dashed color-mix(in srgb, var(--paper) 78%, transparent);
-  transform: rotate(1.5deg);
-  pointer-events: none;
-  z-index: 3;
-}
 .stage__cover-caption {
   display: flex; gap: 10px;
   background: var(--yellow);
