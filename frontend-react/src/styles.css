@@ -477,7 +477,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   gap: clamp(14px, 1.8vw, 20px);
 }
 
-/* --- Sidebar Canal 24 / fanzine radial como la referencia --- */
+/* --- Sidebar Canal 24 / papel rasgado sobre muro ---
+   La superficie opaca no vive en el elemento .sidebar: se recorta en
+   ::before con una silueta irregular. Esto impide que el rectángulo
+   negro sobresalga por debajo de los ocho assets de papel.
+   ::after reúne las cuatro tiras y las cuatro esquinas con alfa.
+*/
 .sidebar {
   --side-pink: #fc168a;
   --side-cyan: #00deef;
@@ -489,11 +494,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   display: flex;
   flex-direction: column;
   color: #f2efe9;
-  /*
-   * Contenedor 100% transparente: el muro fotográfico de la página permanece
-   * visible. Los ocho recortes de papel WebP siguen superpuestos en ::before
-   * y ::after, sin ninguna tarjeta negra detrás del sidebar.
-   */
   padding: 18px 14px 20px;
   overflow: visible;
   border: 0;
@@ -502,41 +502,67 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   isolation: isolate;
 }
 
-/* Tirillas independientes y bordes irregulares, sin tapar ni interceptar
-   enlaces, contador, formulario de búsqueda o controles de reproducción. */
-.sidebar::before,
+/* Superficie completa y opaca, pero con borde quebrado.
+   En escritorio las tiras de papel cubren aprox. 16 px de los lados
+   y 16 px arriba/abajo. El recorte se mantiene debajo de esas tiras. */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 2px 3px;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #080a0c;
+  background-image:
+    linear-gradient(180deg, rgba(3, 4, 6, .24), rgba(3, 4, 6, .42)),
+    url('./assets/radio-ui/sidebar-grunge.webp');
+  background-position: center, center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%, cover;
+  clip-path: polygon(
+    1.8% 1%, 7% .5%, 13% 1%, 21% .3%, 29% .9%, 37% .6%,
+    47% 1%, 56% .4%, 64% 1%, 73% .5%, 82% .9%, 90% .4%, 98% 1%,
+    98.7% 5%, 98.1% 11%, 98.6% 18%, 98% 25%, 98.6% 32%,
+    98% 39%, 98.4% 46%, 98% 53%, 98.6% 60%, 98% 68%,
+    98.7% 74%, 98.2% 82%, 98.5% 89%, 98% 96%,
+    97% 99%, 90% 98.5%, 82% 99.3%, 72% 98.9%, 62% 99.3%,
+    51% 98.7%, 39% 99.3%, 29% 98.7%, 19% 99.3%, 11% 98.8%, 3% 99%,
+    1.5% 96%, 1.7% 88%, 1.2% 79%, 1.8% 71%, 1.4% 63%,
+    1.9% 56%, 1.4% 48%, 1.8% 40%, 1.3% 32%, 1.7% 23%,
+    1.2% 15%, 1.7% 8%
+  );
+}
+
+/* Los 8 archivos tienen canal alfa: esquinas por delante de las
+   tiras para tapar las uniones. Ninguna capa captura clics.
+   Las tiras quedan centradas en el perímetro, no como marco cuadrado. */
 .sidebar::after {
   content: '';
   position: absolute;
   inset: -9px;
-  pointer-events: none;
   z-index: 2;
-  background-repeat: no-repeat;
-}
-.sidebar::before {
-  background-image:
-    url('./assets/radio-ui/sidebar-paper-top.webp'),
-    url('./assets/radio-ui/sidebar-paper-bottom.webp'),
-    url('./assets/radio-ui/sidebar-paper-left.webp'),
-    url('./assets/radio-ui/sidebar-paper-right.webp');
-  background-position: center top, center bottom, left center, right center;
-  background-size:
-    calc(100% - 15px) 15px,
-    calc(100% - 15px) 15px,
-    16px calc(100% - 15px),
-    16px calc(100% - 15px);
-  opacity: .90;
-}
-.sidebar::after {
+  pointer-events: none;
   background-image:
     url('./assets/radio-ui/sidebar-paper-tl.webp'),
     url('./assets/radio-ui/sidebar-paper-tr.webp'),
     url('./assets/radio-ui/sidebar-paper-bl.webp'),
-    url('./assets/radio-ui/sidebar-paper-br.webp');
-  background-position: left top, right top, left bottom, right bottom;
-  background-size: 50px 50px, 50px 50px, 50px 50px, 50px 50px;
-  opacity: .72;
+    url('./assets/radio-ui/sidebar-paper-br.webp'),
+    url('./assets/radio-ui/sidebar-paper-top.webp'),
+    url('./assets/radio-ui/sidebar-paper-bottom.webp'),
+    url('./assets/radio-ui/sidebar-paper-left.webp'),
+    url('./assets/radio-ui/sidebar-paper-right.webp');
+  background-position:
+    left top, right top, left bottom, right bottom,
+    center top, center bottom, left center, right center;
+  background-size:
+    50px 50px, 50px 50px, 50px 50px, 50px 50px,
+    calc(100% - 28px) 16px,
+    calc(100% - 28px) 16px,
+    16px calc(100% - 28px),
+    16px calc(100% - 28px);
+  background-repeat: no-repeat;
+  opacity: .98;
 }
+
 /* El contenido está por delante de los recortes; especialmente la navegación
    debe permanecer clicable en todos los tamaños. */
 .sidebar > * { position: relative; z-index: 3; }
@@ -701,7 +727,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .sidebar__caption { text-align: left; }
 }
 @media (max-width: 540px) {
-  .sidebar::after { background-size: 42px 42px, 42px 42px, 42px 42px, 42px 42px; }
+  .sidebar::after {
+    background-size:
+      42px 42px, 42px 42px, 42px 42px, 42px 42px,
+      calc(100% - 25px) 14px,
+      calc(100% - 25px) 14px,
+      14px calc(100% - 25px),
+      14px calc(100% - 25px);
+  }
   .sidebar__nav { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .sidebar__link { font-size: 11px; }
   .sidebar__station { white-space: normal; }
