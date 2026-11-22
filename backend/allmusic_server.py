@@ -2183,9 +2183,10 @@ RADIO_LIVE_UPSTREAM = os.environ.get('RADIO_LIVE_UPSTREAM', 'http://192.168.1.5:
 def _radio_live_stream_url():
     """URL del stream para clientes web.
 
-    Usa proxy same-origin por defecto (/radio/live.mp3) para evitar DNS/CORS.
-    Si se configura RADIO_LIVE_STREAM_URL con una URL explícita no-legacy, se
-    respeta. El valor legacy roto conocido se ignora.
+    Prioridad:
+    1) RADIO_LIVE_STREAM_URL explícita no-legacy.
+    2) Stream LAN directo conocido (funciona en la red local de despliegue).
+    3) Proxy same-origin /radio/live.mp3 como último recurso.
     """
     url = _RADIO_LIVE_STREAM_URL_RAW
     legacy_broken = {
@@ -2198,8 +2199,8 @@ def _radio_live_stream_url():
         url = ''
     if url:
         return url
-    prefix = '/allmusic' if request.path.startswith('/allmusic') else ''
-    return f'{prefix}/radio/live.mp3'
+    # Stream directo en LAN - accesible desde navegadores en la red local.
+    return 'http://192.168.1.5:2427/live.mp3'
 
 
 RADIO_LIVE_STREAM_URL = _RADIO_LIVE_STREAM_URL_RAW or ''
