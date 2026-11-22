@@ -302,7 +302,7 @@ export default function App() {
 
           {!libraryView && !carteleraOpen ? (
             <div className="content__grid">
-              <QueuePanel items={data.queue} />
+              <QueuePanel items={data.queue} nextMood={data.nextMood} />
               <HistoryPanel items={data.history} />
             </div>
           ) : null}

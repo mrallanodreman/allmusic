@@ -18,9 +18,10 @@ export function TopRequested({ items }) {
         alt=""
         aria-hidden="true"
       />
-      <h2 className="sr-only" id="top-title">Los 10 más pedidos</h2>
+      <h2 className="sr-only" id="top-title">Los 10 más pedidos de la semana</h2>
+      <p className="top__week">SEMANA ACTUAL · LUN–DOM</p>
       {list.length === 0 ? (
-        <p className="empty" role="status">Todavía no hay pedidos registrados.</p>
+        <p className="empty" role="status">Todavía no hay pedidos registrados esta semana.</p>
       ) : (
         <ol className="top__list">
           {list.map((item, index) => {

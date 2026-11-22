@@ -2304,16 +2304,105 @@ def _load_radio():
             state.setdefault('request_stats', {})
             if not isinstance(state.get('request_stats'), dict):
                 state['request_stats'] = {}
+            state.setdefault('request_stats_week', {})
+            if not isinstance(state.get('request_stats_week'), dict):
+                state['request_stats_week'] = {}
+            state.setdefault('request_stats_week_key', '')
             state.setdefault('discovered_moods', {})
             state.setdefault('top_index', 0)
             return state
     except Exception:
-        return {'current': None, 'queue': [], 'history': [], 'request_stats': {}, 'discovered_moods': {}, 'top_index': 0}
+        return {
+            'current': None, 'queue': [], 'history': [], 'request_stats': {},
+            'request_stats_week': {}, 'request_stats_week_key': '',
+            'discovered_moods': {}, 'top_index': 0,
+        }
 
 
 def _save_radio(state):
     with open(RADIO_FILE, 'w') as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+
+def _radio_week_key():
+    """Clave de la semana natural (lunes a domingo) en hora local del servidor."""
+    iso = datetime.date.today().isocalendar()
+    return f"{iso[0]}-W{iso[1]:02d}"
+
+
+def _radio_weekly_stats(state):
+    """Contadores de la semana en curso. Al cambiar de semana se reinician
+    (la clave queda persistida en radio_state.json, dentro del volumen)."""
+    key = _radio_week_key()
+    if state.get('request_stats_week_key') != key or not isinstance(state.get('request_stats_week'), dict):
+        state['request_stats_week_key'] = key
+        state['request_stats_week'] = {}
+    return state['request_stats_week']
+
+
+def _radio_trim_stats(stats):
+    """Mantiene acotado el diccionario de conteos sin descartar los más pedidos."""
+    if len(stats) <= RADIO_MAX_REQUEST_STATS:
+        return stats
+
+    def count(entry):
+        try:
+            return int(entry.get('request_count') or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    ordered = sorted(
+        stats.items(),
+        key=lambda pair: (count(pair[1]), str(pair[1].get('last_requested_at', ''))),
+        reverse=True,
+    )
+    return dict(ordered[:RADIO_MAX_REQUEST_STATS])
+
+
+def _radio_merge_peer_top(state, peer_top):
+    """Fusiona el top que reporta la otra instancia como peer_count. Reemplaza
+    en vez de sumar: el heartbeat se repite cada pocos segundos y no debe inflar
+    el contador. Actualiza el acumulado y el de la semana en curso."""
+    if not isinstance(peer_top, list):
+        return
+    _radio_weekly_stats(state)  # reinicia el contador semanal si cambió de semana
+    for name in ('request_stats', 'request_stats_week'):
+        stats = state.get(name)
+        if not isinstance(stats, dict):
+            stats = {}
+            state[name] = stats
+        for entry in peer_top:
+            if not isinstance(entry, dict):
+                continue
+            vid = entry.get('video_id')
+            if not vid:
+                continue
+            try:
+                reported = int(entry.get('request_count') or 0)
+            except (TypeError, ValueError):
+                continue
+            if reported <= 0:
+                continue
+            item = stats.get(vid)
+            if not isinstance(item, dict):
+                item = {}
+            try:
+                own_count = int(item.get('own_count') or 0)
+            except (TypeError, ValueError):
+                own_count = 0
+            item.update({
+                'video_id': vid,
+                'title': entry.get('title', item.get('title', 'Sin título')),
+                'artist': entry.get('artist', item.get('artist', '')),
+                'thumbnail': entry.get('thumbnail') or item.get('thumbnail', ''),
+                'duration': entry.get('duration') or item.get('duration') or 0,
+                'own_count': own_count,
+                'peer_count': reported,
+                'request_count': own_count + reported,
+                'last_requested_at': entry.get('last_requested_at') or item.get('last_requested_at', ''),
+            })
+            stats[vid] = item
+        state[name] = _radio_trim_stats(stats)
 
 
 def _normalize_mood(text):
@@ -2517,32 +2606,39 @@ def _radio_register_request(state, found, query=''):
         peer_count = 0
     own_count += 1
 
-    item.update({
+    requested_at = datetime.datetime.utcnow().isoformat() + 'Z'
+    common = {
         'video_id': video_id,
         'title': found.get('title', item.get('title', 'Sin título')),
         'artist': found.get('uploader') or found.get('artist') or item.get('artist', ''),
         'thumbnail': found.get('thumbnail') or item.get('thumbnail', ''),
         'duration': found.get('duration') or item.get('duration') or 0,
-        'own_count': own_count,
-        'peer_count': peer_count,
-        'request_count': own_count + peer_count,
-        'last_requested_at': datetime.datetime.utcnow().isoformat() + 'Z',
+        'last_requested_at': requested_at,
         'last_query': str(query or '')[:200],
-    })
+    }
+    item.update(common, own_count=own_count, peer_count=peer_count,
+                request_count=own_count + peer_count)
     stats[video_id] = item
+    state['request_stats'] = _radio_trim_stats(stats)
 
-    if len(stats) > RADIO_MAX_REQUEST_STATS:
-        def count(entry):
-            try:
-                return int(entry.get('request_count') or 0)
-            except (TypeError, ValueError):
-                return 0
-        ordered = sorted(
-            stats.items(),
-            key=lambda pair: (count(pair[1]), str(pair[1].get('last_requested_at', ''))),
-            reverse=True,
-        )
-        state['request_stats'] = dict(ordered[:RADIO_MAX_REQUEST_STATS])
+    # El ranking de "más pedidos" es semanal: se acumula aparte y se reinicia
+    # el lunes. Ambos diccionarios viven en radio_state.json (volumen persistente).
+    weekly = _radio_weekly_stats(state)
+    witem = weekly.get(video_id)
+    if not isinstance(witem, dict):
+        witem = {}
+    try:
+        weekly_own = int(witem.get('own_count') or 0)
+    except (TypeError, ValueError):
+        weekly_own = 0
+    try:
+        weekly_peer = int(witem.get('peer_count') or 0)
+    except (TypeError, ValueError):
+        weekly_peer = 0
+    witem.update(common, own_count=weekly_own + 1, peer_count=weekly_peer,
+                 request_count=weekly_own + weekly_peer + 1)
+    weekly[video_id] = witem
+    state['request_stats_week'] = _radio_trim_stats(weekly)
 
     # Cada solicitud alimenta el pool de moods descubiertos (autofeedback)
     if query:
@@ -2550,8 +2646,11 @@ def _radio_register_request(state, found, query=''):
 
 
 def _radio_top_requested(state):
-    """Devuelve las diez canciones con más solicitudes, sin exponer datos internos."""
-    stats = state.get('request_stats') or {}
+    """Devuelve las diez canciones más pedidas de la semana natural, sin
+    exponer contadores internos. Fuera de la semana registrada devuelve []."""
+    if state.get('request_stats_week_key') != _radio_week_key():
+        return []
+    stats = state.get('request_stats_week') or {}
     if not isinstance(stats, dict):
         return []
 
@@ -2589,6 +2688,28 @@ def _radio_public_moods(state, limit=20):
     ]
     items.sort(key=lambda e: e['uses'], reverse=True)
     return items[:limit]
+
+
+def _radio_next_mood(state):
+    """Próximo mood guardado: el menos usado y, en empate, el más antiguo.
+    Se deriva de discovered_moods (persistido), así que sobrevive a deploys."""
+    discovered = state.get('discovered_moods') or {}
+    candidates = []
+    for entry in (discovered.values() if isinstance(discovered, dict) else []):
+        if not isinstance(entry, dict):
+            continue
+        mood = str(entry.get('mood') or '').strip()
+        if not mood or _radio_is_blocked(mood):
+            continue
+        try:
+            uses = int(entry.get('uses') or 0)
+        except (TypeError, ValueError):
+            uses = 0
+        candidates.append((uses, str(entry.get('last_used_at') or ''), _normalize(mood), mood))
+    if not candidates:
+        return None
+    uses, _, _, mood = min(candidates)
+    return {'mood': mood[:80], 'uses': uses}
 
 
 def _radio_resolve_link(video_id):
@@ -2784,6 +2905,7 @@ def radio_now():
         if _radio_reconcile_master(state):
             _save_radio(state)
         public_queue = _radio_public_queue(state, 20)
+        next_mood = _radio_next_mood(state)
     master = state.get('master')
     master_offline = False
     if master:
@@ -2799,8 +2921,9 @@ def radio_now():
                 'stream_url': _radio_live_stream_url(),
                 'track': public_track,
                 'queue': public_queue[:20],
-                'history': master.get('history', [])[:10],
+                'history': master.get('history', [])[:5],
                 'top_requested': _radio_top_requested(state),
+                'next_mood': next_mood,
                 'moods': _radio_public_moods(state),
             })
     cur = state.get('current')
@@ -2811,8 +2934,9 @@ def radio_now():
             'master_offline': master_offline,
             'stream_url': _radio_live_stream_url(),
             'queue': public_queue[:20],
-            'history': state.get('history', [])[:10],
+            'history': state.get('history', [])[:5],
             'top_requested': _radio_top_requested(state),
+            'next_mood': next_mood,
             'moods': _radio_public_moods(state),
         })
     elapsed = time.time() - cur.get('started_at', 0)
@@ -2825,8 +2949,9 @@ def radio_now():
         'stream_url': _radio_live_stream_url(),
         'track': track,
         'queue': public_queue[:20],
-        'history': state.get('history', [])[:10],
+        'history': state.get('history', [])[:5],
         'top_requested': _radio_top_requested(state),
+        'next_mood': next_mood,
         'moods': _radio_public_moods(state),
     })
 
@@ -2970,49 +3095,11 @@ def radio_master_update():
             'playing': bool(data.get('playing')),
             'track': track,
             'queue': effective_queue[:RADIO_MAX_QUEUE],
-            'history': (data.get('history') or [])[:RADIO_MAX_HISTORY],
+            'history': (data.get('history') or [])[:5],
         }
-        # Unifica el ranking de "más pedidos": el heartbeat trae el top_requested
-        # de la otra instancia (own_count de ese lado) y aquí se fusiona como
-        # peer_count -- reemplazo, no suma, así el heartbeat repetido cada pocos
-        # segundos no infla el contador.
-        peer_top = data.get('request_stats_top') or []
-        if isinstance(peer_top, list):
-            stats = state.setdefault('request_stats', {})
-            if not isinstance(stats, dict):
-                stats = {}
-                state['request_stats'] = stats
-            for entry in peer_top:
-                if not isinstance(entry, dict):
-                    continue
-                vid = entry.get('video_id')
-                if not vid:
-                    continue
-                try:
-                    reported = int(entry.get('request_count') or 0)
-                except (TypeError, ValueError):
-                    continue
-                if reported <= 0:
-                    continue
-                item = stats.get(vid)
-                if not isinstance(item, dict):
-                    item = {}
-                try:
-                    own_count = int(item.get('own_count', 0) or 0)
-                except (TypeError, ValueError):
-                    own_count = 0
-                item.update({
-                    'video_id': vid,
-                    'title': entry.get('title', item.get('title', 'Sin título')),
-                    'artist': entry.get('artist', item.get('artist', '')),
-                    'thumbnail': entry.get('thumbnail') or item.get('thumbnail', ''),
-                    'duration': entry.get('duration') or item.get('duration') or 0,
-                    'own_count': own_count,
-                    'peer_count': reported,
-                    'request_count': own_count + reported,
-                    'last_requested_at': entry.get('last_requested_at') or item.get('last_requested_at', ''),
-                })
-                stats[vid] = item
+        # Unifica el ranking semanal de "más pedidos" con el top que reporta
+        # la otra instancia (ver _radio_merge_peer_top).
+        _radio_merge_peer_top(state, data.get('request_stats_top'))
         if _radio_reconcile_master(state):
             effective_queue = _radio_effective_queue(state)
             state['master']['queue'] = effective_queue[:RADIO_MAX_QUEUE]

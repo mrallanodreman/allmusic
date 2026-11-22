@@ -3,7 +3,7 @@ import { useInView } from '../hooks/useInView.js';
 import { Icon } from './Icons.jsx';
 
 export function HistoryPanel({ items }) {
-  const list = Array.isArray(items) ? items.slice(0, 6) : [];
+  const list = Array.isArray(items) ? items.slice(0, 5) : [];
   const [revealRef, visible] = useInView();
 
   return (
@@ -15,7 +15,7 @@ export function HistoryPanel({ items }) {
     >
       <div className="section-head">
         <h2 id="history-title">HISTORIAL RECIENTE</h2>
-        <span className="section-head__hint">últimas en el aire</span>
+        <span className="section-head__hint">últimos 5 temas</span>
       </div>
       {list.length === 0 ? (
         <p className="empty" role="status">

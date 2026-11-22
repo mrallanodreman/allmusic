@@ -121,8 +121,9 @@ export function useRadioData() {
     submit,
     advance,
     queue: asArray(now?.queue, 20),
-    history: asArray(now?.history, 10),
+    history: asArray(now?.history, 5),
     topRequested: asArray(now?.top_requested, 10),
     moods: asArray(now?.moods, 20),
+    nextMood: now?.next_mood && typeof now.next_mood === 'object' ? now.next_mood : null,
   };
 }

@@ -1752,6 +1752,25 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   background: color-mix(in srgb, var(--paper) 70%, transparent);
 }
 
+.queue__empty { display: grid; gap: 10px; }
+.queue__mood {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0; padding: 10px 12px;
+  background: color-mix(in srgb, var(--yellow) 26%, var(--paper));
+  border: 2px solid var(--ink);
+  clip-path: var(--cut-slip);
+}
+.queue__mood-label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+.queue__mood-name { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.top__week {
+  margin: 0 0 10px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
 /* --- Barra inferior --- */
 .nowbar {
   position: fixed;

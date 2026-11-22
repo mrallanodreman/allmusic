@@ -51,7 +51,17 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/allmusic/radio/now':
             return self.send_json({
                 'playing': False, 'track': None, 'queue': [],
-                'history': [], 'top_requested': [], 'moods': [], 'stream_url': ''
+                'history': [
+                    {'video_id': f'h{i}', 'title': f'Tema histórico {i}',
+                     'artist': 'Artista', 'thumbnail': ''}
+                    for i in range(7)
+                ],
+                'top_requested': [
+                    {'video_id': 't1', 'title': 'Tema más pedido', 'artist': 'Artista',
+                     'thumbnail': '', 'request_count': 3}
+                ],
+                'moods': [], 'next_mood': {'mood': 'jazz piano relax', 'uses': 1},
+                'stream_url': ''
             })
         if path == '/allmusic/playlists':
             return self.send_json([])

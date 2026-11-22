@@ -2,8 +2,9 @@ import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
 import { useInView } from '../hooks/useInView.js';
 import { Icon } from './Icons.jsx';
 
-export function QueuePanel({ items }) {
+export function QueuePanel({ items, nextMood }) {
   const list = Array.isArray(items) ? items.slice(0, 8) : [];
+  const mood = normalizeText(nextMood?.mood, 80);
   const [revealRef, visible] = useInView();
 
   return (
@@ -18,10 +19,18 @@ export function QueuePanel({ items }) {
         <span className="section-head__hint">{list.length} pendientes</span>
       </div>
       {list.length === 0 ? (
-        <p className="empty" role="status">
-          <Icon name="list" className="icon" />
-          Cola vacía · pedí la primera canción
-        </p>
+        <div className="queue__empty" role="status">
+          <p className="empty">
+            <Icon name="list" className="icon" />
+            Cola vacía · pedí la primera canción
+          </p>
+          {mood ? (
+            <p className="queue__mood">
+              <span className="queue__mood-label">SIGUIENTE MOOD</span>
+              <strong className="queue__mood-name">{mood}</strong>
+            </p>
+          ) : null}
+        </div>
       ) : (
         <ol className="queue__list">
           {list.map((item, index) => {
