@@ -57,7 +57,7 @@ Los checkouts del sitio EdgeMarketing que definen `ALLMUSIC_UPSTREAM` apuntando 
 no hace falta editar esos checkouts para publicar cambios de AllMusic.
 
 Verificación tras un push: el audit debe mostrar `webhook.deployment.queued` y
-`curl http://192.168.1.5:2426/radio` debe servir `id="root"` y `assets/index-*.js`.
+`curl http://192.168.1.5:2426/allmusic/radio` debe servir `id="root"` y `assets/index-*.js`.
 
 ## Pipeline de la radio
 
@@ -66,7 +66,7 @@ Web (edgemarketing.tech/allmusic -> túnel CF -> Coolify :2426)  <- fuente de ve
   v
 backend/radio-live.py (VAIO, ffmpeg, :2427) -> MP3 continuo
   v
-stream LAN http://192.168.1.2:2427/live.mp3   (público: https://mail.edgemarketing.art/radio/live.mp3, HOY ROTO — ver Estado conocido)
+stream LAN http://192.168.1.2:2427/live.mp3   (público: https://mail.edgemarketing.art/radio/live.mp3, sin verificar — ver E1/E2)
   v
 radio/atico-player.py -> media_player.atico_2 (bocina del Atico)
 ```
@@ -129,24 +129,36 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 - La app de escritorio habla con la API por URL configurable
   (`desktop/config.example.json`).
 
-## Estado conocido (verificado 2026-10-07)
+## Estado conocido (verificado 2026-11-21)
 
-- `:2426` en el VAIO **sí está vivo** (`allmusic-radio.service`, copia local del
-  backend): `radio-atico.sh` apunta a `127.0.0.1:2426` y `/search` + `/convert`
-  existen y responden. `:2427` es el stream MP3 del master, no una API.
+- `:2426` responde por la IP interna: `/allmusic/status` → `{"status":"running"}`,
+  y `/search`, `/radio`, `/radio/top`, `/radio/queue`, `/radio/history`,
+  `/assets/allmusic-logo.svg` → 200. `:2427` es el stream MP3 del master, no una API.
+- La UI React servida en `/radio` es el **diseño fanzine** (`64711c7`), con bundle
+  `index-_ctsnuPU.js` + `index-mslemx7l.css`. El artboard C24 y la capa RETRO
+  quedaron en el historial de commits pero **no están activos**. Handoff en
+  `docs/AI_HANDOFF_RADIO.md`.
 - `atico-player.service` usa `LIVE_STREAM_URL=http://192.168.1.2:2427/live.mp3`
   (master LAN del VAIO). Ojo: la IP es por DHCP — si cambia, actualizar la unit.
+  Hoy `192.168.1.2:2427` **no responde** y `/radio/now` declara `playing:true`
+  con `queue:[]`, `now:null`, `master:false` → ver **E2**.
   Entidad vieja `media_player.atico` quedó `unavailable` tras el cambio de red;
   la activa es `media_player.atico_2`.
-- El stream público `https://mail.edgemarketing.art/radio/live.mp3` responde **502 Bad
-  Gateway** (antes 404): la regla del túnel (`mail → 192.168.1.4:2123`) apunta al gateway de
-  warmachine, que no responde. Ver **E1** en el reporte de errores.
+- El stream público `https://mail.edgemarketing.art/radio/live.mp3` daba **502 Bad
+  Gateway** en chequeos anteriores. El 2026-11-21 el gateway `192.168.1.4:2123`
+  sí acepta TCP, pero `mail.edgemarketing.art` no resuelve DNS desde este entorno:
+  no se pudo confirmar el arreglo. Ver **E1**.
+- Este entorno tampoco resuelve `edgemarketing.art`; las verificaciones públicas
+  hay que hacerlas desde otra red. Las URL internas sí son verificables.
 - El servicio `allmusic-server` de Railway no tiene despliegues activos.
 - El repo público `mrallanodreman/AllMusic2.0` queda como puntero a este monorepo.
 
 ## 🚨 Reporte de errores y permisos (para colaboradores)
 
-> Verificado **2026-10-09** (web en vivo + API de Coolify).
+> Actualizado **2026-11-21**: endpoints internos, build de la UI React, deliverys
+> del webhook de GitHub y 11 tests de seguridad reejecutados.
+> ⚠️ Las URL públicas (`edgemarketing.art`, `mail.edgemarketing.art`) no se pudieron
+> revalidar: este entorno no resuelve esos DNS.
 > ⚠️ **Sin secretos aquí**: este es un reporte para trabajar, no un volcado de claves.
 > Ningún token/env de producción va en este repo. Si necesitas uno, pídelo por canal privado y
 > rótalo solo en Coolify.
@@ -155,17 +167,20 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 
 | # | Problema | Síntoma | Causa probable | Dónde se arregla | Estado |
 |---|---|---|---|---|---|
-| E1 | Stream público de la radio caído | `https://mail.edgemarketing.art/radio/live.mp3` → **502 Bad Gateway** | Túnel Cloudflare `mail` → `192.168.1.4:2123`; el gateway de warmachine no responde | Cloudflare Tunnel **y** warmachine (SSH) | 🔴 activo |
-| E2 | Cola de radio y master sin conectar | `/allmusic/radio/now` → `playing:true` pero `queue:0`, `top_requested:0`, `master:false`, `master_offline:false` | El master local (VAIO `:2427`) no publica rotación/pedidos; `radio-live.py` fuera o sin feed | VAIO: `allmusic-radio-live.service` + `atico-player.service` | 🔴 activo |
-| E3 | Autodeploy GitHub→Coolify **no dispara** | `git push` a `master` no redeployaba | Webhook apuntaba al dominio viejo `.art` (502) y GitHub no tenía el secreto que Coolify exige (`webhook.github.signature_failed`) | Fix 2026-11-21: URL → `app.edgemarketing.tech` y secreto alineado con `manual_webhook_secret_github` de `radio`; verificado `webhook.deployment.queued` | 🟢 resuelto |
-| E4 | Terminal/Exec de Coolify | `Terminal websocket connection lost` / `WebSocket error occurred` | Ya verificado WebSockets:on y SSL:full en CF y soketi vivo → sospecha: **rol del miembro** sobre el recurso `radio` | Coolify (roles) o Terminal por IP directa `http://192.168.1.4:8000` | 🔴 activo |
+| E1 | Stream público de la radio sin verificar | 502 en 2026-10-09; el 2026-11-21 `mail.edgemarketing.art` no resuelve DNS desde este entorno (el gateway `192.168.1.4:2123` sí acepta TCP) | Túnel Cloudflare `mail` → `192.168.1.4:2123`; queda corroborar ruta/Traefik y DNS público | Cloudflare Tunnel **y** warmachine (SSH), desde otra red | 🟡 pendiente de verificación pública |
+| E2 | Cola de radio y master sin conectar | `/allmusic/radio/now` → `playing:true`, `queue:[]`, `top_requested:[]`, `now:null`, `master:false`; `192.168.1.2:2427` no responde (2026-11-21) | El master local (VAIO `:2427`) no publica rotación/pedidos; `radio-live.py` fuera o sin feed | VAIO: `allmusic-radio-live.service` + `atico-player.service` (IP DHCP) | 🔴 activo |
+| E3 | Autodeploy GitHub→Coolify **no dispara** | `git push` a `master` no redeployaba | Webhook apuntaba al dominio viejo `.art` (502) y GitHub no tenía el secreto que Coolify exige (`webhook.github.signature_failed`) | Fix 2026-11-21: URL → `app.edgemarketing.tech` y secreto alineado con `manual_webhook_secret_github` de `radio`. Deliverys `23:15`, `23:22`, `23:28` y `23:30Z` → `200`; bundle servido `index-_ctsnuPU.js` | 🟢 resuelto |
+| E4 | Terminal/Exec de Coolify | `Terminal websocket connection lost` / `WebSocket error occurred` | Ya verificado WebSockets:on y SSL:full en CF y soketi vivo → sospecha: **rol del miembro** sobre el recurso `radio` | Coolify (roles) o Terminal por IP directa `http://192.168.1.4:8000` (TCP abierto 2026-11-21; WS no probado sin sesión) | 🟡 sin cambios confirmados |
 | E5 | Cabina de IA Radio (iframe) en blanco | `X-Frame-Options: DENY` bloqueaba el iframe `radio.html?embedded=1` | Cabecera demasiado estricta | Fix `SAMEORIGIN` en `92050aa` — **ya desplegado y verificado** | 🟢 resuelto |
 | E6 | Reproducir desde Historial fallaba | Error `MEDIA_ERR`/JS al reproducir desde Historial; Búsqueda sí funcionaba | El historial guardaba enlaces directos que **expiran** | Fix: guardar `videoId` y resolver enlace fresco (`3077d67`) | 🟢 resuelto |
 | E7 | Errores de consola “violates CSP” (adsense/cloudflareinsights) | Scripts legítimos bloqueados por CSP estricta | CSP nueva demasiado cerrada | Fix: permitir `pagead2.googlesyndication.com` y `static.cloudflareinsights.com` + `frame-src`/`connect-src` | 🟢 resuelto |
 | E8 | Logo SVG roto | `allmusic-logo.svg` no servía | Base href / prefijo `/allmusic/` | Fix de `frontend_files` — 200 `image/svg+xml` | 🟢 resuelto |
 
-Detalle de E2 (verificado en vivo): la API declara `playing:true` pero con cola vacía no hay
-rotación real; el Ático depende del master local, no del contenedor.
+Detalle de E2 (verificado en vivo el 2026-11-21): la API declara `playing:true` pero
+`queue:[]`, `top_requested:[]`, `now:null` y `master:false`; `192.168.1.2:2427`
+(master LAN, IP DHCP) no acepta conexiones. Sin cola no hay rotación real: el Ático
+depende del master local, no del contenedor Coolify. `radio-live.py` y
+`atico-player.service` viven en el VAIO, fuera de este repo.
 
 ### 🔐 Permisos y roles que necesitamos (para editar sin fricción)
 
@@ -187,20 +202,29 @@ para diagnosticar y desplegar. Esto NO significa compartir contraseñas: se otor
 
 ### 🛠 Guía para ayudar a arreglar (checklist por error)
 
-1. **E1 (stream público):** con acceso al túnel CF y SSH a warmachine, validar que `192.168.1.4:2123`
-   responda y revisar las rutas de Traefik para el host `mail`.
+1. **E1 (stream público):** `192.168.1.4:2123` ya acepta TCP; falta probar la URL
+   pública desde otra red (aquí no resuelve DNS) y revisar las rutas de Traefik para
+   el host `mail` en el túnel CF.
 2. **E2 (cola/master):** en el VAIO: `systemctl --user status allmusic-radio-live` y `atico-player`.
-   Fijar `LIVE_STREAM_URL` (la IP es por **DHCP**; hoy apunta a `192.168.1.2:2427`).
+   `192.168.1.2:2427` está caído; fijar `LIVE_STREAM_URL` (la IP es por **DHCP**).
 3. **E3 (autodeploy):** resuelto 2026-11-21. Webhook `693647409` → `https://app.edgemarketing.tech/webhooks/source/github/events/manual`
-   con el mismo secreto que Coolify; un push de prueba encoló `webhook.deployment.queued` para `radio`.
+   con el mismo secreto que Coolify. Verificar con
+   `GH_CONFIG_DIR=/home/pctorre/.config/gh gh api repos/mrallanodreman/allmusic/hooks/693647409/deliveries --jq '.[0] | {status_code, delivered_at}'`
+   y comparando el hash de `assets/index-*.js` servido.
 4. **E4 (Terminal):** subir el rol del miembro en Coolify o probar el Terminal por IP directa
-   (`http://192.168.1.4:8000`) para aislar si es Cloudflare.
-5. Marcar avances en el issue **#1** (issues → commits → pushes).
+   (`http://192.168.1.4:8000`, TCP abierto) para aislar si es Cloudflare.
+5. Marcar avances en el issue **#1** (issues → commits → pushes; sigue abierto).
 
 ### 📌 Resumen
 
-- Web y API **operativas**: `/status`, `/search`, `/convert`, `/radio/now`, logo, cabeceras → OK.
-- Tests de seguridad: **11/11 passing**.
-- Quedan **3 errores activos**, todos de **infraestructura** (túnel, master local y rol de Coolify),
-  no de código del backend. El autodeploy quedó restablecido el 2026-11-21.
+- Web y API **operativas por IP interna**: `/status`, `/search`, `/radio`, `/radio/top`,
+  `/radio/queue`, `/radio/history`, `/radio/now`, logo y cabeceras → OK.
+  El deploy responde con el bundle de la UI fanzine (`64711c7`).
+- Tests de seguridad: **11/11 passing**, reejecutados el 2026-11-21 con un entorno
+  aislado en `/tmp/opencode/allmusic-test` (1 `DeprecationWarning` de `datetime.utcnow()`,
+  no funcional).
+- Quedan **2 errores activos** (E1 sin verificación pública, E2 master local) y
+  **1 pendiente de confirmación** (E4, rol/Terminal de Coolify): todos son de
+  **infraestructura**, no de código del backend. El autodeploy quedó restablecido
+  el 2026-11-21 (últimos deliverys `200`).
 - La lista de permisos de arriba desbloquea a los colaboradores para resolverlos solos.
