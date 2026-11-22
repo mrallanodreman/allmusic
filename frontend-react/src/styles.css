@@ -95,8 +95,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   isolation: isolate;
 }
 
-/* Fondo independiente del alto del documento: 3840x2160 y vectorial,
-   conservando detalle en pantallas 4K y evitando estirar el WebP de 768px. */
+/* Wallpaper de la página: arte original de Canal 24 en WebP.
+   Pseudo-elemento fijo y escalado al ancho, sin zoom por la altura del iframe. */
 .app::before {
   content: '';
   position: fixed;
@@ -104,7 +104,9 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   z-index: -1;
   pointer-events: none;
   background-color: #101111;
-  background-image: url('./assets/radio-wall-4k.svg');
+  background-image:
+    linear-gradient(rgba(9, 9, 9, 0.06), rgba(9, 9, 9, 0.16)),
+    url('./assets/fondopagina.webp');
   /* Se adapta al ancho sin aplicar zoom por la altura del iframe. */
   background-size: 100% auto;
   background-position: center top;
