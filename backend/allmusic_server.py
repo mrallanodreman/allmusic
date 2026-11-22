@@ -2814,7 +2814,7 @@ def radio_live_proxy():
             logger.warning(f"Radio live proxy error con {upstream}: {exc}")
     if upstream_resp is None:
         logger.warning(f"Radio live proxy sin upstream disponible: {last_exc}")
-        return jsonify({'error': 'Stream de radio no disponible'}), 502
+        return jsonify({'error': 'Stream de radio no disponible', 'detail': str(last_exc)[:200]}), 502
 
     def generate():
         try:
