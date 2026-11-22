@@ -103,11 +103,20 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-color: var(--ink);
+  background-color: #101111;
   background-image: url('./assets/radio-wall-4k.svg');
-  background-position: center center;
+  /* Se adapta al ancho sin aplicar zoom por la altura del iframe. */
+  background-size: 100% auto;
+  background-position: center top;
   background-repeat: no-repeat;
-  background-size: cover;
+}
+
+/* En pantallas verticales se evita estirar la textura a lo ancho y alto a la vez. */
+@media (max-aspect-ratio: 9/12) {
+  .app::before {
+    background-size: auto 100%;
+    background-position: center center;
+  }
 }
 
 /* Capa decorativa: nunca intercepta clics ni tapa texto dinámico. */
