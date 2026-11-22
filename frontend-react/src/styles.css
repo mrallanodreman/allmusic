@@ -2599,31 +2599,17 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
     grid-row: 1;
     min-width: 0;
   }
+  /* El rail se renderiza completo: sin altura tope ni scroll propio.
+     Si el contenido supera el viewport, scrollea la página, no la columna. */
   .layout > .rail {
     grid-column: 3;
     grid-row: 1;
-    position: sticky;
-    top: 16px;
-    align-self: start;
+    position: static;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: clamp(16px, 2vw, 23px);
     min-width: 0;
-    max-height: calc(100dvh - 32px);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 8px 7px 16px;
-    margin: -8px -7px -16px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--magenta) transparent;
-  }
-  .layout > .rail::-webkit-scrollbar { width: 5px; }
-  .layout > .rail::-webkit-scrollbar-track { background: transparent; }
-  .layout > .rail::-webkit-scrollbar-thumb {
-    background: var(--magenta);
-    border-radius: 6px;
   }
   .rail > .panel {
     width: 100%;
