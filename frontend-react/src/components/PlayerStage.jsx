@@ -121,20 +121,6 @@ export function PlayerStage({
                 {personal ? 'TU SELECCIÓN' : live ? 'SONANDO AHORA' : 'EN ESPERA'}
                 <span className="stage__eyebrow-slashes" aria-hidden="true">///</span>
               </span>
-              {canLike ? (
-                <button
-                  type="button"
-                  className={`stage__like-button${liked ? ' is-liked' : ''}`}
-                  aria-label={`Me gusta ${title} · ${likeCount} likes`}
-                  aria-pressed={liked}
-                  disabled={likeIsPending}
-                  onClick={() => onToggleLike?.(track)}
-                >
-                  <span aria-hidden="true">♥</span>
-                  <span>Me gusta</span>
-                  <span className="stage__like-count">{likeCount}</span>
-                </button>
-              ) : null}
             </div>
             <p className="stage__track" title={title}>{title}</p>
             <p className="stage__artist" title={artist}>{artist}</p>
@@ -223,6 +209,20 @@ export function PlayerStage({
                 MODO:
                 <strong>{personal ? 'TU MÚSICA' : 'RADIO IA'} <b aria-hidden="true">///</b></strong>
               </span>
+              {canLike ? (
+                <button
+                  type="button"
+                  className="stage__like-button"
+                  aria-label={`Me gusta ${title} · ${likeCount} likes`}
+                  aria-pressed={liked}
+                  disabled={likeIsPending}
+                  onClick={() => onToggleLike?.(track)}
+                >
+                  <span aria-hidden="true">♥</span>
+                  <span>Me gusta</span>
+                  <span className="stage__like-count">{likeCount}</span>
+                </button>
+              ) : null}
             </div>
           </div>
 

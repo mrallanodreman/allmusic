@@ -35,6 +35,11 @@ try {
       if (entry.path === '/allmusic/') {
         const like = page.locator('.stage__like-button');
         await like.waitFor({ state: 'visible', timeout: 10000 });
+        const nextToMode = await like.evaluate((button) =>
+          button.closest('.stage__controls') !== null &&
+          button.previousElementSibling?.classList.contains('stage__mode-label')
+        );
+        if (!nextToMode) errors.push('El like debe quedar junto a MODO en los controles del reproductor');
         if (await like.getAttribute('aria-pressed') !== 'false') {
           errors.push('El like del reproductor debe iniciar apagado');
         }
