@@ -2780,7 +2780,16 @@ def radio_live_proxy():
     público o CORS del upstream; el upstream real se configura por
     RADIO_LIVE_UPSTREAM (default: http://192.168.1.5:2427/live.mp3)."""
     candidates = []
-    for value in (RADIO_LIVE_UPSTREAM, 'http://192.168.1.5:2427/live.mp3', 'http://127.0.0.1:2427/live.mp3'):
+    for value in (
+        RADIO_LIVE_UPSTREAM,
+        'http://192.168.1.5:2427/live.mp3',
+        'http://127.0.0.1:2427/live.mp3',
+        'http://host.docker.internal:2427/live.mp3',
+        'http://172.17.0.1:2427/live.mp3',
+        'http://172.18.0.1:2427/live.mp3',
+        'http://172.19.0.1:2427/live.mp3',
+        'http://172.20.0.1:2427/live.mp3',
+    ):
         value = (value or '').strip()
         if value and value not in candidates:
             candidates.append(value)
