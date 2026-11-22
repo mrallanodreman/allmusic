@@ -4,11 +4,17 @@ import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/newshit/${name}`;
 
+// Cada recomendado lleva un tema real del catálogo de AllMusic. El ID es de
+// YouTube y se reproduce por /stream/<id>, el mismo proxy que usa el buscador.
 const ARTISTS = [
   {
     name: 'Razimbrain',
     fullName: 'Razimbrein, LA MENTE',
     tag: 'HIP-HOP · MÉXICO',
+    id: '-BjoKWAuDVY',
+    title: 'APNEA',
+    artist: 'Razimbrein',
+    duration: 245,
     image: asset('razimbrain.webp'),
     alt: 'Retrato editorial de Razimbrain con bandana y audífonos',
     summary:
@@ -18,6 +24,10 @@ const ARTISTS = [
     name: 'Vittorio',
     fullName: 'VITTORIO × LA ANTORCHA',
     tag: 'URBANO · ECUADOR',
+    id: '6rzlzB2zq_0',
+    title: 'SÓLIDO',
+    artist: 'VITTORIO',
+    duration: 142,
     image: asset('vittorio.webp'),
     alt: 'Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito',
     summary:
@@ -25,6 +35,7 @@ const ARTISTS = [
   },
 ];
 
+const RECOMMENDED_IDS = new Set(ARTISTS.map((item) => item.id));
 const ROTATION_MS = 7000;
 
 function useReducedMotion() {
@@ -41,20 +52,24 @@ function useReducedMotion() {
   return reduce;
 }
 
-export function NewShit({ playing, onToggle, hasStream, analyserRef }) {
+export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, onRadio, audioError, analyserRef }) {
   const [index, setIndex] = useState(0);
   const [hold, setHold] = useState(false);
   const [status, setStatus] = useState('');
   const sectionRef = useRef(null);
   const reduceMotion = useReducedMotion();
   const artist = ARTISTS[index];
+  const isThisTrack = mode === 'personal' && selectedTrack?.id === artist.id;
+  const playingRecommended = mode === 'personal' && RECOMMENDED_IDS.has(selectedTrack?.id);
+  const sounding = isThisTrack && playing;
 
-  // Rotación automática: se detiene al pasar el mouse, al enfocar y con movimiento reducido.
+  // Rotación automática: se detiene al pasar el mouse, al enfocar, con movimiento
+  // reducido y mientras suene un recomendado (así la portada no cambia de canción).
   useEffect(() => {
-    if (hold || reduceMotion) return undefined;
+    if (hold || reduceMotion || playingRecommended) return undefined;
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % ARTISTS.length), ROTATION_MS);
     return () => window.clearInterval(timer);
-  }, [hold, reduceMotion]);
+  }, [hold, reduceMotion, playingRecommended]);
 
   const handleBlur = useCallback((event) => {
     if (!sectionRef.current?.contains(event.relatedTarget)) setHold(false);
@@ -63,14 +78,32 @@ export function NewShit({ playing, onToggle, hasStream, analyserRef }) {
   const openRadio = useCallback(() => {
     const radio = document.getElementById('reproductor');
     radio?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
-    if (!playing && hasStream) onToggle();
+    // Volver a la señal 24/7 detiene el tema personal: nunca suenan los dos a la vez.
+    if (mode !== 'radio' || !playing) onRadio();
     setStatus(`Radio desplegado · recomendado: ${artist.name}`);
-  }, [artist.name, hasStream, onToggle, playing, reduceMotion]);
+  }, [artist.name, mode, onRadio, playing, reduceMotion]);
+
+  const toggleTrack = useCallback(() => {
+    if (isThisTrack) {
+      onToggle();
+      setStatus(playing ? `${artist.title} en pausa` : `Reanudando ${artist.title}`);
+      return;
+    }
+    onPlayTrack(artist);
+    setStatus(`Sonando ahora: ${artist.title} · ${artist.artist}`);
+  }, [artist, isThisTrack, onPlayTrack, onToggle, playing]);
 
   const change = useCallback((next) => {
+    const item = ARTISTS[next];
     setIndex(next);
-    setStatus(`Recomendado: ${ARTISTS[next].name}`);
-  }, []);
+    if (playingRecommended) {
+      // Los puntos funcionan como cambio de pista mientras suena un recomendado.
+      onPlayTrack(item);
+      setStatus(`Sonando ahora: ${item.title} · ${item.artist}`);
+    } else {
+      setStatus(`Recomendado: ${item.name}`);
+    }
+  }, [onPlayTrack, playingRecommended]);
 
   return (
     <section
@@ -97,7 +130,7 @@ export function NewShit({ playing, onToggle, hasStream, analyserRef }) {
             aria-label={`Desplegar el radio y escuchar a ${artist.name}`}
           >
             <span className="newshit__sleeve-wrap">
-              <span className={`newshit__disc ${playing ? 'newshit__disc--spin' : ''}`} aria-hidden="true">
+              <span className={`newshit__disc ${sounding ? 'newshit__disc--spin' : ''}`} aria-hidden="true">
                 <span className="newshit__disc-label">{artist.name}</span>
               </span>
               <img
@@ -119,19 +152,25 @@ export function NewShit({ playing, onToggle, hasStream, analyserRef }) {
           <div className="newshit__mini">
             <button
               type="button"
-              className="newshit__play"
-              onClick={onToggle}
-              disabled={!hasStream}
-              aria-label={playing ? 'Pausar la radio' : `Escuchar la radio · ${artist.name}`}
+              className={`newshit__play${sounding ? ' is-playing' : ''}`}
+              onClick={toggleTrack}
+              aria-label={sounding
+                ? `Pausar ${artist.title}`
+                : `Escuchar ${artist.title} de ${artist.name}`}
             >
-              <Icon name={playing ? 'pause' : 'play'} />
+              <Icon name={sounding ? 'pause' : 'play'} />
             </button>
             <span className="newshit__meta">
-              <strong>{artist.name}</strong>
-              <small>{artist.tag}</small>
+              <strong>{isThisTrack ? artist.title : artist.name}</strong>
+              <small>{isThisTrack ? `${artist.artist} · SONANDO` : artist.tag}</small>
             </span>
-            <AudioReactiveMeter active={playing} analyserRef={analyserRef} variant="compact" />
+            {analyserRef
+              ? <AudioReactiveMeter active={sounding} analyserRef={analyserRef} variant="compact" />
+              : <Equalizer active={sounding} compact />}
           </div>
+          {audioError && isThisTrack ? (
+            <p className="newshit__error" role="alert">{audioError}</p>
+          ) : null}
         </article>
       </div>
 

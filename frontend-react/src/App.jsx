@@ -144,8 +144,12 @@ export default function App() {
           />
           <NewShit
             playing={audio.listening}
+            mode={audio.mode}
+            selectedTrack={audio.selectedTrack}
             onToggle={handleToggleAudio}
-            hasStream={audio.hasStream}
+            onPlayTrack={handlePlaySelection}
+            onRadio={handleReturnRadio}
+            audioError={audio.error}
             analyserRef={meter.analyserRef}
           />
         </aside>
