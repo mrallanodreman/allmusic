@@ -490,21 +490,15 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   flex-direction: column;
   color: #f2efe9;
   /*
-   * Papel editorial pegado sobre muro: la textura del sidebar es independiente
-   * del wallpaper general. Los 8 recortes WebP tienen canal alfa real.
+   * Contenedor 100% transparente: el muro fotográfico de la página permanece
+   * visible. Los ocho recortes de papel WebP siguen superpuestos en ::before
+   * y ::after, sin ninguna tarjeta negra detrás del sidebar.
    */
   padding: 18px 14px 20px;
   overflow: visible;
   border: 0;
-  background-color: #08090b;
-  background-image:
-    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.022) 3px 4px),
-    linear-gradient(180deg, rgba(4,6,7,.38), rgba(4,6,7,.54)),
-    url('./assets/radio-ui/sidebar-grunge.webp');
-  background-size: auto, auto, cover;
-  background-position: left top, center, center center;
-  background-repeat: repeat, no-repeat, no-repeat;
-  box-shadow: 7px 8px 0 rgba(0,0,0,.66);
+  background: transparent;
+  box-shadow: none;
   isolation: isolate;
 }
 
@@ -559,7 +553,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   position: relative;
   display: flex; align-items: center; gap: 13px;
   min-height: 43px; width: 100%; padding: 8px 12px;
-  color: #ecebe7; background: rgba(0,0,0,.22);
+  color: #ecebe7; background: transparent;
   border: 0; border-left: 3px solid transparent;
   text-decoration: none; text-transform: uppercase;
   font: 900 15px/1.15 var(--font-body);
