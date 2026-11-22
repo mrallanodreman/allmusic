@@ -64,6 +64,58 @@ export function postAdvance({ signal } = {}) {
   return requestJson('/radio/advance', { method: 'POST', signal, body: {} });
 }
 
+const LIKES_KEY = 'allmusic_radio_likes_v1';
+const VISITOR_KEY = 'allmusic_radio_visitor_v1';
+
+export function getLikedVideoIds() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(LIKES_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((id) => /^[A-Za-z0-9_-]{11}$/.test(id)) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLikedVideoIds(ids) {
+  try {
+    window.localStorage.setItem(LIKES_KEY, JSON.stringify(ids));
+  } catch {
+    // El voto sigue guardado en el servidor aunque el navegador no permita persistencia local.
+  }
+}
+
+function getVisitorId() {
+  try {
+    const stored = window.localStorage.getItem(VISITOR_KEY);
+    if (stored && /^[A-Za-z0-9_-]{8,64}$/.test(stored)) return stored;
+    const id = globalThis.crypto?.randomUUID?.().replaceAll('-', '') ||
+      `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem(VISITOR_KEY, id);
+    return id;
+  } catch {
+    return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+export function postLike(track, liked, { signal } = {}) {
+  const videoId = normalizeText(track?.video_id, 16);
+  if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    return Promise.reject(new Error('No se pudo identificar esta canción.'));
+  }
+  return requestJson('/radio/like', {
+    method: 'POST',
+    signal,
+    body: {
+      video_id: videoId,
+      title: normalizeText(track?.title, 90),
+      artist: normalizeText(track?.artist, 60),
+      thumbnail: safeUrl(track?.thumbnail),
+      voter_id: getVisitorId(),
+      liked: Boolean(liked),
+    },
+  });
+}
+
 /* Búsqueda personal: usa el mismo catálogo que el reproductor clásico.
    No envía pedidos a la cola compartida ni cambia el estado de Radio IA. */
 export function searchTracks(query, { signal, limit = 12 } = {}) {

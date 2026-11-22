@@ -2310,12 +2310,15 @@ def _load_radio():
             state.setdefault('request_stats_week_key', '')
             state.setdefault('discovered_moods', {})
             state.setdefault('top_index', 0)
+            state.setdefault('likes', {})
+            if not isinstance(state.get('likes'), dict):
+                state['likes'] = {}
             return state
     except Exception:
         return {
             'current': None, 'queue': [], 'history': [], 'request_stats': {},
             'request_stats_week': {}, 'request_stats_week_key': '',
-            'discovered_moods': {}, 'top_index': 0,
+            'discovered_moods': {}, 'top_index': 0, 'likes': {},
         }
 
 
@@ -2328,6 +2331,27 @@ def _radio_week_key():
     """Clave de la semana natural (lunes a domingo) en hora local del servidor."""
     iso = datetime.date.today().isocalendar()
     return f"{iso[0]}-W{iso[1]:02d}"
+
+
+def _radio_most_liked(state, limit=10):
+    likes = state.get('likes')
+    if not isinstance(likes, dict):
+        return []
+    ranked = []
+    for video_id, entry in likes.items():
+        if not isinstance(entry, dict) or not isinstance(entry.get('voters'), list):
+            continue
+        count = len(entry['voters'])
+        if count < 1:
+            continue
+        ranked.append({
+            'video_id': video_id,
+            'title': entry.get('title') or 'Sin título',
+            'artist': entry.get('artist') or '',
+            'thumbnail': entry.get('thumbnail') or '',
+            'like_count': count,
+        })
+    return sorted(ranked, key=lambda item: (-item['like_count'], item['title'].lower()))[:limit]
 
 
 def _radio_weekly_stats(state):
@@ -2906,6 +2930,7 @@ def radio_now():
             _save_radio(state)
         public_queue = _radio_public_queue(state, 20)
         next_mood = _radio_next_mood(state)
+        most_liked = _radio_most_liked(state)
     master = state.get('master')
     master_offline = False
     if master:
@@ -2923,6 +2948,7 @@ def radio_now():
                 'queue': public_queue[:20],
                 'history': master.get('history', [])[:5],
                 'top_requested': _radio_top_requested(state),
+                'most_liked': most_liked,
                 'next_mood': next_mood,
                 'moods': _radio_public_moods(state),
             })
@@ -2936,6 +2962,7 @@ def radio_now():
             'queue': public_queue[:20],
             'history': state.get('history', [])[:5],
             'top_requested': _radio_top_requested(state),
+            'most_liked': most_liked,
             'next_mood': next_mood,
             'moods': _radio_public_moods(state),
         })
@@ -2951,9 +2978,61 @@ def radio_now():
         'queue': public_queue[:20],
         'history': state.get('history', [])[:5],
         'top_requested': _radio_top_requested(state),
+        'most_liked': most_liked,
         'next_mood': next_mood,
         'moods': _radio_public_moods(state),
     })
+
+
+@app.route('/radio/like', methods=['POST'])
+@limiter.limit('30 per minute')
+def radio_like():
+    data = request.get_json(silent=True) or {}
+    video_id = str(data.get('video_id') or '').strip()
+    voter_id = str(data.get('voter_id') or '').strip()
+    liked = data.get('liked')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id):
+        return jsonify({'error': 'Identificador de canción inválido.'}), 400
+    if not re.fullmatch(r'[A-Za-z0-9_-]{8,64}', voter_id) or not isinstance(liked, bool):
+        return jsonify({'error': 'Voto inválido.'}), 400
+
+    with RADIO_LOCK:
+        state = _load_radio()
+        likes = state.setdefault('likes', {})
+        entry = likes.get(video_id)
+        if not isinstance(entry, dict):
+            entry = {'voters': []}
+            likes[video_id] = entry
+        voters = entry.setdefault('voters', [])
+        if not isinstance(voters, list):
+            voters = []
+            entry['voters'] = voters
+        if liked and voter_id not in voters:
+            thumbnail = str(data.get('thumbnail') or '')
+            entry.update({
+                'title': str(data.get('title') or 'Sin título').strip()[:90] or 'Sin título',
+                'artist': str(data.get('artist') or '').strip()[:60],
+                'thumbnail': thumbnail[:500] if thumbnail.startswith(
+                    ('https://i.ytimg.com/', 'https://img.youtube.com/')
+                ) else '',
+            })
+            voters.append(voter_id)
+        elif not liked and voter_id in voters:
+            voters.remove(voter_id)
+        if not voters:
+            likes.pop(video_id, None)
+        if len(likes) > 500:
+            state['likes'] = dict(sorted(
+                likes.items(),
+                key=lambda pair: len(pair[1].get('voters', [])) if isinstance(pair[1], dict) else 0,
+                reverse=True,
+            )[:500])
+        _save_radio(state)
+        current = state.get('likes', {}).get(video_id, {})
+        return jsonify({
+            'liked': voter_id in current.get('voters', []),
+            'like_count': len(current.get('voters', [])),
+        })
 
 
 @app.route('/radio/moods')

@@ -1687,7 +1687,20 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   transform: rotate(0.4deg);
 }
 .top__banner { position: absolute; top: -24px; left: 6px; width: min(88%, 300px); transform: rotate(-3deg); pointer-events: none; z-index: 2; }
-.top__list, .queue__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.top__list, .queue__list, .liked__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.liked { background: color-mix(in srgb, var(--magenta) 9%, var(--paper-light)); }
+.liked__item {
+  display: flex; align-items: center; gap: 9px;
+  min-width: 0;
+  padding: 6px 8px;
+  background: var(--paper-light);
+  border: 2px solid var(--ink);
+  border-radius: 12px 3px 10px 4px / 4px 10px 3px 12px;
+  transform: rotate(-0.3deg);
+  transition: transform 160ms ease, background 160ms ease;
+}
+.liked__item:nth-child(even) { transform: rotate(0.5deg); background: color-mix(in srgb, var(--magenta) 12%, var(--paper)); }
+.liked__item:hover { transform: translateX(3px) rotate(0deg); background: var(--yellow); }
 .top__item {
   display: flex; align-items: center; gap: 8px;
   min-width: 0;
@@ -1725,6 +1738,25 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .queue__pos { font-family: var(--font-mono); font-weight: 700; font-size: 16px; min-width: 24px; color: var(--magenta); }
 .queue__eta { font-family: var(--font-mono); font-size: 10px; white-space: nowrap; }
+.liked__count {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  white-space: nowrap; color: var(--magenta);
+}
+.like-button {
+  flex: none;
+  min-width: 36px; min-height: 36px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  color: #756d66;
+  font-size: 17px; line-height: 1;
+  cursor: pointer;
+  transition: transform 150ms ease, color 150ms ease, background 150ms ease;
+}
+.like-button:hover:not(:disabled) { transform: scale(1.08) rotate(-8deg); }
+.like-button.is-liked { color: #b3144b; background: color-mix(in srgb, var(--magenta) 16%, var(--paper)); }
+.like-button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.like-button:disabled { cursor: wait; opacity: 0.65; }
 .queue__item, .history__item {
   display: flex; align-items: center; gap: 9px;
   min-width: 0;

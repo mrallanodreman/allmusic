@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchNow, postAdvance, postSuggestion } from '../lib/api.js';
+import {
+  fetchNow,
+  getLikedVideoIds,
+  postAdvance,
+  postLike,
+  postSuggestion,
+  saveLikedVideoIds,
+} from '../lib/api.js';
 import { isSafeRequestText, normalizeText } from '../lib/safe.js';
 
 const EMPTY = { queue: [], history: [], top_requested: [], moods: [] };
@@ -16,6 +23,9 @@ export function useRadioData() {
   const [advancing, setAdvancing] = useState(false);
   const [ticketsUsed, setTicketsUsed] = useState(0);
   const [notice, setNotice] = useState('');
+  const [likedIds, setLikedIds] = useState(getLikedVideoIds);
+  const likedIdsRef = useRef(likedIds);
+  const [likePending, setLikePending] = useState([]);
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -109,6 +119,27 @@ export function useRadioData() {
     }
   }, [advancing, refresh]);
 
+  const toggleLike = useCallback(async (track) => {
+    const videoId = normalizeText(track?.video_id, 16);
+    if (!/^[A-Za-z0-9_-]{11}$/.test(videoId) || likePending.includes(videoId)) return;
+    const liked = !likedIdsRef.current.includes(videoId);
+    setLikePending((pendingIds) => [...pendingIds, videoId]);
+    try {
+      await postLike(track, liked);
+      const nextIds = liked
+        ? [...new Set([...likedIdsRef.current, videoId])]
+        : likedIdsRef.current.filter((id) => id !== videoId);
+      likedIdsRef.current = nextIds;
+      setLikedIds(nextIds);
+      saveLikedVideoIds(nextIds);
+      await refresh();
+    } catch (err) {
+      setNotice(normalizeText(err?.message, 120) || 'No se pudo guardar el like.');
+    } finally {
+      setLikePending((pendingIds) => pendingIds.filter((id) => id !== videoId));
+    }
+  }, [likePending, refresh]);
+
   return {
     now,
     loading,
@@ -120,9 +151,13 @@ export function useRadioData() {
     refresh,
     submit,
     advance,
+    toggleLike,
+    likedIds,
+    likePending,
     queue: asArray(now?.queue, 20),
     history: asArray(now?.history, 5),
     topRequested: asArray(now?.top_requested, 10),
+    mostLiked: asArray(now?.most_liked, 10),
     moods: asArray(now?.moods, 20),
     nextMood: now?.next_mood && typeof now.next_mood === 'object' ? now.next_mood : null,
   };

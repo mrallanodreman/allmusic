@@ -2,9 +2,11 @@ import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
 import { useInView } from '../hooks/useInView.js';
 import { Icon } from './Icons.jsx';
 
-export function QueuePanel({ items, nextMood }) {
+export function QueuePanel({ items, nextMood, likedIds = [], likePending = [], onToggleLike }) {
   const list = Array.isArray(items) ? items.slice(0, 8) : [];
   const mood = normalizeText(nextMood?.mood, 80);
+  const liked = new Set(likedIds);
+  const pending = new Set(likePending);
   const [revealRef, visible] = useInView();
 
   return (
@@ -47,6 +49,18 @@ export function QueuePanel({ items, nextMood }) {
                   {artist ? <small title={artist}>{artist}</small> : null}
                 </span>
                 <span className="queue__eta">{[0, 1, 2].includes(minutes) ? `~${minutes} min` : formatTime(item?.eta_seconds)}</span>
+                {item?.video_id ? (
+                  <button
+                    className={`like-button${liked.has(item.video_id) ? ' is-liked' : ''}`}
+                    type="button"
+                    aria-label={`${liked.has(item.video_id) ? 'Quitar me gusta de' : 'Me gusta'} ${title}`}
+                    aria-pressed={liked.has(item.video_id)}
+                    disabled={pending.has(item.video_id)}
+                    onClick={() => onToggleLike?.(item)}
+                  >
+                    ♥
+                  </button>
+                ) : null}
               </li>
             );
           })}

@@ -18,6 +18,7 @@ import { NewShit } from './components/NewShit.jsx';
 import { CommunityCarousel } from './components/CommunityCarousel.jsx';
 import { TopRequested } from './components/TopRequested.jsx';
 import { QueuePanel } from './components/QueuePanel.jsx';
+import { MostLikedPanel } from './components/MostLikedPanel.jsx';
 import { HistoryPanel } from './components/HistoryPanel.jsx';
 import { NowPlayingBar } from './components/NowPlayingBar.jsx';
 
@@ -302,8 +303,20 @@ export default function App() {
 
           {!libraryView && !carteleraOpen ? (
             <div className="content__grid">
-              <QueuePanel items={data.queue} nextMood={data.nextMood} />
+              <QueuePanel
+                items={data.queue}
+                nextMood={data.nextMood}
+                likedIds={data.likedIds}
+                likePending={data.likePending}
+                onToggleLike={data.toggleLike}
+              />
               <HistoryPanel items={data.history} />
+              <MostLikedPanel
+                items={data.mostLiked}
+                likedIds={data.likedIds}
+                likePending={data.likePending}
+                onToggleLike={data.toggleLike}
+              />
             </div>
           ) : null}
 
