@@ -2783,12 +2783,17 @@ def radio_live_proxy():
     for value in (
         RADIO_LIVE_UPSTREAM,
         'http://192.168.1.5:2427/live.mp3',
+        'http://192.168.1.6:2427/live.mp3',
+        'http://192.168.1.2:2427/live.mp3',
         'http://127.0.0.1:2427/live.mp3',
         'http://host.docker.internal:2427/live.mp3',
         'http://172.17.0.1:2427/live.mp3',
         'http://172.18.0.1:2427/live.mp3',
         'http://172.19.0.1:2427/live.mp3',
         'http://172.20.0.1:2427/live.mp3',
+        'http://172.21.0.1:2427/live.mp3',
+        'http://172.22.0.1:2427/live.mp3',
+        'http://172.23.0.1:2427/live.mp3',
     ):
         value = (value or '').strip()
         if value and value not in candidates:
