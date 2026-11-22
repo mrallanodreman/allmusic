@@ -1,75 +1,186 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icons.jsx';
+import { Equalizer } from './Equalizer.jsx';
 
-const LINKS = [
-  { id: 'reproductor', label: 'Reproductor', icon: 'radio' },
-  { id: 'moods', label: 'Moods', icon: 'bolt' },
-  { id: 'top10', label: 'Pedidos', icon: 'star' },
-  { id: 'cola', label: 'Cola', icon: 'list' },
-  { id: 'historial', label: 'Historial', icon: 'clock' },
+// Navegación principal como en el arte de referencia; los controles propios
+// de la Radio IA también quedan accesibles en la franja inferior.
+const MAIN = [
+  { id: 'reproductor', label: 'EN VIVO', icon: 'radio', kind: 'section' },
+  { id: 'historial', label: 'HISTORIAL', icon: 'clock', kind: 'section' },
+  { id: 'buscar', label: 'BUSCAR', icon: 'search', kind: 'search' },
+  { id: 'playlists', label: 'PLAYLISTS', icon: 'list', kind: 'library' },
+  { id: 'mymusic', label: 'TU MÚSICA', icon: 'star', kind: 'library' },
 ];
+const SHORTCUTS = [
+  { id: 'moods', label: 'MOODS' },
+  { id: 'top10', label: 'TOP 10' },
+  { id: 'cola', label: 'COLA' },
+];
+const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola'];
 
-const SECTION_IDS = LINKS.map((link) => link.id);
-
-function hashSection() {
-  const hash = window.location.hash.slice(1);
-  return SECTION_IDS.includes(hash) ? hash : SECTION_IDS[0];
+function getActiveSection() {
+  if (typeof window === 'undefined') return 'reproductor';
+  const fragment = window.location.hash.slice(1);
+  if (fragment === 'request-input') return 'buscar';
+  return SECTION_IDS.includes(fragment) ? fragment : 'reproductor';
 }
 
-export function Sidebar({ ticketsUsed }) {
-  const [activeId, setActiveId] = useState(hashSection);
+function openLibrary(event, tab) {
+  // El iframe de Radio IA comparte origen con AllMusic y puede abrir sus
+  // pestañas reales sin perder el estado de reproducción del sitio padre.
+  try {
+    if (window.parent !== window && typeof window.parent.switchTab === 'function') {
+      event.preventDefault();
+      window.parent.switchTab(tab);
+    }
+  } catch {
+    // Si cambia el origen, el enlace abre el sitio completo en _top.
+  }
+}
+
+function focusRequestInput() {
+  window.requestAnimationFrame(() => {
+    const field = document.getElementById('request-input');
+    if (field) {
+      field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field.focus({ preventScroll: true });
+    }
+  });
+}
+
+function formatTimecode(value) {
+  const totalFrames = Math.max(0, Math.floor((Number(value) || 0) * 25));
+  return [
+    Math.floor(totalFrames / 90000),
+    Math.floor(totalFrames / 1500) % 60,
+    Math.floor(totalFrames / 25) % 60,
+    totalFrames % 25,
+  ].map((number) => String(number).padStart(2, '0')).join(':');
+}
+
+export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0 }) {
+  const [activeId, setActiveId] = useState(getActiveSection);
+  const [counter, setCounter] = useState(() => formatTimecode(elapsed));
 
   useEffect(() => {
-    const syncHash = () => setActiveId(hashSection());
-    window.addEventListener('hashchange', syncHash);
-
+    const onHashChange = () => setActiveId(getActiveSection());
+    window.addEventListener('hashchange', onHashChange);
     if (!('IntersectionObserver' in window)) {
-      return () => window.removeEventListener('hashchange', syncHash);
+      return () => window.removeEventListener('hashchange', onHashChange);
     }
-
     const sections = SECTION_IDS.map((id) => document.getElementById(id)).filter(Boolean);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActiveId(visible[0].target.id);
-      },
-      { rootMargin: '-18% 0px -62% 0px' }
-    );
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (visible[0] && window.location.hash !== '#request-input') {
+        setActiveId(visible[0].target.id);
+      }
+    }, { rootMargin: '-18% 0px -62% 0px' });
     sections.forEach((section) => observer.observe(section));
-
     return () => {
-      window.removeEventListener('hashchange', syncHash);
+      window.removeEventListener('hashchange', onHashChange);
       observer.disconnect();
     };
   }, []);
 
+  useEffect(() => {
+    const baseline = Math.max(0, Number(elapsed) || 0);
+    setCounter(formatTimecode(baseline));
+    if (!onAir) return undefined;
+    const beganAt = Date.now();
+    const timer = window.setInterval(() => {
+      setCounter(formatTimecode(baseline + (Date.now() - beganAt) / 1000));
+    }, 200);
+    return () => window.clearInterval(timer);
+  }, [elapsed, onAir]);
+
   return (
     <nav className="sidebar" aria-label="Navegación de IA Radio">
-      <div className="sidebar__brand">
-        <span className="sidebar__bolt"><Icon name="bolt" className="icon" /></span>
-        <span className="sidebar__title">IA<br />RADIO</span>
-        <span className="sidebar__sub">24/7</span>
+      <div className="sidebar__identity">
+        <span>C24 / 001</span>
+        <span>SEÑAL PRINCIPAL</span>
+        <span className="sidebar__identity-dot" aria-hidden="true" />
       </div>
+
       <ul className="sidebar__nav">
-        {LINKS.map((link) => (
-          <li key={link.id}>
-            <a
-              className="sidebar__link"
-              href={`#${link.id}`}
-              aria-current={activeId === link.id ? 'location' : undefined}
-            >
-              <Icon name={link.icon} className="icon" />
-              <span>{link.label}</span>
-            </a>
-          </li>
-        ))}
+        {MAIN.map((link) => {
+          const current = activeId === link.id;
+          const href = link.kind === 'search' ? '#request-input'
+            : link.kind === 'library' ? '/allmusic/' : `#${link.id}`;
+          return (
+            <li key={link.id}>
+              <a
+                className="sidebar__link"
+                href={href}
+                target={link.kind === 'library' ? '_top' : undefined}
+                aria-current={current ? 'location' : undefined}
+                onClick={(event) => {
+                  if (link.kind === 'library') {
+                    openLibrary(event, link.id);
+                  } else {
+                    setActiveId(link.id);
+                    if (link.kind === 'search') focusRequestInput();
+                  }
+                }}
+              >
+                <Icon name={link.icon} className="icon sidebar__link-icon" />
+                <span>{link.label}</span>
+                {current ? <span className="sidebar__active-dot" aria-hidden="true" /> : null}
+              </a>
+            </li>
+          );
+        })}
       </ul>
-      <div className="sidebar__tickets">
-        <span className="sidebar__tickets-label">TICKETS USADOS</span>
-        <strong aria-live="polite">{String(ticketsUsed).padStart(2, '0')}</strong>
-        <span className="sidebar__tickets-note">reflejo visual de esta sesión</span>
+
+      <div className="sidebar__broadcast">
+        <div className="sidebar__master">
+          <span className="sidebar__master-ticket">MASTER<br />EN VIVO</span>
+          <span className="sidebar__master-247">24/7</span>
+        </div>
+        <span className="sidebar__caption">CANAL 24 · TRANSMISIÓN CONTINUA</span>
+      </div>
+
+      <div className="sidebar__hero" aria-label="IA RADIO">
+        <span className="sidebar__hero-ia">IA</span>
+        <span className="sidebar__hero-radio">RADIO</span>
+        <Icon name="bolt" className="icon sidebar__hero-bolt" />
+      </div>
+
+      <div className="sidebar__signal">
+        <Equalizer active={onAir} />
+      </div>
+
+      <div className="sidebar__station">SEÑAL PRINCIPAL // ÁTICO // QUITO</div>
+
+      <div className="sidebar__footer">
+        <div className="sidebar__timecode">
+          <span>TCR</span>
+          <output aria-label="Tiempo de reproducción actual">{counter}</output>
+        </div>
+        <div className="sidebar__footer-bottom">
+          <span className={`sidebar__record${onAir ? ' sidebar__record--live' : ''}`}>
+            {onAir ? 'REC' : 'STBY'}
+            <span className="sidebar__record-dot" aria-hidden="true" />
+          </span>
+          <div className="sidebar__tickets">
+            <span>PEDIDOS DE<br />ESTA SESIÓN</span>
+            <strong aria-live="polite">{String(ticketsUsed).padStart(2, '0')}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="sidebar__shortcuts" aria-label="Accesos rápidos a Radio IA">
+        {SHORTCUTS.map((link) => (
+          <a
+            key={link.id}
+            className="sidebar__shortcut"
+            href={`#${link.id}`}
+            aria-current={activeId === link.id ? 'location' : undefined}
+            onClick={() => setActiveId(link.id)}
+          >
+            {link.label}
+          </a>
+        ))}
       </div>
     </nav>
   );

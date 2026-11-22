@@ -39,7 +39,11 @@ export default function App() {
       </HeaderBanner>
 
       <div className="layout">
-        <Sidebar ticketsUsed={data.ticketsUsed} />
+        <Sidebar
+          ticketsUsed={data.ticketsUsed}
+          onAir={Boolean(data.now?.playing)}
+          elapsed={data.now?.track?.elapsed}
+        />
         <main className="content" id="contenido">
           {data.error ? (
             <div className="alert" role="alert">
