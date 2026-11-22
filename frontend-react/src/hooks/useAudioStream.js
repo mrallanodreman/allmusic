@@ -47,7 +47,9 @@ export function useAudioStream(streamUrl) {
       return;
     }
     setError('');
-    audio.volume = volume;
+    // Si el usuario tenía volumen 0 guardado, al dar play subimos a un nivel audible.
+    if (audio.volume === 0) setVolumeState(0.8);
+    audio.volume = audio.volume === 0 ? 0.8 : volume;
     if (audio.dataset.stream !== url) {
       audio.dataset.stream = url;
       audio.src = url;
@@ -88,8 +90,19 @@ export function useAudioStream(streamUrl) {
       setListening(false);
       setError('La transmisión se interrumpió. Probá de nuevo.');
     };
+    const handlePlaying = () => setListening(true);
+    const handlePause = () => {
+      // pausa explícita/externa: refleja estado real; stop() ya limpia src
+      if (!audio.src) setListening(false);
+    };
     audio.addEventListener('error', handleError);
-    return () => audio.removeEventListener('error', handleError);
+    audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('pause', handlePause);
+    return () => {
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePause);
+    };
   }, []);
 
   useEffect(() => {

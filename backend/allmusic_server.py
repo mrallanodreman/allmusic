@@ -2185,8 +2185,8 @@ def _radio_live_stream_url():
 
     Prioridad:
     1) RADIO_LIVE_STREAM_URL explícita no-legacy.
-    2) Stream LAN directo conocido (funciona en la red local de despliegue).
-    3) Proxy same-origin /radio/live.mp3 como último recurso.
+    2) Proxy same-origin /radio/live.mp3 (evita mixed-content en HTTPS y
+       problemas de DNS/CORS; el backend resuelve el upstream por LAN).
     """
     url = _RADIO_LIVE_STREAM_URL_RAW
     legacy_broken = {
@@ -2199,8 +2199,8 @@ def _radio_live_stream_url():
         url = ''
     if url:
         return url
-    # Stream directo en LAN - accesible desde navegadores en la red local.
-    return 'http://192.168.1.5:2427/live.mp3'
+    prefix = '/allmusic' if request.path.startswith('/allmusic') else ''
+    return f'{prefix}/radio/live.mp3'
 
 
 RADIO_LIVE_STREAM_URL = _RADIO_LIVE_STREAM_URL_RAW or ''
@@ -2805,13 +2805,16 @@ def radio_live_proxy():
     for upstream in candidates:
         if not (upstream.startswith('http://') or upstream.startswith('https://')):
             continue
-        headers = {}
+        headers = {'Accept': '*/*'}
         ua = request.headers.get('User-Agent')
         if ua:
             headers['User-Agent'] = ua[:200]
         rng = request.headers.get('Range')
         if rng:
             headers['Range'] = rng
+        icy = request.headers.get('Icy-MetaData')
+        if icy:
+            headers['Icy-MetaData'] = icy
         try:
             req = urllib.request.Request(upstream, headers=headers)
             upstream_resp = urllib.request.urlopen(req, timeout=15)
