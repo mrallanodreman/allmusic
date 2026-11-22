@@ -3675,3 +3675,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .community-carousel :focus-visible { outline:3px solid #00e7ee; outline-offset:3px; }
 @keyframes community-fade { from { opacity:.55; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce) { .community-carousel__image { animation:none; } .community-carousel__cta { transition:none; } }
+
+/* Keep the Discord recruitment panel immediately below NewShit on the two-column tablet rail. */
+@media (min-width: 901px) and (max-width: 1260px) {
+  .layout > .rail > .community-carousel { grid-column: 1; }
+}
