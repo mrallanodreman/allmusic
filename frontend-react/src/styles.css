@@ -2542,3 +2542,201 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .stage__tags span { font-size: 9px; }
   .stage__signal { font-size: 10px; }
 }
+
+
+/* === CANAL 24 / RIGHT RAIL RESTORED === */
+/*
+ * Regresa la columna editorial derecha original:
+ * Los 10 más pedidos, Moods / Estilos y NEWSHIT.
+ * Preserva el nuevo player de tres módulos, el fondo rasgado y las acciones.
+ *
+ * >= 1261 px : sidebar izquierdo | radio | rail derecho persistente.
+ * 901-1260px : radio con su ancho de lectura y rail bajo el contenido.
+ * <= 900 px  : pila responsive sin ocultar contenido.
+ */
+@media (min-width: 1261px) {
+  .layout {
+    display: grid;
+    grid-template-columns:
+      clamp(208px, 16.8vw, 254px)
+      minmax(0, 1fr)
+      clamp(268px, 21vw, 322px);
+    column-gap: clamp(12px, 1.65vw, 26px);
+    row-gap: clamp(18px, 2vw, 30px);
+    max-width: 1760px;
+    margin: 0 auto;
+    align-items: start;
+    padding-inline: clamp(12px, 1.9vw, 34px);
+  }
+  .layout > .sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    position: sticky;
+    top: 16px;
+    align-self: start;
+  }
+  .layout > .content {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .layout > .rail {
+    grid-column: 3;
+    grid-row: 1;
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: clamp(16px, 2vw, 23px);
+    min-width: 0;
+    max-height: calc(100dvh - 32px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px 7px 16px;
+    margin: -8px -7px -16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--magenta) transparent;
+  }
+  .layout > .rail::-webkit-scrollbar { width: 5px; }
+  .layout > .rail::-webkit-scrollbar-track { background: transparent; }
+  .layout > .rail::-webkit-scrollbar-thumb {
+    background: var(--magenta);
+    border-radius: 6px;
+  }
+  .rail > .panel {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* El nuevo reproductor sigue siendo collage, ajustado a la columna central. */
+  .stage.panel {
+    padding: clamp(22px, 2.3vw, 34px) clamp(17px, 2vw, 29px) 23px;
+  }
+  .stage__head {
+    gap: 9px;
+    margin-bottom: clamp(24px, 2.4vw, 34px);
+  }
+  .stage__title {
+    font-size: clamp(30px, 2.95vw, 48px);
+  }
+  .stage__title-paper {
+    padding: 11px clamp(13px, 1.5vw, 20px);
+  }
+  .stage__crown {
+    top: -34px;
+    width: clamp(33px, 3.7vw, 48px);
+  }
+  .stage__badges { gap: 7px; padding-right: 0; }
+  .stage__station-label {
+    padding-left: 8px;
+    border-left-width: 3px;
+    font-size: 11px;
+    letter-spacing: .03em;
+  }
+  .stage__station-label small { font-size: 9px; }
+  .stage__rec-sticker { font-size: clamp(16px, 1.5vw, 21px); padding: 5px 7px; }
+  .stage__rec-sticker i { width: 12px; height: 12px; }
+  .stage__live { min-height: 30px; font-size: 10px; padding: 6px 8px; }
+  .stage__body {
+    grid-template-columns: minmax(130px, .88fr) minmax(0, 1.32fr) 92px;
+    gap: clamp(11px, 1.25vw, 19px);
+    align-items: center;
+  }
+  .stage__cover {
+    border-width: 5px;
+  }
+  .stage__track {
+    font-size: clamp(23px, 2.15vw, 35px);
+    line-height: 1.06;
+  }
+  .stage__artist { font-size: clamp(12px, 1.08vw, 16px); }
+  .stage__song-header { margin-bottom: 9px; }
+  .stage__tags { margin-bottom: 12px; }
+  .stage__tags span { font-size: 9px; }
+  .stage__meter .audio-meter--main { height: 49px; }
+  .stage__controls { gap: 8px; }
+  .stage__controls .control { width: 43px; height: 43px; padding: 8px; }
+  .stage__controls .control .icon { width: 22px; height: 22px; }
+  .stage__controls .control--transport { width: 52px; height: 52px; }
+  .stage__controls .control--transport .icon { width: 26px; height: 26px; }
+  .stage__mode-label { padding-left: 8px; font-size: 10px; }
+  .stage__mode-label strong { font-size: 11px; }
+  .stage__fader .snd-fader-panel { padding: 11px 7px 8px; }
+  .stage__fader .snd-fader-label { font-size: 12px; }
+  .stage__fader .snd-fader-container { height: 186px; }
+  .stage__fader .snd-fader-container::before { height: 160px; }
+  .stage__fader .snd-audio-fader { width: 158px; }
+  .stage__fader .snd-fader-readout { font-size: 17px; }
+  .stage__fader .snd-fader-mute { width: 27px; height: 27px; }
+  .stage__fader .snd-fader-status { width: 6px; height: 6px; }
+  .stage__footer { margin-top: 18px; }
+  .stage__signal { font-size: 11px; padding: 8px 12px; }
+
+  /* La columna derecha mantiene los papeles y recomendaciones originales. */
+  .rail .top { padding-top: 44px; }
+  .rail .top__banner { width: min(92%, 290px); }
+  .rail .top__list { grid-template-columns: minmax(0, 1fr); }
+  .rail .moods__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rail .newshit__sleeve-wrap { width: min(67%, 195px); }
+  .content__grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 1261px) and (max-width: 1460px) {
+  .stage__station-label { display: none; }
+  .stage__title { font-size: clamp(27px, 2.9vw, 41px); }
+  .stage__body {
+    grid-template-columns: minmax(115px, .83fr) minmax(0, 1.25fr) 87px;
+    gap: 11px;
+  }
+  .stage__mode-label { display: none; }
+  .stage__fader .snd-fader-container { height: 165px; }
+  .stage__fader .snd-fader-container::before { height: 141px; }
+  .stage__fader .snd-audio-fader { width: 139px; }
+  .stage__fader .snd-fader-panel { padding: 10px 6px 8px; }
+  .stage__track { font-size: clamp(21px, 2.15vw, 29px); }
+  .stage__cover-caption { font-size: 8px; padding: 4px 5px; }
+  .stage__tags span { font-size: 8px; }
+  .stage__eyebrow { font-size: 12px; }
+  .stage__tape { width: 135px; top: -16px; }
+}
+@media (min-width: 901px) and (max-width: 1260px) {
+  .layout {
+    grid-template-columns: minmax(195px, 235px) minmax(0, 1fr);
+    column-gap: clamp(16px, 2vw, 26px);
+  }
+  .layout > .sidebar { grid-column: 1; grid-row: 1 / span 2; }
+  .layout > .content { grid-column: 2; grid-row: 1; }
+  .layout > .rail {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+  .layout > .rail > .panel { min-width: 0; }
+  .rail .top__list { grid-template-columns: minmax(0, 1fr); }
+  .rail .moods__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 900px) {
+  .layout > .rail {
+    grid-column: 1;
+    grid-row: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+  .layout > .rail > .panel { min-width: 0; width: 100%; }
+}
