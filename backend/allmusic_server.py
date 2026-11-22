@@ -2354,6 +2354,12 @@ def _radio_most_liked(state, limit=10):
     return sorted(ranked, key=lambda item: (-item['like_count'], item['title'].lower()))[:limit]
 
 
+def _radio_like_count(state, video_id):
+    entry = state.get('likes', {}).get(str(video_id or ''))
+    voters = entry.get('voters') if isinstance(entry, dict) else None
+    return len(voters) if isinstance(voters, list) else 0
+
+
 def _radio_weekly_stats(state):
     """Contadores de la semana en curso. Al cambiar de semana se reinician
     (la clave queda persistida en radio_state.json, dentro del volumen)."""
@@ -2940,6 +2946,7 @@ def radio_now():
         if not master_offline and master.get('playing') and track:
             public_track = {k: v for k, v in track.items() if k != 'started_at'}
             public_track['elapsed'] = round(time.time() - track.get('started_at', time.time()), 1)
+            public_track['like_count'] = _radio_like_count(state, public_track.get('video_id'))
             return jsonify({
                 'playing': True,
                 'master': True,
@@ -2969,6 +2976,7 @@ def radio_now():
     elapsed = time.time() - cur.get('started_at', 0)
     track = {k: v for k, v in cur.items() if k != 'started_at'}
     track['elapsed'] = round(elapsed, 1)
+    track['like_count'] = _radio_like_count(state, track.get('video_id'))
     return jsonify({
         'playing': True,
         'master': bool(master),

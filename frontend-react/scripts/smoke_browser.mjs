@@ -32,6 +32,20 @@ try {
       if (fallback || boundary || !layout) {
         errors.push(`Fallback ${fallback}, error boundary ${boundary}, sidebar ${layout}`);
       }
+      if (entry.path === '/allmusic/') {
+        const like = page.locator('.stage__like-button');
+        await like.waitFor({ state: 'visible', timeout: 10000 });
+        if (await like.getAttribute('aria-pressed') !== 'false') {
+          errors.push('El like del reproductor debe iniciar apagado');
+        }
+        await like.click();
+        await page.waitForFunction(() =>
+          document.querySelector('.stage__like-button')?.textContent.includes('5')
+        );
+        if (await like.getAttribute('aria-pressed') !== 'true') {
+          errors.push('El like no se activó en la canción sonando');
+        }
+      }
       if (response.status() !== 200) errors.push(`HTTP status ${response.status()}`);
       if (entry.path === '/allmusic' && !page.url().includes('/allmusic/')) {
         errors.push('No redirect to canonical /allmusic/');

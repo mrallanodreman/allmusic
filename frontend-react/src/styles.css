@@ -737,6 +737,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 /* --- Contenido y paneles --- */
 .content { min-width: 0; display: grid; gap: clamp(16px, 2.4vw, 26px); align-content: start; }
 .content__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: clamp(16px, 2.4vw, 26px); align-items: start; }
+.content__queue-stack { min-width: 0; display: grid; gap: clamp(16px, 2.4vw, 26px); align-content: start; }
 
 .panel {
   position: relative;
@@ -1742,21 +1743,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   font-family: var(--font-mono); font-size: 11px; font-weight: 700;
   white-space: nowrap; color: var(--magenta);
 }
-.like-button {
-  flex: none;
-  min-width: 36px; min-height: 36px;
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  background: var(--paper);
-  color: #756d66;
-  font-size: 17px; line-height: 1;
-  cursor: pointer;
-  transition: transform 150ms ease, color 150ms ease, background 150ms ease;
-}
-.like-button:hover:not(:disabled) { transform: scale(1.08) rotate(-8deg); }
-.like-button.is-liked { color: #b3144b; background: color-mix(in srgb, var(--magenta) 16%, var(--paper)); }
-.like-button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
-.like-button:disabled { cursor: wait; opacity: 0.65; }
 .queue__item, .history__item {
   display: flex; align-items: center; gap: 9px;
   min-width: 0;
@@ -2232,7 +2218,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   align-self: stretch;
   padding: 10px 0 4px;
 }
-.stage__song-header { margin-bottom: 13px; }
+.stage__song-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 13px;
+}
 .stage__eyebrow {
   display: inline-flex;
   gap: 10px;
@@ -2253,6 +2242,25 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   font: italic 1000 20px/.5 Impact,sans-serif;
   letter-spacing: -.20em;
   margin-right: 4px;
+}
+.stage__like-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 38px; padding: 6px 12px;
+  border: 2px solid var(--ink); border-radius: 3px 11px 4px 9px;
+  background: var(--paper-light); color: var(--ink);
+  font: 800 12px/1 var(--font-mono);
+  cursor: pointer; transform: rotate(1deg);
+  transition: transform 150ms ease, color 150ms ease, background 150ms ease;
+}
+.stage__like-button > span:first-child { color: #756d66; font-size: 16px; }
+.stage__like-button.is-liked { color: #a10e42; background: color-mix(in srgb, var(--magenta) 20%, var(--paper)); }
+.stage__like-button.is-liked > span:first-child { color: #b3144b; }
+.stage__like-button:hover:not(:disabled) { transform: rotate(0deg) translateY(-2px); background: var(--yellow); }
+.stage__like-button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.stage__like-button:disabled { cursor: wait; opacity: 0.65; }
+.stage__like-count {
+  min-width: 20px; padding: 3px 5px; border-radius: 10px;
+  background: var(--ink); color: var(--paper-light); text-align: center;
 }
 .stage__track {
   max-width: 100%;
@@ -2476,7 +2484,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 
 /* 6. Cola e historial: hojas de papel rasgado, sin tarjetas rosas. */
-.content__grid > .queue.panel,
+.content__queue-stack > .queue.panel,
+.content__queue-stack > .liked.panel,
 .content__grid > .history.panel {
   position: relative;
   padding: clamp(17px, 2vw, 26px);

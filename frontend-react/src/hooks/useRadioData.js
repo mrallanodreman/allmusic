@@ -26,6 +26,7 @@ export function useRadioData() {
   const [likedIds, setLikedIds] = useState(getLikedVideoIds);
   const likedIdsRef = useRef(likedIds);
   const [likePending, setLikePending] = useState([]);
+  const [likeCounts, setLikeCounts] = useState({});
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -125,12 +126,13 @@ export function useRadioData() {
     const liked = !likedIdsRef.current.includes(videoId);
     setLikePending((pendingIds) => [...pendingIds, videoId]);
     try {
-      await postLike(track, liked);
+      const result = await postLike(track, liked);
       const nextIds = liked
         ? [...new Set([...likedIdsRef.current, videoId])]
         : likedIdsRef.current.filter((id) => id !== videoId);
       likedIdsRef.current = nextIds;
       setLikedIds(nextIds);
+      setLikeCounts((counts) => ({ ...counts, [videoId]: Number(result?.like_count) || 0 }));
       saveLikedVideoIds(nextIds);
       await refresh();
     } catch (err) {
@@ -154,6 +156,7 @@ export function useRadioData() {
     toggleLike,
     likedIds,
     likePending,
+    likeCounts,
     queue: asArray(now?.queue, 20),
     history: asArray(now?.history, 5),
     topRequested: asArray(now?.top_requested, 10),

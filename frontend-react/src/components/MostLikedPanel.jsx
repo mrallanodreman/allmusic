@@ -1,10 +1,8 @@
 import { normalizeText, safeUrl } from '../lib/safe.js';
 import { useInView } from '../hooks/useInView.js';
 
-export function MostLikedPanel({ items, likedIds = [], likePending = [], onToggleLike }) {
+export function MostLikedPanel({ items }) {
   const list = Array.isArray(items) ? items.slice(0, 10) : [];
-  const liked = new Set(likedIds);
-  const pending = new Set(likePending);
   const [revealRef, visible] = useInView();
 
   return (
@@ -18,7 +16,7 @@ export function MostLikedPanel({ items, likedIds = [], likePending = [], onToggl
         <span className="section-head__hint">favoritas de la comunidad</span>
       </div>
       {list.length === 0 ? (
-        <p className="empty" role="status">Todavía no hay likes · elegí una canción de la cola.</p>
+        <p className="empty" role="status">Todavía no hay likes · marcá la canción que suena en el reproductor.</p>
       ) : (
         <ol className="liked__list">
           {list.map((item, index) => {
@@ -37,18 +35,6 @@ export function MostLikedPanel({ items, likedIds = [], likePending = [], onToggl
                 <span className="liked__count" aria-label={`${Number(item?.like_count) || 0} likes`}>
                   {Number(item?.like_count) || 0} ♥
                 </span>
-                {videoId ? (
-                  <button
-                    className={`like-button${liked.has(videoId) ? ' is-liked' : ''}`}
-                    type="button"
-                    aria-label={`${liked.has(videoId) ? 'Quitar me gusta de' : 'Me gusta'} ${title}`}
-                    aria-pressed={liked.has(videoId)}
-                    disabled={pending.has(videoId)}
-                    onClick={() => onToggleLike?.(item)}
-                  >
-                    ♥
-                  </button>
-                ) : null}
               </li>
             );
           })}

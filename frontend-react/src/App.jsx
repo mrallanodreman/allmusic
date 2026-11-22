@@ -266,6 +266,11 @@ export default function App() {
             personalElapsed={audio.elapsed}
             personalDuration={audio.duration}
             searchOpen={searchOpen}
+            likedIds={data.likedIds}
+            likePending={data.likePending}
+            likeCounts={data.likeCounts}
+            mostLiked={data.mostLiked}
+            onToggleLike={data.toggleLike}
             analyserRef={meter.analyserRef}
             onSearch={toggleSearch}
             onRadio={handleReturnRadio}
@@ -303,20 +308,11 @@ export default function App() {
 
           {!libraryView && !carteleraOpen ? (
             <div className="content__grid">
-              <QueuePanel
-                items={data.queue}
-                nextMood={data.nextMood}
-                likedIds={data.likedIds}
-                likePending={data.likePending}
-                onToggleLike={data.toggleLike}
-              />
+              <div className="content__queue-stack">
+                <QueuePanel items={data.queue} nextMood={data.nextMood} />
+                <MostLikedPanel items={data.mostLiked} />
+              </div>
               <HistoryPanel items={data.history} />
-              <MostLikedPanel
-                items={data.mostLiked}
-                likedIds={data.likedIds}
-                likePending={data.likePending}
-                onToggleLike={data.toggleLike}
-              />
             </div>
           ) : null}
 

@@ -50,7 +50,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_file(DIST / relative)
         if path == '/allmusic/radio/now':
             return self.send_json({
-                'playing': False, 'track': None, 'queue': [],
+                'playing': True,
+                'track': {
+                    'video_id': 'abcdefghijk', 'title': 'Canción de prueba',
+                    'artist': 'Artista de prueba', 'thumbnail': '', 'like_count': self.server.like_count,
+                },
+                'queue': [], 'most_liked': [],
                 'history': [
                     {'video_id': f'h{i}', 'title': f'Tema histórico {i}',
                      'artist': 'Artista', 'thumbnail': ''}
@@ -69,10 +74,24 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({'tracks': []})
         self.send_error(404)
 
+    def do_POST(self):
+        path = urlparse(self.path).path
+        if path != '/allmusic/radio/like':
+            return self.send_error(404)
+        length = int(self.headers.get('Content-Length', '0'))
+        data = json.loads(self.rfile.read(length) or b'{}')
+        self.server.like_count += 1 if data.get('liked') else -1
+        return self.send_json({
+            'liked': bool(data.get('liked')),
+            'like_count': self.server.like_count,
+        })
+
     def log_message(self, fmt, *args):
         if '/assets/' not in str(args):
             super().log_message(fmt, *args)
 
 if __name__ == '__main__':
     print('AllMusic smoke server listening on 127.0.0.1:8123', flush=True)
-    ThreadingHTTPServer(('127.0.0.1', 8123), Handler).serve_forever()
+    server = ThreadingHTTPServer(('127.0.0.1', 8123), Handler)
+    server.like_count = 4
+    server.serve_forever()

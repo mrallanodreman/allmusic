@@ -20,6 +20,13 @@ class RadioLikesTest(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_like_is_counted_once_per_visitor_and_can_be_removed(self):
+        state = server._load_radio()
+        state["current"] = {
+            "video_id": "abcdefghijk",
+            "title": "Track One",
+            "started_at": server.time.time(),
+        }
+        server._save_radio(state)
         payload = {
             "video_id": "abcdefghijk",
             "title": "Track One",
@@ -30,11 +37,13 @@ class RadioLikesTest(unittest.TestCase):
 
         first = self.client.post("/radio/like", json=payload)
         duplicate = self.client.post("/radio/like", json=payload)
-        ranked = self.client.get("/radio/now").get_json()["most_liked"]
+        now = self.client.get("/radio/now").get_json()
+        ranked = now["most_liked"]
 
         self.assertEqual(first.status_code, 200)
         self.assertEqual(duplicate.status_code, 200)
         self.assertEqual(ranked[0]["like_count"], 1)
+        self.assertEqual(now["track"]["like_count"], 1)
 
         payload["liked"] = False
         removed = self.client.post("/radio/like", json=payload)

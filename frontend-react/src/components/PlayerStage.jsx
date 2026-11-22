@@ -32,6 +32,11 @@ export function PlayerStage({
   onNextPersonal,
   canNextPersonal = false,
   onSeek,
+  likedIds = [],
+  likePending = [],
+  likeCounts = {},
+  mostLiked = [],
+  onToggleLike,
   analyserRef,
 }) {
   const personal = mode === 'personal';
@@ -43,6 +48,15 @@ export function PlayerStage({
   const duration = personal ? Number(personalDuration) || 0 : Number(track?.duration) || 0;
   const progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
   const live = Boolean(now?.playing);
+  const videoId = typeof track?.video_id === 'string' ? track.video_id : '';
+  const canLike = /^[A-Za-z0-9_-]{11}$/.test(videoId);
+  const liked = likedIds.includes(videoId);
+  const likeIsPending = likePending.includes(videoId);
+  const likeCount = Number(
+    likeCounts[videoId] ??
+    track?.like_count ??
+    mostLiked.find((item) => item?.video_id === videoId)?.like_count
+  ) || 0;
 
   const stateLabel = personal ? 'MODO PERSONAL' : live ? 'EN VIVO' : 'EN ESPERA';
   const signalLabel = audioError || (personal
@@ -107,6 +121,20 @@ export function PlayerStage({
                 {personal ? 'TU SELECCIÓN' : live ? 'SONANDO AHORA' : 'EN ESPERA'}
                 <span className="stage__eyebrow-slashes" aria-hidden="true">///</span>
               </span>
+              {canLike ? (
+                <button
+                  type="button"
+                  className={`stage__like-button${liked ? ' is-liked' : ''}`}
+                  aria-label={`Me gusta ${title} · ${likeCount} likes`}
+                  aria-pressed={liked}
+                  disabled={likeIsPending}
+                  onClick={() => onToggleLike?.(track)}
+                >
+                  <span aria-hidden="true">♥</span>
+                  <span>Me gusta</span>
+                  <span className="stage__like-count">{likeCount}</span>
+                </button>
+              ) : null}
             </div>
             <p className="stage__track" title={title}>{title}</p>
             <p className="stage__artist" title={artist}>{artist}</p>
