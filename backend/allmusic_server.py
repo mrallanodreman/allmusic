@@ -3,7 +3,7 @@
 AllMusic Server - Railway Edition
 yt-dlp + YouTube MP3 API - Adaptado para Railway
 """
-from flask import Flask, jsonify, request, Response, send_from_directory, redirect
+from flask import Flask, jsonify, request, Response, send_from_directory, redirect, stream_with_context
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -600,58 +600,82 @@ class AllMusicServer:
             logger.error(f"❌ Error en stream rapidapi: {str(e)}")
             return None
 
+    def resolve_ytdlp_url(self, video_id):
+        """URL directa de audio resuelta por yt-dlp local, o '' si falla.
+
+        El client forzado (web_embedded,tv,android) era un parche contra el
+        bot-check de 2026-08, pero con yt-dlp 2026.08.19 hace que no haya
+        formato disponible. Se prueba primero la extracción estándar y solo
+        se reintenta con el client forzado si la primera falla.
+        """
+        try:
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            base_cmd = [
+                'yt-dlp',
+                '-f', 'bestaudio[ext=m4a]/bestaudio/best',
+                '--get-url', '--no-warnings', '--no-update',
+                '--no-cookies',
+            ]
+            commands = [
+                base_cmd + [url],
+                base_cmd + ['--extractor-args', 'youtube:player_client=web_embedded,tv,android', url],
+            ]
+            for cmd in commands:
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                except subprocess.TimeoutExpired:
+                    logger.warning(f"⏱️ yt-dlp timeout para {video_id}; probando siguiente client")
+                    continue
+                if result.returncode == 0:
+                    audio_url = result.stdout.strip().split('\n')[-1]
+                    if audio_url.startswith('http'):
+                        return audio_url
+            return ''
+        except Exception as e:
+            logger.error(f"❌ resolve_ytdlp_url: {e}")
+            return ''
+
     def stream_via_ytdlp(self, video_id):
         """Stream usando yt-dlp (sin cookies de navegador)"""
         try:
-            url = f"https://www.youtube.com/watch?v={video_id}"
-            cmd = [
-                'yt-dlp',
-                '-f', 'bestaudio[ext=m4a]/bestaudio',
-                '--get-url', '--no-warnings', '--no-update',
-                '--no-cookies',
-                '--extractor-args', 'youtube:player_client=web_embedded,tv,android',
-                url
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            if result.returncode == 0:
-                audio_url = result.stdout.strip().split('\n')[-1]
-                if audio_url and audio_url.startswith('http'):
-                    logger.info(f"✅ yt-dlp URL obtenida para {video_id}")
-                    headers = {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept': 'audio/mpeg,audio/mp4,audio/*,*/*',
-                        'Accept-Encoding': 'identity',
-                        'Referer': 'https://www.youtube.com/',
-                        'Origin': 'https://www.youtube.com',
+            audio_url = self.resolve_ytdlp_url(video_id)
+            if audio_url:
+                logger.info(f"✅ yt-dlp URL obtenida para {video_id}")
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'audio/mpeg,audio/mp4,audio/*,*/*',
+                    'Accept-Encoding': 'identity',
+                    'Referer': 'https://www.youtube.com/',
+                    'Origin': 'https://www.youtube.com',
+                }
+                client_range = request.headers.get('Range')
+                if client_range:
+                    headers['Range'] = client_range
+                response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
+                if response.status_code in [200, 206]:
+                    upstream_type = response.headers.get('Content-Type', 'audio/mp4').split(';', 1)[0].strip().lower()
+                    if upstream_type in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
+                        upstream_type = 'audio/mp4'
+                    elif upstream_type in ('video/webm', 'application/webm'):
+                        upstream_type = 'audio/webm'
+                    elif not upstream_type.startswith('audio/'):
+                        upstream_type = 'application/octet-stream'
+                    out_headers = {
+                        'Content-Type': upstream_type,
+                        'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
+                        'Cache-Control': 'no-cache',
+                        'Access-Control-Allow-Origin': '*',
                     }
-                    client_range = request.headers.get('Range')
-                    if client_range:
-                        headers['Range'] = client_range
-                    response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
-                    if response.status_code in [200, 206]:
-                        upstream_type = response.headers.get('Content-Type', 'audio/mp4').split(';', 1)[0].strip().lower()
-                        if upstream_type in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
-                            upstream_type = 'audio/mp4'
-                        elif upstream_type in ('video/webm', 'application/webm'):
-                            upstream_type = 'audio/webm'
-                        elif not upstream_type.startswith('audio/'):
-                            upstream_type = 'application/octet-stream'
-                        out_headers = {
-                            'Content-Type': upstream_type,
-                            'Accept-Ranges': response.headers.get('Accept-Ranges', 'bytes'),
-                            'Cache-Control': 'no-cache',
-                            'Access-Control-Allow-Origin': '*',
-                        }
-                        if response.status_code == 206 and response.headers.get('Content-Range'):
-                            out_headers['Content-Range'] = response.headers['Content-Range']
-                        if response.headers.get('Content-Length'):
-                            out_headers['Content-Length'] = response.headers['Content-Length']
-                        return Response(
-                            response.raw,
-                            status=response.status_code,
-                            headers=out_headers,
-                            direct_passthrough=True,
-                        )
+                    if response.status_code == 206 and response.headers.get('Content-Range'):
+                        out_headers['Content-Range'] = response.headers['Content-Range']
+                    if response.headers.get('Content-Length'):
+                        out_headers['Content-Length'] = response.headers['Content-Length']
+                    return Response(
+                        response.raw,
+                        status=response.status_code,
+                        headers=out_headers,
+                        direct_passthrough=True,
+                    )
             logger.warning(f"⚠️ yt-dlp falló para {video_id}, usando fallback RapidAPI")
             return None
         except subprocess.TimeoutExpired:
@@ -2539,7 +2563,7 @@ def _radio_public_moods(state, limit=20):
 
 
 def _radio_resolve_link(video_id):
-    """Devuelve link CDN directo (cachea igual que /convert). None si falla."""
+    """Devuelve link reproducible para el master de radio. None si falla."""
     music_server._cache_prune()
     if video_id in music_server.cache:
         cached = music_server.cache[video_id]
@@ -2549,6 +2573,17 @@ def _radio_resolve_link(video_id):
     if result.get('success'):
         music_server.cache_set(video_id, result)
         return result
+    # RapidAPI sin cuota: yt-dlp local sigue resolviendo el audio. El master
+    # (radio-live.py) corre en el mismo contenedor, así que lo alimentamos por
+    # el proxy /stream del propio backend; así no exponemos URLs firmadas en
+    # /radio/now ni mezclamos este link con la caché de /convert.
+    if music_server.resolve_ytdlp_url(video_id):
+        port = int(os.environ.get('PORT', 2426))
+        return {
+            'success': True,
+            'link': f'http://127.0.0.1:{port}/stream/{video_id}',
+            'duration': 0,
+        }
     return None
 
 
