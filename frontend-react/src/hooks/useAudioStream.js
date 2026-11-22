@@ -182,6 +182,18 @@ export function useAudioStream(streamUrl) {
     return setSourceAndPlay(radioUrl, 'radio', sequence, true);
   }, [pause, radioUrl, setSourceAndPlay]);
 
+  // El progreso de la escucha individual sí puede moverse; el master 24/7 no.
+  const seek = useCallback((time) => {
+    const audio = audioRef.current;
+    if (!audio || modeRef.current !== 'personal') return false;
+    const target = Number(time);
+    if (!Number.isFinite(target) || !audio.seekable?.length) return false;
+    const upper = Number.isFinite(audio.duration) ? audio.duration : target;
+    audio.currentTime = Math.max(0, Math.min(target, upper));
+    setElapsed(audio.currentTime);
+    return true;
+  }, []);
+
   const setVolume = useCallback((next) => {
     const n = Number(next);
     if (!Number.isFinite(n)) return;
@@ -282,6 +294,7 @@ export function useAudioStream(streamUrl) {
     stop,
     playTrack,
     switchToRadio,
+    seek,
     volume,
     setVolume,
   };

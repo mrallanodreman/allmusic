@@ -18,26 +18,13 @@ const SHORTCUTS = [
   { id: 'top10', label: 'TOP 10' },
   { id: 'cola', label: 'COLA' },
 ];
-const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola', 'cartelera'];
+const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola', 'cartelera', 'playlists', 'mymusic'];
 
 function getActiveSection() {
   if (typeof window === 'undefined') return 'reproductor';
   const fragment = window.location.hash.slice(1);
   if (fragment === 'buscar-musica') return 'buscar';
   return SECTION_IDS.includes(fragment) ? fragment : 'reproductor';
-}
-
-function openLibrary(event, tab) {
-  // El iframe de Radio IA comparte origen con AllMusic y puede abrir sus
-  // pestañas reales sin perder el estado de reproducción del sitio padre.
-  try {
-    if (window.parent !== window && typeof window.parent.switchTab === 'function') {
-      event.preventDefault();
-      window.parent.switchTab(tab);
-    }
-  } catch {
-    // Si cambia el origen, el enlace abre el sitio completo en _top.
-  }
 }
 
 function formatTimecode(value) {
@@ -50,7 +37,7 @@ function formatTimecode(value) {
   ].map((number) => String(number).padStart(2, '0')).join(':');
 }
 
-export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch, onOpenCartelera, onCloseCartelera, carteleraOpen = false, analyserRef, listening = false }) {
+export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch, onOpenCartelera, onCloseCartelera, carteleraOpen = false, activeLibrary = null, onOpenLibrary, onRadioHome, analyserRef, listening = false }) {
   const [activeId, setActiveId] = useState(getActiveSection);
   const [counter, setCounter] = useState(() => formatTimecode(elapsed));
 
@@ -96,9 +83,9 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
 
       <ul className="sidebar__nav">
         {MAIN.map((link) => {
-          const current = link.kind === 'billboard' ? carteleraOpen : !carteleraOpen && activeId === link.id;
+          const current = link.kind === 'billboard' ? carteleraOpen : link.kind === 'library' ? activeLibrary === link.id : !carteleraOpen && !activeLibrary && activeId === link.id;
           const href = link.kind === 'search' ? '#buscar-musica'
-            : link.kind === 'library' ? '/allmusic/' : `#${link.id}`;
+            : `#${link.id}`;
           return (
             <li key={link.id}>
               <a
@@ -112,8 +99,9 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
                     setActiveId('cartelera');
                     onOpenCartelera?.();
                   } else if (link.kind === 'library') {
-                    onCloseCartelera?.();
-                    openLibrary(event, link.id);
+                    event.preventDefault();
+                    setActiveId(link.id);
+                    onOpenLibrary?.(link.id);
                   } else if (link.kind === 'search') {
                     event.preventDefault();
                     onCloseCartelera?.();
@@ -122,6 +110,18 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
                   } else {
                     onCloseCartelera?.();
                     setActiveId(link.id);
+                    if (link.id === 'reproductor') {
+                      event.preventDefault();
+                      onRadioHome?.();
+                    } else if (activeLibrary) {
+                      event.preventDefault();
+                      onRadioHome?.();
+                      window.requestAnimationFrame(() =>
+                        window.requestAnimationFrame(() =>
+                          document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        )
+                      );
+                    }
                   }
                 }}
               >

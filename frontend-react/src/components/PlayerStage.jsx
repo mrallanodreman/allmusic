@@ -29,6 +29,9 @@ export function PlayerStage({
   searchOpen = false,
   onSearch,
   onRadio,
+  onNextPersonal,
+  canNextPersonal = false,
+  onSeek,
   analyserRef,
 }) {
   const personal = mode === 'personal';
@@ -129,6 +132,19 @@ export function PlayerStage({
                 aria-label="Progreso de la pista"
               >
                 <span style={{ width: `${progress}%` }} />
+                {personal && duration > 0 ? (
+                  <input
+                    className="stage__seek"
+                    type="range"
+                    min="0"
+                    max={duration}
+                    step="1"
+                    value={Math.min(duration, elapsed)}
+                    onChange={(event) => onSeek?.(Number(event.target.value))}
+                    aria-label="Avanzar o retroceder en la canción"
+                    title="Mover posición de la canción"
+                  />
+                ) : null}
               </div>
               <div className="stage__times">
                 <span>{formatTime(elapsed)}</span>
@@ -147,6 +163,12 @@ export function PlayerStage({
               >
                 <Icon name={playing ? 'pause' : 'play'} className="icon" />
               </button>
+              {personal && canNextPersonal ? (
+                <button type="button" className="control control--next-personal" onClick={onNextPersonal}
+                  aria-label="Siguiente canción de la playlist" title="Siguiente canción">
+                  <Icon name="skip" className="icon" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={`control control--search${searchOpen ? ' control--selected' : ''}`}

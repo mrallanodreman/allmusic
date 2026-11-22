@@ -23,6 +23,8 @@ export function NowPlayingBar({
   onSearch,
   onRadio,
   searchOpen = false,
+  onNextPersonal,
+  canNextPersonal = false,
   analyserRef,
 }) {
   const personal = mode === 'personal';
@@ -46,6 +48,12 @@ export function NowPlayingBar({
         >
           <Icon name={playing ? 'pause' : 'play'} className="icon" />
         </button>
+        {personal && canNextPersonal ? (
+          <button type="button" className="nowbar__skip" onClick={onNextPersonal}
+            aria-label="Siguiente tema de tu playlist" title="Siguiente tema">
+            <Icon name="skip" className="icon" />
+          </button>
+        ) : null}
         {!personal ? (
           <button
             type="button"

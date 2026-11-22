@@ -1151,20 +1151,47 @@ def is_legacy_device(ua):
 
 
 @app.route('/')
+@app.route('/allmusic/')
 def index():
+    """AllMusic principal: React Canal 24 reemplaza el sitio clásico.
+
+    Se conserva /classic para acceso reversible al reproductor antiguo,
+    con el mismo backend y la misma base de datos de artistas y playlists.
+    No se fuerza una redirección hacia /radio, para mantener la URL canónica.
+    """
     ua = request.headers.get('User-Agent', '')
     legacy_path = os.path.join(FRONTEND_DIR, 'index-legacy.html')
-    if is_legacy_device(ua) and os.path.exists(legacy_path):
+    if is_legacy_device(ua) and os.path.isfile(legacy_path):
         return send_from_directory(FRONTEND_DIR, 'index-legacy.html')
-    idx_path = os.path.join(FRONTEND_DIR, 'index.html')
+    react_index = os.path.join(REACT_DIST_DIR, 'index.html')
+    if os.path.isfile(react_index):
+        return _no_cache(send_from_directory(REACT_DIST_DIR, 'index.html'))
     modern_path = os.path.join(FRONTEND_DIR, 'modern_index.html')
-    if os.path.exists(modern_path):
-        return send_from_directory(FRONTEND_DIR, 'modern_index.html')
+    if os.path.isfile(modern_path):
+        return _no_cache(send_from_directory(FRONTEND_DIR, 'modern_index.html'))
+    return send_from_directory(FRONTEND_DIR, 'index.html')
+
+
+@app.route('/allmusic')
+def allmusic_redirect():
+    return redirect('/allmusic/', code=308)
+
+
+@app.route('/classic')
+@app.route('/classic/')
+def classic_site():
+    """Respaldo del frontend anterior hasta completar el corte definitivo."""
+    modern_path = os.path.join(FRONTEND_DIR, 'modern_index.html')
+    if os.path.isfile(modern_path):
+        return _no_cache(send_from_directory(FRONTEND_DIR, 'modern_index.html'))
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 
 @app.route('/<path:filename>')
 def frontend_files(filename):
+    # Evitar un enlace residual que abra el viejo reproductor como portada.
+    if filename in ('index.html', 'allmusic/index.html'):
+        return redirect('/allmusic/', code=302)
     file_path = os.path.join(FRONTEND_DIR, filename)
     if os.path.exists(file_path) and os.path.isfile(file_path):
         resp = send_from_directory(FRONTEND_DIR, filename)
@@ -1188,10 +1215,13 @@ def frontend_files(filename):
         html_path = os.path.join(FRONTEND_DIR, rel + '.html')
         if os.path.exists(html_path) and os.path.isfile(html_path):
             return redirect('/allmusic/' + rel + '.html')
-    # SPA fallback
-    idx = os.path.join(FRONTEND_DIR, 'index.html')
-    if os.path.exists(idx):
-        return send_from_directory(FRONTEND_DIR, 'index.html')
+    # SPA fallback: la misma aplicación nueva, no la página HTML de 2026.
+    react_index = os.path.join(REACT_DIST_DIR, 'index.html')
+    if os.path.isfile(react_index):
+        return _no_cache(send_from_directory(REACT_DIST_DIR, 'index.html'))
+    idx = os.path.join(FRONTEND_DIR, 'modern_index.html')
+    if os.path.isfile(idx):
+        return send_from_directory(FRONTEND_DIR, 'modern_index.html')
     return jsonify({'error': 'Not found'}), 404
 
 

@@ -9,6 +9,9 @@ import { Sidebar } from './components/Sidebar.jsx';
 import { PlayerStage } from './components/PlayerStage.jsx';
 import { TrackSearchPanel } from './components/TrackSearchPanel.jsx';
 import { EventBillboard } from './components/EventBillboard.jsx';
+import { LibraryPanel } from './components/LibraryPanel.jsx';
+import { MyMusicPanel } from './components/MyMusicPanel.jsx';
+import { toPersonalTrack } from './lib/libraryApi.js';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
 import { NewShit } from './components/NewShit.jsx';
@@ -31,11 +34,72 @@ export default function App() {
     meter.activate();
     audio.switchToRadio();
   }, [meter.activate, audio.switchToRadio]);
-  const handlePlaySelection = useCallback((track) => {
+  const [personalQueue, setPersonalQueue] = useState([]);
+  const [personalIndex, setPersonalIndex] = useState(0);
+  const [historyVersion, setHistoryVersion] = useState(0);
+
+  const playOne = useCallback((item) => {
+    const track = toPersonalTrack(item);
+    if (!track) return false;
     meter.activate();
-    return audio.playTrack(track);
+    const ok = audio.playTrack(track);
+    if (ok) {
+      // Reutilizar las escuchadas del reproductor clásico (am_played).
+      try {
+        const existing = JSON.parse(window.localStorage.getItem('am_played') || '[]');
+        const items = Array.isArray(existing) ? existing : [];
+        const src = track.directSrc || (track.id ? `stream/${track.id}` : '');
+        const next = [{
+          title: track.title,
+          artist: track.artist,
+          thumb: track.thumbnail || '',
+          src, videoId: track.id || null,
+          id: track.localTrackId || track.id,
+          ts: Date.now(),
+        }, ...items.filter(x => !(x.title === track.title && x.artist === track.artist))].slice(0, 50);
+        window.localStorage.setItem('am_played', JSON.stringify(next));
+        setHistoryVersion(v => v + 1);
+      } catch { /* audio funciona sin localStorage */ }
+    }
+    return ok;
   }, [meter.activate, audio.playTrack]);
+
+  const handlePlaySelection = useCallback((track) => {
+    setPersonalQueue([]);
+    setPersonalIndex(0);
+    return playOne(track);
+  }, [playOne]);
+
+  const handlePlayQueue = useCallback((tracks, index = 0) => {
+    const queue = (Array.isArray(tracks) ? tracks : []).map(toPersonalTrack).filter(Boolean);
+    if (!queue.length) return false;
+    const pos = Math.min(queue.length - 1, Math.max(0, Number(index) || 0));
+    setPersonalQueue(queue);
+    setPersonalIndex(pos);
+    return playOne(queue[pos]);
+  }, [playOne]);
+
+  const handleNextPersonal = useCallback(() => {
+    if (audio.mode !== 'personal' || personalQueue.length < 2) return false;
+    const next = (personalIndex + 1) % personalQueue.length;
+    setPersonalIndex(next);
+    return playOne(personalQueue[next]);
+  }, [audio.mode, personalQueue, personalIndex, playOne]);
+
+  useEffect(() => {
+    const node = audio.audioRef.current;
+    if (!node) return undefined;
+    const onEnd = () => {
+      if (audio.mode === 'personal' && personalQueue.length > 1) handleNextPersonal();
+    };
+    node.addEventListener('ended', onEnd);
+    return () => node.removeEventListener('ended', onEnd);
+  }, [audio.audioRef, audio.mode, personalQueue, handleNextPersonal]);
   const [activeMood, setActiveMood] = useState('');
+  const [libraryView, setLibraryView] = useState(() => {
+    const section = typeof window === 'undefined' ? '' : window.location.hash.slice(1);
+    return ['playlists', 'mymusic'].includes(section) ? section : null;
+  });
   const [searchOpen, setSearchOpen] = useState(false);
   const [carteleraOpen, setCarteleraOpen] = useState(
     () => typeof window !== 'undefined' && window.location.hash === '#cartelera'
@@ -43,7 +107,9 @@ export default function App() {
 
   useEffect(() => {
     const syncCartelera = () => {
-      setCarteleraOpen(window.location.hash === '#cartelera');
+      const hash = window.location.hash.slice(1);
+      setCarteleraOpen(hash === 'cartelera');
+      setLibraryView(['playlists', 'mymusic'].includes(hash) ? hash : null);
     };
     window.addEventListener('hashchange', syncCartelera);
     window.addEventListener('popstate', syncCartelera);
@@ -54,6 +120,8 @@ export default function App() {
   }, []);
 
   const openCartelera = useCallback(() => {
+    setLibraryView(null);
+    setSearchOpen(false);
     setCarteleraOpen(true);
     if (window.location.hash !== '#cartelera') {
       window.history.pushState(null, '', '#cartelera');
@@ -87,6 +155,8 @@ export default function App() {
   }, []);
 
   const openSearch = useCallback(() => {
+    setLibraryView(null);
+    setCarteleraOpen(false);
     setSearchOpen(true);
     // La sección se monta debajo del reproductor, no dentro del formulario
     // de pedidos a la radio. Dos frames garantizan que el DOM ya exista.
@@ -106,6 +176,34 @@ export default function App() {
   }, [openSearch, searchOpen]);
 
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  const openLibrary = useCallback((view) => {
+    if (!['playlists', 'mymusic'].includes(view)) return;
+    setCarteleraOpen(false);
+    setSearchOpen(false);
+    setLibraryView(view);
+    if (window.location.hash !== `#${view}`) {
+      window.history.pushState(null, '', `#${view}`);
+    }
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(view)?.scrollIntoView({
+          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      });
+    });
+  }, []);
+
+  const radioHome = useCallback(() => {
+    setLibraryView(null);
+    setCarteleraOpen(false);
+    setSearchOpen(false);
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    document.getElementById('reproductor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const handleMood = useCallback(
     (label) => {
@@ -136,6 +234,9 @@ export default function App() {
           onOpenCartelera={openCartelera}
           onCloseCartelera={closeCartelera}
           carteleraOpen={carteleraOpen}
+          activeLibrary={libraryView}
+          onOpenLibrary={openLibrary}
+          onRadioHome={radioHome}
           analyserRef={meter.analyserRef}
           listening={audio.listening}
         />
@@ -166,6 +267,9 @@ export default function App() {
             analyserRef={meter.analyserRef}
             onSearch={toggleSearch}
             onRadio={handleReturnRadio}
+            onNextPersonal={handleNextPersonal}
+            onSeek={audio.seek}
+            canNextPersonal={personalQueue.length > 1}
           />
 
           {searchOpen ? (
@@ -182,10 +286,25 @@ export default function App() {
             <EventBillboard onClose={() => closeCartelera(true)} />
           ) : null}
 
-          <div className="content__grid">
-            <QueuePanel items={data.queue} />
-            <HistoryPanel items={data.history} />
-          </div>
+          {libraryView === 'playlists' ? (
+            <LibraryPanel
+              onPlay={handlePlaySelection}
+              onPlayQueue={handlePlayQueue}
+              selectedTrack={audio.selectedTrack}
+              historyVersion={historyVersion}
+            />
+          ) : null}
+
+          {libraryView === 'mymusic' ? (
+            <MyMusicPanel onPlay={handlePlaySelection} />
+          ) : null}
+
+          {!libraryView && !carteleraOpen ? (
+            <div className="content__grid">
+              <QueuePanel items={data.queue} />
+              <HistoryPanel items={data.history} />
+            </div>
+          ) : null}
 
           {data.loading ? <p className="loading" role="status">Sintonizando señal…</p> : null}
         </main>
@@ -230,6 +349,8 @@ export default function App() {
         analyserRef={meter.analyserRef}
         onSearch={toggleSearch}
         onRadio={handleReturnRadio}
+        onNextPersonal={handleNextPersonal}
+        canNextPersonal={personalQueue.length > 1}
       />
       <audio ref={audio.audioRef} preload="none" />
     </div>

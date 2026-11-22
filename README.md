@@ -15,7 +15,7 @@ está aquí y este repo es la fuente de verdad.
 | `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4/.5:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
 | `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | master activo: `allmusic-radio-live.service` en el VAIO (`:2427`) |
 | `frontend/` | sitio web + assets de la radio (C24, moods, artistas) | servido por el backend |
-| `frontend-react/` | UI React de Radio IA (estilo fanzine) servida en `/radio` | build de Vite dentro del contenedor Coolify |
+| `frontend-react/` | AllMusic principal: Radio IA, biblioteca, playlists, cuentas de artistas y cartelera | `/allmusic/` (también `/radio`), build de Vite dentro del contenedor Coolify |
 | `docs/AI_HANDOFF_RADIO.md` | handoff del estado final de la UI y cómo verificar el deploy | — |
 | `desktop/allmusic2.py` | mini-player GTK de escritorio (oculto con F9 / launcher) | en el PC del usuario, contra la API |
 | `radio/atico-player.py` | manda el stream a `media_player.atico_2` vía Home Assistant | `atico-player.service` (solo VAIO) |
@@ -46,10 +46,14 @@ Si GitHub devuelve 200 pero no se despliega, revisar el audit de Coolify:
 `webhook.deployment.queued` = ok. Comprobar con
 `GET /repos/mrallanodreman/allmusic/hooks/693647409/deliveries`.
 
-"Radio IA" **no es un subdominio**: es la pestaña del reproductor en
-`edgemarketing.tech/allmusic/` que carga un iframe `./radio?embedded=1` servido por
-este mismo backend. Rutas: `/radio` (UI React), `/radio-legacy` (dashboard anterior),
-`/radio/now` (datos reales), `/assets/*` (JS/CSS/PNG del build).
+Desde la migración a la UI principal (22-nov-2026), **AllMusic es una sola web React**:
+`/allmusic/` carga directamente la cabina Canal 24 con playlists, Tu Música
+(autenticación y uploads de artistas), descubrimiento y cartelera; ya no es un
+iframe dentro del sitio clásico. `/radio` conserva el mismo build como alias.
+`/classic` conserva `modern_index.html` temporalmente por compatibilidad.
+`/radio-legacy` conserva el tablero antiguo. `/radio/now` y la API
+continúan sin cambios de estructura. El token de artistas se recupera desde
+`am_artist_token`; las playlists del backend siguen siendo compartidas.
 
 Los checkouts del sitio EdgeMarketing que definen `ALLMUSIC_UPSTREAM` apuntando a
 `allmusic-server-production.up.railway.app` **no están en la ruta pública de
@@ -58,6 +62,30 @@ no hace falta editar esos checkouts para publicar cambios de AllMusic.
 
 Verificación tras un push: el audit debe mostrar `webhook.deployment.queued` y
 `curl http://192.168.1.5:2426/allmusic/radio` debe servir `id="root"` y `assets/index-*.js`.
+
+
+## Migración de UI principal (noviembre 2026)
+
+**Entrada pública:** `https://edgemarketing.tech/allmusic/` → `backend/allmusic_server.py::index` → `frontend-react-dist/index.html`.
+El servidor conserva `/classic` para revertir visualmente sin cambiar datos y
+`/radio` como alias. Si falta el build React, se entrega el HTML clásico como
+fallback. El menú React dirige a `#playlists`, `#mymusic` y `#cartelera`.
+
+La biblioteca React reutiliza las rutas existentes `/playlists`,
+`/tracks/public`, `/artists/auth/*`, `/artists/profile`, `/tracks` y
+`/premium/*`. El reproductor tiene una sola etiqueta audio para emisora y
+música personal. El historial personal conserva la clave `am_played`.
+
+**Advertencia de datos:** el backend clásico mantiene las playlists globales
+sin control de propiedad. El nuevo panel avisa que son compartidas y que no
+deben almacenar información privada. Esto requiere una migración posterior
+de ACL/cuentas antes de ofrecer listas privadas.
+
+**Reversión si falla el layout:** `/classic` sigue disponible para el frontend
+antiguo sin tocar archivos de artistas ni sus claves. Para revertir el index en
+servidor, cambiar la prioridad de `index()` y redeplegar; no restaurar el repo
+entero ni la base de datos. Comprobar `npm run build` y la web externa
+tras el despliegue de Coolify.
 
 ## Pipeline de la radio
 
