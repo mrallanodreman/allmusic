@@ -2175,19 +2175,28 @@ RADIO_SEED_MOODS = [
 # playlists largas. Las canciones suenan completas.
 RADIO_MAX_TRACK_SECONDS = 3600
 RADIO_MASTER_TTL_SECONDS = 15
-_RADIO_LIVE_STREAM_URL_RAW = os.environ.get('RADIO_LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3').strip()
+_RADIO_LIVE_STREAM_URL_RAW = os.environ.get('RADIO_LIVE_STREAM_URL', '').strip()
+RADIO_LIVE_UPSTREAM = os.environ.get('RADIO_LIVE_UPSTREAM', 'http://192.168.1.5:2427/live.mp3').strip()
 
 
 def _radio_live_stream_url():
-    """URL pública del stream. Normaliza valores legacy rotos conocidos."""
+    """URL del stream para clientes web.
+
+    Prioridad:
+    1) RADIO_LIVE_STREAM_URL explícita (si no es un valor legacy roto conocido).
+    2) Proxy same-origin servido por este backend (/radio/live.mp3), que evita
+       DNS/CORS/mixed-content y mantiene el stream accesible desde la UI.
+    """
     url = _RADIO_LIVE_STREAM_URL_RAW
-    # Deploys antiguos podían dejar /live.mp3 sin el prefijo /radio.
     if url == 'https://mail.edgemarketing.art/live.mp3':
-        return 'https://mail.edgemarketing.art/radio/live.mp3'
-    return url
+        url = 'https://mail.edgemarketing.art/radio/live.mp3'
+    if url:
+        return url
+    prefix = '/allmusic' if request.path.startswith('/allmusic') else ''
+    return f'{prefix}/radio/live.mp3'
 
 
-RADIO_LIVE_STREAM_URL = _radio_live_stream_url()
+RADIO_LIVE_STREAM_URL = _RADIO_LIVE_STREAM_URL_RAW or ''
 
 RADIO_FALLBACK_QUERIES = RADIO_SEED_MOODS
 
@@ -2713,7 +2722,7 @@ def radio_now():
             return jsonify({
                 'playing': True,
                 'master': True,
-                'stream_url': RADIO_LIVE_STREAM_URL,
+                'stream_url': _radio_live_stream_url(),
                 'track': public_track,
                 'queue': public_queue[:20],
                 'history': master.get('history', [])[:10],
@@ -2738,7 +2747,7 @@ def radio_now():
         'playing': True,
         'master': bool(master),
         'master_offline': master_offline,
-        'stream_url': RADIO_LIVE_STREAM_URL,
+        'stream_url': _radio_live_stream_url(),
         'track': track,
         'queue': public_queue[:20],
         'history': state.get('history', [])[:10],
@@ -2757,6 +2766,54 @@ def radio_moods():
         'moods': _radio_public_moods(state, 50),
         'total': len(_radio_public_moods(state, 100000)),
     })
+
+
+@app.route('/radio/live.mp3')
+@app.route('/allmusic/radio/live.mp3')
+def radio_live_proxy():
+    """Proxy same-origin del stream de radio. Evita que la UI dependa de DNS
+    público o CORS del upstream; el upstream real se configura por
+    RADIO_LIVE_UPSTREAM (default: http://192.168.1.5:2427/live.mp3)."""
+    upstream = RADIO_LIVE_UPSTREAM
+    if not (upstream.startswith('http://') or upstream.startswith('https://')):
+        return jsonify({'error': 'RADIO_LIVE_UPSTREAM inválido'}), 500
+    headers = {}
+    ua = request.headers.get('User-Agent')
+    if ua:
+        headers['User-Agent'] = ua[:200]
+    rng = request.headers.get('Range')
+    if rng:
+        headers['Range'] = rng
+    try:
+        req = urllib.request.Request(upstream, headers=headers)
+        upstream_resp = urllib.request.urlopen(req, timeout=15)
+    except Exception as exc:
+        logger.warning(f"Radio live proxy error: {exc}")
+        return jsonify({'error': 'Stream de radio no disponible'}), 502
+
+    def generate():
+        try:
+            while True:
+                chunk = upstream_resp.read(8192)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            try:
+                upstream_resp.close()
+            except Exception:
+                pass
+
+    status = getattr(upstream_resp, 'status', 200)
+    content_type = upstream_resp.headers.get('Content-Type', 'audio/mpeg')
+    resp = Response(stream_with_context(generate()), status=status, content_type=content_type)
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    resp.headers['Accept-Ranges'] = upstream_resp.headers.get('Accept-Ranges', 'none')
+    for header in ('Content-Range', 'Content-Length', 'ICY-Name', 'icy-name', 'ICY-MetaInt', 'icy-metaint'):
+        value = upstream_resp.headers.get(header)
+        if value:
+            resp.headers[header] = value
+    return resp
 
 
 @app.route('/radio/master', methods=['POST'])
