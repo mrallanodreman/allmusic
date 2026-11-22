@@ -56,7 +56,7 @@ export function PlayerStage({
               <path d="M6 41 3 12 21 28 32 3 47 26 69 7 62 43 6 41Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
               <path d="m10 49 53-1" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
             </svg>
-            <span className="stage__title-paper">
+            <div className="stage__title-paper">
               <h1 className="stage__title" id="stage-title">
                 {personal ? (
                   <>TU <em>MÚSICA</em></>
@@ -64,7 +64,7 @@ export function PlayerStage({
                   <>CANAL <em>24</em> MIX</>
                 )}
               </h1>
-            </span>
+            </div>
           </div>
           <div className="stage__badges">
             <span className="stage__station-label">
