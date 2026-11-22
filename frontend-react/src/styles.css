@@ -91,13 +91,16 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   position: relative;
   min-height: 100vh;
   padding-bottom: 96px;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 3px, rgba(245, 211, 0, 0.03) 3px 4px),
-    radial-gradient(circle at 15% 10%, var(--accent-soft), transparent 38%),
-    radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--cyan) 16%, transparent), transparent 42%),
-    var(--ink);
+  /* Muro de pizarra negro: textura real del arte de Canal 24, sin degradados fucsia. */
+  background-color: var(--ink);
+  background-image:
+    linear-gradient(rgba(13, 12, 12, 0.10), rgba(13, 12, 12, 0.10)),
+    url('./assets/radio-wall-texture.webp');
+  background-position: center center, center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: scroll, fixed;
   isolation: isolate;
-  transition: background 300ms ease;
 }
 
 /* Capa decorativa: nunca intercepta clics ni tapa texto dinámico. */
