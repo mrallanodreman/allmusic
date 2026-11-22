@@ -215,54 +215,91 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   gap: clamp(14px, 1.8vw, 20px);
 }
 
-/* --- Sidebar --- */
+/* --- Sidebar: talón de acceso recortado sobre el fondo de Canal 24 --- */
 .sidebar {
   position: sticky;
   top: 16px;
   align-self: start;
-  background: var(--yellow);
-  border: 4px solid var(--ink);
-  box-shadow: var(--shadow);
+  color: var(--paper);
+  background-image:
+    linear-gradient(rgba(9, 9, 9, 0.74), rgba(9, 9, 9, 0.88)),
+    url('./assets/fondopagina.webp');
+  background-position: center, center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 3px solid color-mix(in srgb, var(--paper) 78%, transparent);
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent) 72%, var(--ink));
   padding: 16px 12px;
-  clip-path: polygon(0 1%, 100% 0, 99% 99%, 1% 100%);
+  clip-path: var(--cut-slip);
 }
-.sidebar__brand { text-align: center; border-bottom: 3px dashed var(--ink); padding-bottom: 12px; }
+.sidebar__brand {
+  text-align: center;
+  border-bottom: 3px dashed color-mix(in srgb, var(--paper) 55%, transparent);
+  padding-bottom: 12px;
+}
 .sidebar__bolt {
   display: inline-grid;
   place-items: center;
   width: 44px; height: 44px;
-  background: var(--magenta);
-  color: var(--paper);
-  border: 3px solid var(--ink);
+  background: var(--accent);
+  color: var(--ink);
+  border: 3px solid var(--paper);
   border-radius: 50%;
   font-size: 26px;
 }
-.sidebar__title { display: block; font-family: var(--font-display); font-size: 26px; line-height: 0.9; margin-top: 8px; }
-.sidebar__sub { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+.sidebar__title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 0.9;
+  margin-top: 8px;
+  text-shadow: 2px 2px 0 var(--ink);
+}
+.sidebar__sub { font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--yellow); }
 .sidebar__nav { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 6px; }
 .sidebar__link {
   display: flex; align-items: center; gap: 9px;
   padding: 9px 10px;
-  color: var(--ink);
+  color: var(--paper);
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
   text-decoration: none;
   font-weight: 800;
   font-size: 14px;
-  border: 2px solid transparent;
+  border: 2px solid color-mix(in srgb, var(--paper) 32%, transparent);
+  text-shadow: 1px 1px 0 var(--ink);
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
-.sidebar__link:hover { background: var(--ink); color: var(--yellow); transform: translateX(4px); }
+.sidebar__link:hover {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+  text-shadow: none;
+  transform: translateX(4px);
+}
+.sidebar__link[aria-current='location'] {
+  background: var(--yellow);
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  text-shadow: none;
+}
 .sidebar__link:active { transform: translateX(1px) scale(0.98); }
-.sidebar__link:focus-visible { border-color: var(--cyan); background: var(--ink); color: var(--paper); }
+.sidebar__link:focus-visible {
+  border-color: var(--cyan);
+  background: var(--ink);
+  color: var(--paper);
+  text-shadow: none;
+}
 .sidebar__tickets {
-  border-top: 3px dashed var(--ink);
+  border-top: 3px dashed color-mix(in srgb, var(--paper) 55%, transparent);
   padding-top: 12px;
   text-align: center;
   display: grid;
   gap: 2px;
 }
 .sidebar__tickets-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; }
-.sidebar__tickets strong { font-family: var(--font-display); font-size: 34px; color: var(--magenta); }
-.sidebar__tickets-note { font-size: 10px; opacity: 0.7; }
+.sidebar__tickets strong { font-family: var(--font-display); font-size: 34px; color: var(--yellow); text-shadow: 2px 2px 0 var(--ink); }
+.sidebar__tickets-note { font-size: 10px; color: color-mix(in srgb, var(--paper) 78%, transparent); }
 
 /* --- Contenido y paneles --- */
 .content { min-width: 0; display: grid; gap: clamp(16px, 2.4vw, 26px); align-content: start; }
@@ -628,9 +665,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .rail .moods__grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
 @media (max-width: 900px) {
+  .app { background-attachment: scroll; }
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: static; }
   .sidebar__nav { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .sidebar__link:hover { transform: translateY(-2px); }
   .rail { grid-column: 1; }
   .masthead__request { order: 5; flex-basis: 100%; max-width: none; }
 }
