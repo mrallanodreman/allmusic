@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const INVITE = 'https://discord.gg/YVUQPPyxX';
 const SLIDES = [
-  { id: 'locutores', title: 'Buscamos locutores', description: 'Tu voz puede estar al aire', image: 'buscamos-locutores.svg' },
-  { id: 'djs', title: 'Buscamos DJs', description: 'Mezcla con nosotros', image: 'buscamos-djs.svg' },
-  { id: 'unete', title: 'Únete a la señal', description: 'Conecta con la comunidad', image: 'unete.svg' },
+  { id: 'locutores', title: 'Buscamos locutores', description: 'Tu voz puede estar al aire', image: 'buscamos-locutores.png' },
+  { id: 'djs', title: 'Buscamos DJs', description: 'Mezcla con nosotros', image: 'buscamos-djs.png' },
+  { id: 'unete', title: 'Únete a la señal', description: 'Conecta con la comunidad', image: 'unete.png' },
 ];
 const asset = (name) => `${import.meta.env.BASE_URL}assets/community/${name}`;
 
