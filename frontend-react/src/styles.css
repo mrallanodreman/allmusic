@@ -646,18 +646,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   position: relative; padding: 5px 3px 9px;
   overflow: hidden; border-bottom: 2px solid rgba(0,210,223,.44);
 }
-.sidebar__signal .equalizer {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 2px; width: 100%; height: 59px;
+.sidebar__signal .audio-meter {
+  height: 59px;
+  width: 100%;
+  background: rgba(0,0,0,.14);
 }
-.sidebar__signal .equalizer__bar {
-  flex: 1 1 0; min-width: 2px; width: auto; height: 100%; border: none;
-  background: repeating-linear-gradient(to top,
-    var(--side-pink) 0 3px, transparent 3px 5px,
-    var(--side-cyan) 5px 8px, transparent 8px 10px);
-  transform-origin: center bottom;
-}
-.sidebar__signal .equalizer__bar:nth-child(3n) { background-color: rgba(0,238,238,.07); }
 .sidebar__station {
   padding: 9px 0 12px;
   color: #c6c4c0; text-align: center;
@@ -738,7 +731,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .sidebar__nav { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .sidebar__link { font-size: 11px; }
   .sidebar__station { white-space: normal; }
-  .sidebar__signal .equalizer { height: 47px; }
+  .sidebar__signal .audio-meter { height: 47px; }
 }
 
 /* --- Contenido y paneles --- */
@@ -831,6 +824,35 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .stage__eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; margin: 0 0 4px; color: var(--magenta); font-weight: 700; }
 .stage__track { font-family: var(--font-display); font-size: clamp(22px, 3vw, 40px); margin: 0; line-height: 1.05; overflow-wrap: anywhere; }
 .stage__artist { font-weight: 700; font-size: clamp(13px, 1.4vw, 16px); margin: 6px 0 14px; opacity: 0.8; overflow-wrap: anywhere; }
+/* Vúmetros: FFT extraída del audio realmente reproducido.
+   La carátula queda limpia; el principal se ubica sobre el progreso. */
+.audio-meter { display: block; position: relative; min-width: 0; overflow: hidden; }
+.audio-meter canvas { display: block; width: 100%; height: 100%; }
+.stage__meter {
+  padding: 7px 10px 8px;
+  margin: 11px 0 4px;
+  color: var(--paper);
+  background: rgba(9,11,12,.96);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(0,229,255,.13);
+}
+.stage__meter-label {
+  display: block;
+  margin-bottom: 4px;
+  font: 900 9px/1.1 var(--font-mono);
+  color: var(--cyan);
+  letter-spacing: .12em;
+}
+.stage__meter .audio-meter--main { height: 58px; }
+.audio-meter--sidebar { height: 59px; }
+.audio-meter--compact { width: 80px; height: 26px; flex: none; }
+@media (max-width: 620px) {
+  .stage__meter .audio-meter--main { height: 44px; }
+  .stage__meter { padding: 6px; }
+}
+@media (max-width: 760px) {
+  .audio-meter--compact { width: 50px; height: 22px; }
+}
 .stage__progress { height: 12px; border: 2px solid var(--ink); background: var(--paper); overflow: hidden; }
 .stage__progress span { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 8px, var(--ink) 8px 10px); transition: width 400ms linear; }
 .stage__times { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; font-weight: 700; margin-top: 4px; }
@@ -1173,17 +1195,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   border: 1px solid var(--ink);
   transform: scaleY(var(--eq-lo, 0.2));
   transform-origin: bottom center;
-}
-.equalizer--wave {
-  position: absolute; inset-inline: 7%; bottom: 7%;
-  height: 32%; gap: 3px;
-  z-index: 2;
-  pointer-events: none;
-}
-.equalizer--wave .equalizer__bar {
-  flex: 1; width: auto;
-  background: linear-gradient(to top, var(--accent), var(--yellow));
-  mix-blend-mode: screen;
 }
 .equalizer--compact { height: 26px; }
 .equalizer--compact .equalizer__bar { width: 3px; }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icons.jsx';
-import { Equalizer } from './Equalizer.jsx';
+import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 
 // Navegación principal como en el arte de referencia; los controles propios
 // de la Radio IA también quedan accesibles en la franja inferior.
@@ -48,7 +48,7 @@ function formatTimecode(value) {
   ].map((number) => String(number).padStart(2, '0')).join(':');
 }
 
-export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch }) {
+export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch, analyserRef, listening = false }) {
   const [activeId, setActiveId] = useState(getActiveSection);
   const [counter, setCounter] = useState(() => formatTimecode(elapsed));
 
@@ -140,7 +140,7 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
       </div>
 
       <div className="sidebar__signal">
-        <Equalizer active={onAir} />
+        <AudioReactiveMeter analyserRef={analyserRef} active={listening} variant="sidebar" />
       </div>
 
       <div className="sidebar__station">SEÑAL PRINCIPAL // ÁTICO // QUITO</div>

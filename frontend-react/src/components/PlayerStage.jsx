@@ -1,5 +1,5 @@
 import { Icon } from './Icons.jsx';
-import { Equalizer } from './Equalizer.jsx';
+import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 import { formatTime, safeUrl } from '../lib/safe.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/radio-ui/${name}`;
@@ -22,6 +22,7 @@ export function PlayerStage({
   searchOpen = false,
   onSearch,
   onRadio,
+  analyserRef,
 }) {
   const personal = mode === 'personal';
   const track = personal ? selectedTrack : now?.track;
@@ -69,7 +70,6 @@ export function PlayerStage({
               ) : (
                 <span className="stage__cover-fallback" aria-hidden="true">C24</span>
               )}
-              <Equalizer active={playing} wave />
             </div>
             <figcaption className="stage__cover-caption">
               <span>{personal ? 'ALLMUSIC' : 'CANAL 24'}</span>
@@ -83,6 +83,12 @@ export function PlayerStage({
             </p>
             <p className="stage__track" title={title}>{title}</p>
             <p className="stage__artist" title={artist}>{artist}</p>
+            <div className="stage__meter">
+              <span className="stage__meter-label">
+                {personal ? 'AUDIO / ESCUCHA PERSONAL' : 'AUDIO / SEÑAL EN VIVO'}
+              </span>
+              <AudioReactiveMeter analyserRef={analyserRef} active={playing} variant="main" />
+            </div>
             <div
               className="stage__progress"
               role="progressbar"
@@ -146,7 +152,6 @@ export function PlayerStage({
                   />
                   <span className="stage__volume-value">{volumePct}%</span>
                 </label>
-                <Equalizer active={playing} />
               </div>
               <p className="stage__signal" role="status">
                 {audioError || (personal

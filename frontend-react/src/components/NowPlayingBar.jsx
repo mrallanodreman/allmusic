@@ -1,5 +1,5 @@
 import { Icon } from './Icons.jsx';
-import { Equalizer } from './Equalizer.jsx';
+import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/radio-ui/${name}`;
@@ -22,6 +22,7 @@ export function NowPlayingBar({
   onSearch,
   onRadio,
   searchOpen = false,
+  analyserRef,
 }) {
   const personal = mode === 'personal';
   const track = personal ? selectedTrack : now?.track;
@@ -89,7 +90,7 @@ export function NowPlayingBar({
           </span>
           <strong title={title}>{title}</strong>
         </div>
-        <Equalizer active={playing} compact />
+        <AudioReactiveMeter analyserRef={analyserRef} active={playing} variant="compact" />
         <span className="nowbar__time">
           {formatTime(elapsed)} / {duration > 0 ? formatTime(duration) : '--:--'}
         </span>

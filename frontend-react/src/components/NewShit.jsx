@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icons.jsx';
-import { Equalizer } from './Equalizer.jsx';
+import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/newshit/${name}`;
 
@@ -41,7 +41,7 @@ function useReducedMotion() {
   return reduce;
 }
 
-export function NewShit({ playing, onToggle, hasStream }) {
+export function NewShit({ playing, onToggle, hasStream, analyserRef }) {
   const [index, setIndex] = useState(0);
   const [hold, setHold] = useState(false);
   const [status, setStatus] = useState('');
@@ -130,7 +130,7 @@ export function NewShit({ playing, onToggle, hasStream }) {
               <strong>{artist.name}</strong>
               <small>{artist.tag}</small>
             </span>
-            <Equalizer active={playing} compact />
+            <AudioReactiveMeter active={playing} analyserRef={analyserRef} variant="compact" />
           </div>
         </article>
       </div>

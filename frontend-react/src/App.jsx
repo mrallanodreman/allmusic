@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useRadioData } from './hooks/useRadioData.js';
 import { useAudioStream } from './hooks/useAudioStream.js';
+import { useAudioAnalyser } from './hooks/useAudioAnalyser.js';
 import { moodSlug, normalizeText } from './lib/safe.js';
 import { DecorLayer } from './components/DecorLayer.jsx';
 import { HeaderBanner } from './components/HeaderBanner.jsx';
@@ -18,6 +19,21 @@ import { NowPlayingBar } from './components/NowPlayingBar.jsx';
 export default function App() {
   const data = useRadioData();
   const audio = useAudioStream(data.now?.stream_url);
+  const meter = useAudioAnalyser(audio.audioRef);
+
+  // El contexto se habilita en un gesto: PLAY/PAUSA, RADIO o canción.
+  const handleToggleAudio = useCallback(() => {
+    meter.activate();
+    audio.toggle();
+  }, [meter.activate, audio.toggle]);
+  const handleReturnRadio = useCallback(() => {
+    meter.activate();
+    audio.switchToRadio();
+  }, [meter.activate, audio.switchToRadio]);
+  const handlePlaySelection = useCallback((track) => {
+    meter.activate();
+    return audio.playTrack(track);
+  }, [meter.activate, audio.playTrack]);
   const [activeMood, setActiveMood] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -68,6 +84,8 @@ export default function App() {
           onAir={Boolean(data.now?.playing)}
           elapsed={data.now?.track?.elapsed}
           onOpenSearch={openSearch}
+          analyserRef={meter.analyserRef}
+          listening={audio.listening}
         />
         <main className="content" id="contenido">
           {data.error ? (
@@ -80,7 +98,7 @@ export default function App() {
           <PlayerStage
             now={data.now}
             playing={audio.listening}
-            onToggle={audio.toggle}
+            onToggle={handleToggleAudio}
             volume={audio.volume}
             onVolume={audio.setVolume}
             onSkip={data.advance}
@@ -93,15 +111,16 @@ export default function App() {
             personalElapsed={audio.elapsed}
             personalDuration={audio.duration}
             searchOpen={searchOpen}
+            analyserRef={meter.analyserRef}
             onSearch={toggleSearch}
-            onRadio={audio.switchToRadio}
+            onRadio={handleReturnRadio}
           />
 
           {searchOpen ? (
             <TrackSearchPanel
               onClose={closeSearch}
-              onSelect={audio.playTrack}
-              onRadio={audio.switchToRadio}
+              onSelect={handlePlaySelection}
+              onRadio={handleReturnRadio}
               mode={audio.mode}
               selectedTrack={audio.selectedTrack}
             />
@@ -125,8 +144,9 @@ export default function App() {
           />
           <NewShit
             playing={audio.listening}
-            onToggle={audio.toggle}
+            onToggle={handleToggleAudio}
             hasStream={audio.hasStream}
+            analyserRef={meter.analyserRef}
           />
         </aside>
       </div>
@@ -134,7 +154,7 @@ export default function App() {
       <NowPlayingBar
         now={data.now}
         playing={audio.listening}
-        onToggle={audio.toggle}
+        onToggle={handleToggleAudio}
         volume={audio.volume}
         onVolume={audio.setVolume}
         onSkip={data.advance}
@@ -147,8 +167,9 @@ export default function App() {
         personalElapsed={audio.elapsed}
         personalDuration={audio.duration}
         searchOpen={searchOpen}
+        analyserRef={meter.analyserRef}
         onSearch={toggleSearch}
-        onRadio={audio.switchToRadio}
+        onRadio={handleReturnRadio}
       />
       <audio ref={audio.audioRef} preload="none" />
     </div>
