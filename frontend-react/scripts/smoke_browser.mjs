@@ -40,6 +40,11 @@ try {
           button.previousElementSibling?.classList.contains('stage__mode-label')
         );
         if (!nextToMode) errors.push('El like debe quedar junto a MODO en los controles del reproductor');
+        const rightOffset = await like.evaluate((button) => {
+          const controls = button.closest('.stage__controls');
+          return parseFloat(getComputedStyle(button).marginInlineStart) / controls.clientWidth;
+        });
+        if (rightOffset < 0.19) errors.push('El like debe conservar un desplazamiento horizontal cercano al 20%');
         if (await like.getAttribute('aria-pressed') !== 'false') {
           errors.push('El like del reproductor debe iniciar apagado');
         }

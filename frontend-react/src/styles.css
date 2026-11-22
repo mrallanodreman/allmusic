@@ -2243,6 +2243,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .stage__like-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   min-height: 38px; padding: 6px 12px;
+  margin-inline-start: 20%;
   border: 2px solid var(--ink); border-radius: 3px 11px 4px 9px;
   background: var(--paper-light); color: var(--ink);
   font: 800 12px/1 var(--font-mono);
