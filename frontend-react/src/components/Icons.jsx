@@ -3,6 +3,8 @@ export function Icon({ name, className = '' }) {
     play: <path d="M8 5v14l11-7z" />,
     pause: <path d="M6 5h4v14H6zM14 5h4v14h-4z" />,
     bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+    x: <path d="M5 5l14 14M19 5 5 19" />,
+    music: <><path d="M8.5 17V5.5L19 3v11.5" /><path d="M8.5 8.8 19 6.2" /><circle cx="6" cy="17" r="2.7" /><circle cx="16.5" cy="14.5" r="2.7" /></>,
     search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.4 15.4 5.1 5.1" /></>,
     radio: <path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9Zm0 5a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4Zm-7 4a7 7 0 0 1 3-5.8M19 12a7 7 0 0 1-3 5.8" />,
     list: <path d="M4 6h16M4 12h16M4 18h10" />,

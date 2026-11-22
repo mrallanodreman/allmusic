@@ -11,6 +11,10 @@ export default defineConfig({
     proxy: {
       '/radio': 'http://127.0.0.1:2426',
       '/status': 'http://127.0.0.1:2426',
+      // Mismo buscador y reproductor usados por AllMusic clásico.
+      '/search': 'http://127.0.0.1:2426',
+      '/convert': 'http://127.0.0.1:2426',
+      '/stream': 'http://127.0.0.1:2426',
     },
   },
 });

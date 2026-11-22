@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getTrackStreamUrl, resolveTrackUrl } from '../lib/api.js';
 import { normalizeText, safeUrl } from '../lib/safe.js';
 
-/** Reproducción manual del stream: el navegador solo conecta tras un clic. */
+/**
+ * Un solo elemento <audio> para Radio IA y escucha personal.
+ * Radio y canción elegida son modos excluyentes: jamás se mezclan dos streams.
+ * El cambio de modo y la reproducción solo se inician mediante interacción.
+ */
 export function useAudioStream(streamUrl) {
   const audioRef = useRef(null);
+  const modeRef = useRef('radio');
+  const selectionRef = useRef(null);
+  const requestRef = useRef(0);
+  const fallbackRef = useRef('');
+  const [mode, setMode] = useState('radio');
+  const [selectedTrack, setSelectedTrack] = useState(null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(() => {
     try {
       const raw = window.localStorage.getItem('ia-radio-volume');
@@ -16,7 +29,8 @@ export function useAudioStream(streamUrl) {
       return 0.8;
     }
   });
-  const url = safeUrl(streamUrl);
+
+  const radioUrl = safeUrl(streamUrl);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -24,58 +38,149 @@ export function useAudioStream(streamUrl) {
     try {
       window.localStorage.setItem('ia-radio-volume', String(volume));
     } catch {
-      // almacenamiento no disponible: se mantiene solo en memoria
+      // El volumen sigue funcionando aunque localStorage esté bloqueado.
     }
   }, [volume]);
 
+  const attemptPlay = useCallback((sequence) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.volume === 0) {
+      audio.volume = 0.8;
+      setVolumeState(0.8);
+    }
+    setError('');
+    const attempt = audio.play();
+    if (attempt && typeof attempt.then === 'function') {
+      attempt.then(() => {
+        if (requestRef.current === sequence) setListening(true);
+      }).catch((err) => {
+        if (requestRef.current !== sequence || err?.name === 'AbortError') return;
+        setListening(false);
+        setError(err?.name === 'NotAllowedError'
+          ? 'Tu navegador requiere otro clic para reproducir el audio.'
+          : normalizeText(err?.message, 120) || 'No se pudo iniciar el audio.');
+      });
+    } else {
+      setListening(true);
+    }
+  }, []);
+
+  const setSourceAndPlay = useCallback((src, kind, sequence, reload = false) => {
+    const audio = audioRef.current;
+    if (!audio || !src) return false;
+    audio.pause();
+    setListening(false);
+    if (reload || audio.dataset.stream !== src || audio.dataset.mode !== kind) {
+      audio.dataset.stream = src;
+      audio.dataset.mode = kind;
+      audio.src = src;
+      audio.load();
+    }
+    attemptPlay(sequence);
+    return true;
+  }, [attemptPlay]);
+
+  const pause = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) audio.pause();
+    setListening(false);
+    setError('');
+  }, []);
+
   const stop = useCallback(() => {
+    requestRef.current += 1;
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
       audio.removeAttribute('src');
+      audio.removeAttribute('data-stream');
+      audio.removeAttribute('data-mode');
       audio.load();
-      delete audio.dataset.stream;
     }
+    fallbackRef.current = '';
     setListening(false);
+    setElapsed(0);
+    setDuration(0);
     setError('');
   }, []);
 
   const start = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !url) {
-      setError('El stream no está disponible en este momento.');
+    if (!audio) return;
+    if (modeRef.current === 'personal') {
+      const track = selectionRef.current;
+      const src = track && getTrackStreamUrl(track.id);
+      if (!src) {
+        setError('Seleccioná una canción en el buscador.');
+        return;
+      }
+      const sequence = ++requestRef.current;
+      if (audio.dataset.mode === 'personal' && audio.dataset.stream) {
+        attemptPlay(sequence);
+      } else {
+        setSourceAndPlay(src, 'personal', sequence);
+      }
       return;
     }
-    setError('');
-    // Si el usuario tenía volumen 0 guardado, al dar play subimos a un nivel audible.
-    if (audio.volume === 0) setVolumeState(0.8);
-    audio.volume = audio.volume === 0 ? 0.8 : volume;
-    if (audio.dataset.stream !== url) {
-      audio.dataset.stream = url;
-      audio.src = url;
-      audio.load();
+    if (!radioUrl) {
+      setError('La transmisión no está disponible en este momento.');
+      return;
     }
-    const attempt = audio.play();
-    if (attempt && typeof attempt.then === 'function') {
-      attempt
-        .then(() => setListening(true))
-        .catch((err) => {
-          setListening(false);
-          setError(
-            err?.name === 'NotAllowedError'
-              ? 'El navegador requiere otro clic para iniciar el audio.'
-              : normalizeText(err?.message, 120) || 'No se pudo conectar con el stream.'
-          );
-        });
-    } else {
-      setListening(true);
-    }
-  }, [url, volume]);
+    // Sintonizar siempre desde el punto EN VIVO: una pausa no debe
+    // reanudar un búfer viejo del stream compartido.
+    const sequence = ++requestRef.current;
+    setSourceAndPlay(radioUrl, 'radio', sequence, true);
+  }, [attemptPlay, radioUrl, setSourceAndPlay]);
 
   const toggle = useCallback(() => {
-    if (listening) stop();
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!audio.paused && !audio.ended) pause();
     else start();
-  }, [listening, start, stop]);
+  }, [pause, start]);
+
+  const playTrack = useCallback((result) => {
+    const id = normalizeText(result?.id, 16);
+    const src = getTrackStreamUrl(id);
+    if (!src) {
+      setError('La canción seleccionada no tiene un identificador válido.');
+      return false;
+    }
+    const track = {
+      id,
+      title: normalizeText(result?.title, 160) || 'Sin título',
+      artist: normalizeText(result?.uploader || result?.artist, 100) || 'YouTube',
+      thumbnail: safeUrl(result?.thumbnail),
+      duration: Number.isFinite(Number(result?.duration)) ? Math.max(0, Number(result.duration)) : 0,
+    };
+    modeRef.current = 'personal';
+    selectionRef.current = track;
+    fallbackRef.current = '';
+    setMode('personal');
+    setSelectedTrack(track);
+    setElapsed(0);
+    setDuration(track.duration);
+    const sequence = ++requestRef.current;
+    return setSourceAndPlay(src, 'personal', sequence);
+  }, [setSourceAndPlay]);
+
+  const switchToRadio = useCallback(() => {
+    modeRef.current = 'radio';
+    selectionRef.current = null;
+    fallbackRef.current = '';
+    setMode('radio');
+    setSelectedTrack(null);
+    setElapsed(0);
+    setDuration(0);
+    const sequence = ++requestRef.current;
+    if (!radioUrl) {
+      pause();
+      setError('Radio 24/7 no disponible en este momento.');
+      return false;
+    }
+    return setSourceAndPlay(radioUrl, 'radio', sequence, true);
+  }, [pause, radioUrl, setSourceAndPlay]);
 
   const setVolume = useCallback((next) => {
     const n = Number(next);
@@ -86,36 +191,98 @@ export function useAudioStream(streamUrl) {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
-    const handleError = () => {
-      setListening(false);
-      setError('La transmisión se interrumpió. Probá de nuevo.');
+
+    const onPlaying = () => { setListening(true); setError(''); };
+    const onPause = () => setListening(false);
+    const onEnded = () => setListening(false);
+    const onTimeUpdate = () => {
+      if (modeRef.current !== 'personal') return;
+      setElapsed(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
     };
-    const handlePlaying = () => setListening(true);
-    const handlePause = () => {
-      // pausa explícita/externa: refleja estado real; stop() ya limpia src
-      if (!audio.src) setListening(false);
+    const onDurationChange = () => {
+      if (modeRef.current !== 'personal') return;
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : (selectionRef.current?.duration || 0));
     };
-    audio.addEventListener('error', handleError);
-    audio.addEventListener('playing', handlePlaying);
-    audio.addEventListener('pause', handlePause);
+
+    const onError = async () => {
+      const current = selectionRef.current;
+      if (modeRef.current !== 'personal' || !current) {
+        setListening(false);
+        setError('La transmisión se interrumpió. Intentá de nuevo.');
+        return;
+      }
+      // Mismo fallback que el reproductor clásico (/convert); se intenta una sola vez.
+      if (fallbackRef.current === current.id) {
+        setListening(false);
+        setError('No se pudo reproducir esa canción. Probá con otro resultado.');
+        return;
+      }
+      fallbackRef.current = current.id;
+      const sequence = requestRef.current;
+      try {
+        const direct = await resolveTrackUrl(current.id);
+        if (sequence !== requestRef.current || modeRef.current !== 'personal') return;
+        if (direct && direct !== audio.dataset.stream) {
+          setSourceAndPlay(direct, 'personal', sequence);
+        } else {
+          setListening(false);
+          setError('No se encontró audio reproducible para esa canción.');
+        }
+      } catch {
+        if (sequence === requestRef.current) {
+          setListening(false);
+          setError('No se pudo conectar con el audio de esa canción.');
+        }
+      }
+    };
+
+    audio.addEventListener('playing', onPlaying);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('durationchange', onDurationChange);
+    audio.addEventListener('error', onError);
     return () => {
-      audio.removeEventListener('error', handleError);
-      audio.removeEventListener('playing', handlePlaying);
-      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('playing', onPlaying);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('durationchange', onDurationChange);
+      audio.removeEventListener('error', onError);
+      audio.pause();
     };
-  }, []);
+  }, [setSourceAndPlay]);
 
   useEffect(() => {
-    if (!listening || !url) return;
+    // La cabina puede cambiar su URL cuando refresca /radio/now.
+    // Nunca reintroducir el stream si el usuario escucha una canción propia.
+    if (!radioUrl || modeRef.current !== 'radio') return;
     const audio = audioRef.current;
-    if (audio && audio.dataset.stream !== url) {
-      audio.dataset.stream = url;
-      audio.src = url;
-      audio.load();
-      const attempt = audio.play();
-      if (attempt && typeof attempt.catch === 'function') attempt.catch(() => setListening(false));
-    }
-  }, [listening, url]);
+    if (!audio || audio.paused || audio.dataset.mode !== 'radio') return;
+    if (audio.dataset.stream === radioUrl) return;
+    const sequence = ++requestRef.current;
+    setSourceAndPlay(radioUrl, 'radio', sequence);
+  }, [radioUrl, setSourceAndPlay]);
 
-  return { audioRef, listening, error, hasStream: Boolean(url), toggle, stop, volume, setVolume };
+  const hasPlayable = mode === 'personal' ? Boolean(selectedTrack) : Boolean(radioUrl);
+
+  return {
+    audioRef,
+    listening,
+    error,
+    hasStream: Boolean(radioUrl),
+    hasPlayable,
+    mode,
+    selectedTrack,
+    elapsed,
+    duration,
+    toggle,
+    start,
+    pause,
+    stop,
+    playTrack,
+    switchToRadio,
+    volume,
+    setVolume,
+  };
 }

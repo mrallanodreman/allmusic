@@ -6,6 +6,7 @@ import { DecorLayer } from './components/DecorLayer.jsx';
 import { HeaderBanner } from './components/HeaderBanner.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { PlayerStage } from './components/PlayerStage.jsx';
+import { TrackSearchPanel } from './components/TrackSearchPanel.jsx';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
 import { TopRequested } from './components/TopRequested.jsx';
@@ -17,6 +18,28 @@ export default function App() {
   const data = useRadioData();
   const audio = useAudioStream(data.now?.stream_url);
   const [activeMood, setActiveMood] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+    // La sección se monta debajo del reproductor, no dentro del formulario
+    // de pedidos a la radio. Dos frames garantizan que el DOM ya exista.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('buscar-musica')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      });
+    });
+  }, []);
+
+  const toggleSearch = useCallback(() => {
+    if (searchOpen) setSearchOpen(false);
+    else openSearch();
+  }, [openSearch, searchOpen]);
+
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   const handleMood = useCallback(
     (label) => {
@@ -43,6 +66,7 @@ export default function App() {
           ticketsUsed={data.ticketsUsed}
           onAir={Boolean(data.now?.playing)}
           elapsed={data.now?.track?.elapsed}
+          onOpenSearch={openSearch}
         />
         <main className="content" id="contenido">
           {data.error ? (
@@ -62,7 +86,25 @@ export default function App() {
             advancing={data.advancing}
             audioError={audio.error}
             hasStream={audio.hasStream}
+            hasPlayable={audio.hasPlayable}
+            mode={audio.mode}
+            selectedTrack={audio.selectedTrack}
+            personalElapsed={audio.elapsed}
+            personalDuration={audio.duration}
+            searchOpen={searchOpen}
+            onSearch={toggleSearch}
+            onRadio={audio.switchToRadio}
           />
+
+          {searchOpen ? (
+            <TrackSearchPanel
+              onClose={closeSearch}
+              onSelect={audio.playTrack}
+              onRadio={audio.switchToRadio}
+              mode={audio.mode}
+              selectedTrack={audio.selectedTrack}
+            />
+          ) : null}
 
           <div className="content__grid">
             <QueuePanel items={data.queue} />
@@ -93,6 +135,14 @@ export default function App() {
         advancing={data.advancing}
         activeMood={activeMood}
         hasStream={audio.hasStream}
+        hasPlayable={audio.hasPlayable}
+        mode={audio.mode}
+        selectedTrack={audio.selectedTrack}
+        personalElapsed={audio.elapsed}
+        personalDuration={audio.duration}
+        searchOpen={searchOpen}
+        onSearch={toggleSearch}
+        onRadio={audio.switchToRadio}
       />
       <audio ref={audio.audioRef} preload="none" />
     </div>

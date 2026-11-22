@@ -21,7 +21,7 @@ const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola'];
 function getActiveSection() {
   if (typeof window === 'undefined') return 'reproductor';
   const fragment = window.location.hash.slice(1);
-  if (fragment === 'request-input') return 'buscar';
+  if (fragment === 'buscar-musica') return 'buscar';
   return SECTION_IDS.includes(fragment) ? fragment : 'reproductor';
 }
 
@@ -38,16 +38,6 @@ function openLibrary(event, tab) {
   }
 }
 
-function focusRequestInput() {
-  window.requestAnimationFrame(() => {
-    const field = document.getElementById('request-input');
-    if (field) {
-      field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      field.focus({ preventScroll: true });
-    }
-  });
-}
-
 function formatTimecode(value) {
   const totalFrames = Math.max(0, Math.floor((Number(value) || 0) * 25));
   return [
@@ -58,7 +48,7 @@ function formatTimecode(value) {
   ].map((number) => String(number).padStart(2, '0')).join(':');
 }
 
-export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0 }) {
+export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch }) {
   const [activeId, setActiveId] = useState(getActiveSection);
   const [counter, setCounter] = useState(() => formatTimecode(elapsed));
 
@@ -105,7 +95,7 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0 }) {
       <ul className="sidebar__nav">
         {MAIN.map((link) => {
           const current = activeId === link.id;
-          const href = link.kind === 'search' ? '#request-input'
+          const href = link.kind === 'search' ? '#buscar-musica'
             : link.kind === 'library' ? '/allmusic/' : `#${link.id}`;
           return (
             <li key={link.id}>
@@ -117,9 +107,12 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0 }) {
                 onClick={(event) => {
                   if (link.kind === 'library') {
                     openLibrary(event, link.id);
+                  } else if (link.kind === 'search') {
+                    event.preventDefault();
+                    setActiveId('buscar');
+                    onOpenSearch?.();
                   } else {
                     setActiveId(link.id);
-                    if (link.kind === 'search') focusRequestInput();
                   }
                 }}
               >
