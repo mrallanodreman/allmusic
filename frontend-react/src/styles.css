@@ -3209,3 +3209,73 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .billboard__purchase-link { transition: none; }
   .billboard__ticket:hover::after { opacity: 0; }
 }
+
+/* === CANAL 24 / CARTELERA · 2027 AMPLIACIÓN === */
+/* Tarjetas agotadas son anuncios informativos, no botones de compra. */
+.billboard__art-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  text-align: center;
+  color: var(--ticket-accent);
+  font: 1000 clamp(21px, 2.3vw, 34px)/1.05 Impact, 'Arial Black', sans-serif;
+  letter-spacing: -.035em;
+  background:
+    repeating-linear-gradient(-17deg, rgba(250,250,250,.035) 0 2px, transparent 2px 8px),
+    #0a0a0d;
+}
+.billboard__art > img { position: relative; z-index: 1; }
+.billboard__art-mark { z-index: 2; }
+.billboard__art-soldout {
+  position: absolute;
+  z-index: 2;
+  left: -7%;
+  right: -7%;
+  bottom: 13%;
+  display: block;
+  padding: 9px 4px;
+  text-align: center;
+  background: rgba(251, 19, 133, .94);
+  color: white;
+  border-block: 3px solid #050505;
+  font: 1000 clamp(19px, 2.6vw, 35px)/1 Impact, 'Arial Black', sans-serif;
+  letter-spacing: .15em;
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+.billboard__price--soldout > strong {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  padding: 6px 9px;
+  color: #fff;
+  background: #f4147d;
+  font-size: clamp(21px, 2.1vw, 28px);
+  transform: rotate(-2deg);
+}
+.billboard__purchase-link--soldout {
+  background: transparent;
+  border-color: #ddd;
+  color: #f4f2ef;
+  box-shadow: 2px 2px 0 #090909;
+}
+.billboard__purchase-link--soldout:hover {
+  background: #f4f2ef;
+  color: #0b0c0d;
+}
+.billboard__venue-warning {
+  display: block;
+  margin: 0;
+  padding: 7px 9px;
+  color: #ffda5c;
+  border-left: 3px solid #ffda5c;
+  background: rgba(255, 218, 92, .07);
+  font: 700 9px/1.45 var(--font-mono);
+}
+@media (max-width: 650px) {
+  .billboard__art-soldout { font-size: clamp(22px, 8vw, 34px); }
+  .billboard__price--soldout > strong { font-size: 22px; }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icons.jsx';
 import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
+import { EVENT_COUNT } from './EventBillboard.jsx';
 
 // Navegación principal como en el arte de referencia; los controles propios
 // de la Radio IA también quedan accesibles en la franja inferior.
@@ -126,7 +127,7 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
               >
                 <Icon name={link.icon} className="icon sidebar__link-icon" />
                 <span>{link.label}</span>
-                {link.kind === 'billboard' ? <span className="sidebar__billboard-counter" aria-hidden="true">03</span> : null}
+                {link.kind === 'billboard' ? <span className="sidebar__billboard-counter" aria-hidden="true">{String(EVENT_COUNT).padStart(2, '0')}</span> : null}
                 {current ? <span className="sidebar__active-dot" aria-hidden="true" /> : null}
               </a>
             </li>
