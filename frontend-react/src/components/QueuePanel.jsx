@@ -1,11 +1,18 @@
 import { formatTime, normalizeText, safeUrl } from '../lib/safe.js';
+import { useInView } from '../hooks/useInView.js';
 import { Icon } from './Icons.jsx';
 
 export function QueuePanel({ items }) {
   const list = Array.isArray(items) ? items.slice(0, 8) : [];
+  const [revealRef, visible] = useInView();
 
   return (
-    <section className="queue panel" id="cola" aria-labelledby="queue-title">
+    <section
+      ref={revealRef}
+      className={`queue panel reveal${visible ? ' reveal--in' : ''}`}
+      id="cola"
+      aria-labelledby="queue-title"
+    >
       <div className="section-head">
         <h2 id="queue-title">SIGUIENTE EN LA COLA</h2>
         <span className="section-head__hint">{list.length} pendientes</span>

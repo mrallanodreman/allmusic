@@ -33,12 +33,13 @@ export default function App() {
 
   return (
     <div className="app" data-mood={activeMood || 'default'}>
+      <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <DecorLayer />
       <HeaderBanner live={Boolean(data.now?.playing)} />
 
       <div className="layout">
         <Sidebar ticketsUsed={data.ticketsUsed} />
-        <main className="content">
+        <main className="content" id="contenido">
           {data.error ? (
             <div className="alert" role="alert">
               {data.error}
@@ -56,13 +57,16 @@ export default function App() {
           />
 
           <div className="content__grid">
-            <TopRequested items={data.topRequested} />
             <QueuePanel items={data.queue} />
             <HistoryPanel items={data.history} />
           </div>
 
           {data.loading ? <p className="loading" role="status">Sintonizando señal…</p> : null}
         </main>
+
+        <aside className="rail" aria-label="Ranking de pedidos">
+          <TopRequested items={data.topRequested} />
+        </aside>
       </div>
 
       <NowPlayingBar

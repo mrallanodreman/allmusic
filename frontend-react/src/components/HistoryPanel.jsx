@@ -1,11 +1,18 @@
 import { normalizeText, safeUrl } from '../lib/safe.js';
+import { useInView } from '../hooks/useInView.js';
 import { Icon } from './Icons.jsx';
 
 export function HistoryPanel({ items }) {
   const list = Array.isArray(items) ? items.slice(0, 6) : [];
+  const [revealRef, visible] = useInView();
 
   return (
-    <section className="history panel" id="historial" aria-labelledby="history-title">
+    <section
+      ref={revealRef}
+      className={`history panel reveal${visible ? ' reveal--in' : ''}`}
+      id="historial"
+      aria-labelledby="history-title"
+    >
       <div className="section-head">
         <h2 id="history-title">HISTORIAL RECIENTE</h2>
         <span className="section-head__hint">últimas en el aire</span>

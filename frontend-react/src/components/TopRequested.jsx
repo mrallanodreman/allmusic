@@ -1,10 +1,17 @@
 import { normalizeText, safeUrl } from '../lib/safe.js';
+import { useInView } from '../hooks/useInView.js';
 
 export function TopRequested({ items }) {
   const list = Array.isArray(items) ? items.slice(0, 10) : [];
+  const [revealRef, visible] = useInView();
 
   return (
-    <section className="top panel" id="top10" aria-labelledby="top-title">
+    <section
+      ref={revealRef}
+      className={`top panel reveal${visible ? ' reveal--in' : ''}`}
+      id="top10"
+      aria-labelledby="top-title"
+    >
       <img
         className="top__banner"
         src={`${import.meta.env.BASE_URL}assets/radio-ui/banner_top_10.png`}
@@ -21,7 +28,10 @@ export function TopRequested({ items }) {
             const artist = normalizeText(item?.artist, 60);
             const cover = safeUrl(item?.thumbnail);
             return (
-              <li className="top__item" key={normalizeText(item?.video_id, 60) || `${title}-${index}`}>
+              <li
+                className={`top__item${index === 0 ? ' top__item--first' : ''}`}
+                key={normalizeText(item?.video_id, 60) || `${title}-${index}`}
+              >
                 <span className="top__rank">{String(index + 1).padStart(2, '0')}</span>
                 {cover ? <img className="top__thumb" src={cover} alt="" loading="lazy" /> : <span className="top__thumb top__thumb--empty" />}
                 <span className="top__text">

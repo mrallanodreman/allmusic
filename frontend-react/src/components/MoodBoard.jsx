@@ -24,10 +24,10 @@ export function MoodBoard({ moods, activeMood, onSelect, pending }) {
         <span className="section-head__hint">activá el ambiente</span>
       </div>
       <ul className="moods__grid">
-        {options.map((option) => {
+        {options.map((option, index) => {
           const active = activeMood === moodSlug(option.label);
           return (
-            <li key={option.label}>
+            <li key={option.label} style={{ '--i': index }}>
               <button
                 type="button"
                 className={`mood${active ? ' mood--active' : ''}`}
