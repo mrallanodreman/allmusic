@@ -10,13 +10,14 @@ const MAIN = [
   { id: 'buscar', label: 'BUSCAR', icon: 'search', kind: 'search' },
   { id: 'playlists', label: 'PLAYLISTS', icon: 'list', kind: 'library' },
   { id: 'mymusic', label: 'TU MÚSICA', icon: 'star', kind: 'library' },
+  { id: 'cartelera', label: 'CARTELERA', icon: 'ticket', kind: 'billboard' },
 ];
 const SHORTCUTS = [
   { id: 'moods', label: 'MOODS' },
   { id: 'top10', label: 'TOP 10' },
   { id: 'cola', label: 'COLA' },
 ];
-const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola'];
+const SECTION_IDS = ['reproductor', 'historial', 'moods', 'top10', 'cola', 'cartelera'];
 
 function getActiveSection() {
   if (typeof window === 'undefined') return 'reproductor';
@@ -48,7 +49,7 @@ function formatTimecode(value) {
   ].map((number) => String(number).padStart(2, '0')).join(':');
 }
 
-export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch, analyserRef, listening = false }) {
+export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSearch, onOpenCartelera, onCloseCartelera, carteleraOpen = false, analyserRef, listening = false }) {
   const [activeId, setActiveId] = useState(getActiveSection);
   const [counter, setCounter] = useState(() => formatTimecode(elapsed));
 
@@ -62,7 +63,7 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting)
         .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0] && window.location.hash !== '#request-input') {
+      if (visible[0] && window.location.hash !== '#request-input' && window.location.hash !== '#cartelera') {
         setActiveId(visible[0].target.id);
       }
     }, { rootMargin: '-18% 0px -62% 0px' });
@@ -94,30 +95,38 @@ export function Sidebar({ ticketsUsed = 0, onAir = false, elapsed = 0, onOpenSea
 
       <ul className="sidebar__nav">
         {MAIN.map((link) => {
-          const current = activeId === link.id;
+          const current = link.kind === 'billboard' ? carteleraOpen : !carteleraOpen && activeId === link.id;
           const href = link.kind === 'search' ? '#buscar-musica'
             : link.kind === 'library' ? '/allmusic/' : `#${link.id}`;
           return (
             <li key={link.id}>
               <a
-                className="sidebar__link"
+                className={`sidebar__link${link.kind === 'billboard' ? ' sidebar__link--cartelera' : ''}`}
                 href={href}
                 target={link.kind === 'library' ? '_top' : undefined}
                 aria-current={current ? 'location' : undefined}
                 onClick={(event) => {
-                  if (link.kind === 'library') {
+                  if (link.kind === 'billboard') {
+                    event.preventDefault();
+                    setActiveId('cartelera');
+                    onOpenCartelera?.();
+                  } else if (link.kind === 'library') {
+                    onCloseCartelera?.();
                     openLibrary(event, link.id);
                   } else if (link.kind === 'search') {
                     event.preventDefault();
+                    onCloseCartelera?.();
                     setActiveId('buscar');
                     onOpenSearch?.();
                   } else {
+                    onCloseCartelera?.();
                     setActiveId(link.id);
                   }
                 }}
               >
                 <Icon name={link.icon} className="icon sidebar__link-icon" />
                 <span>{link.label}</span>
+                {link.kind === 'billboard' ? <span className="sidebar__billboard-counter" aria-hidden="true">03</span> : null}
                 {current ? <span className="sidebar__active-dot" aria-hidden="true" /> : null}
               </a>
             </li>

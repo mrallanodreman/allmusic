@@ -2740,3 +2740,472 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   }
   .layout > .rail > .panel { min-width: 0; width: 100%; }
 }
+
+
+/* === CANAL 24 / CARTELERA · TICKETS 2026-2027 === */
+/*
+ * Entradas promocionales inspiradas en dos diseños MIT de Uiverse:
+ * dexter-st / slippery-bird-76 = holographic ticket
+ * zeeshan_2112 / shy-rattlesnake-3 = dark neon ticket
+ * Imágenes: afiches OFICIALES de las tres fichas BuenPlan indicadas.
+ * CTA lleva al evento real: no se genera código de acceso ni reserva.
+ */
+
+/* Enlaces especiales, nunca sustituir ni tapar el resto del sidebar */
+.sidebar__link--cartelera {
+  gap: 9px;
+  min-height: 51px;
+  margin-top: 9px;
+  padding: 10px 11px;
+  background: var(--side-yellow);
+  color: #0a0a0a;
+  border: 0;
+  font: italic 900 clamp(14px, 1.15vw, 17px)/1 Impact, 'Arial Black', sans-serif;
+  letter-spacing: .035em;
+  transform: rotate(-2deg);
+  clip-path: polygon(0 6%, 12% 0, 31% 3%, 56% 0, 77% 5%, 99% 1%, 100% 87%, 86% 100%, 59% 96%, 31% 100%, 0 93%);
+  text-shadow: none;
+}
+.sidebar__link--cartelera .sidebar__link-icon { width: 25px; height: 25px; color: #030303; }
+.sidebar__link--cartelera:hover,
+.sidebar__link--cartelera:focus-visible {
+  background: var(--side-cyan);
+  color: #070707;
+  transform: rotate(-1deg) translateX(1px);
+}
+.sidebar__link--cartelera[aria-current='location'] {
+  background: var(--side-pink);
+  color: #fff;
+  border: 0;
+}
+.sidebar__link--cartelera[aria-current='location'] .sidebar__link-icon { color: #fff; }
+.sidebar__billboard-counter {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  margin-left: auto;
+  padding: 4px 6px;
+  color: var(--side-yellow);
+  background: #080808;
+  font: 900 12px/1 var(--font-mono);
+  transform: rotate(3deg);
+  border: 1px solid #080808;
+}
+.sidebar__link--cartelera[aria-current='location'] .sidebar__billboard-counter {
+  color: var(--side-cyan);
+}
+
+/* Contenedor de colección */
+.billboard {
+  --bill-ink: #0c0d10;
+  --bill-paper: #faf3e8;
+  --bill-pink: #ff178d;
+  --bill-cyan: #00e5ee;
+  --bill-yellow: #f8d500;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: clamp(16px, 2.3vw, 30px);
+  color: var(--bill-paper);
+  background:
+    repeating-linear-gradient(6deg, transparent 0 6px, rgba(239,239,231,.016) 6px 7px),
+    linear-gradient(135deg, rgba(4,5,7,.88), rgba(8,8,9,.94)),
+    url('./assets/radio-ui/sidebar-grunge.webp') center/cover;
+  border: 1px solid rgba(248,246,235,.25);
+  box-shadow: 5px 7px 0 rgba(0,0,0,.6);
+  scroll-margin-top: 20px;
+}
+.billboard__header {
+  position: relative;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 13px;
+  border-bottom: 2px dashed rgba(250,248,238,.45);
+}
+.billboard__prefix {
+  display: inline-block;
+  color: var(--bill-cyan);
+  font: 900 10px/1.25 var(--font-mono);
+  letter-spacing: .15em;
+}
+.billboard__heading h2 {
+  position: relative;
+  display: table;
+  margin: 10px 0 12px;
+  padding: 7px clamp(12px, 2vw, 20px);
+  color: #101010;
+  background:
+    radial-gradient(rgba(0,0,0,.07) .5px, transparent 1px) 0 0/6px 6px,
+    var(--bill-paper);
+  font: 1000 clamp(32px, 4.1vw, 59px)/.95 Impact, 'Arial Black', sans-serif;
+  letter-spacing: -.045em;
+  transform: rotate(-2deg);
+  clip-path: polygon(0 4%, 17% 0, 38% 3%, 62% 0, 88% 4%, 100% 1%, 99% 90%, 82% 100%, 56% 97%, 34% 100%, 0 95%);
+}
+.billboard__heading h2 span { color: var(--bill-pink); }
+.billboard__heading h2:focus { outline: 2px solid var(--bill-cyan); outline-offset: 5px; }
+.billboard__heading p {
+  margin: 0;
+  font: 800 clamp(10px, 1.1vw, 13px)/1.5 var(--font-mono);
+  color: rgba(255,255,246,.80);
+}
+.billboard__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  color: #0b0b0b;
+  background: var(--bill-yellow);
+  border: 2px solid #0b0b0b;
+  box-shadow: 3px 3px 0 var(--bill-pink);
+  font: 900 11px/1 var(--font-mono);
+  cursor: pointer;
+}
+.billboard__close .icon { width: 17px; height: 17px; }
+.billboard__close:hover { background: var(--bill-cyan); }
+.billboard__intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--bill-cyan);
+  font: 900 9px/1.3 var(--font-mono);
+  letter-spacing: .1em;
+}
+.billboard__grid { display: grid; gap: clamp(15px, 2vw, 23px); }
+
+/* Soporte común para los tres tickets, con zona separable a la derecha */
+.billboard__ticket {
+  --ticket-accent: var(--bill-pink);
+  --ticket-border: rgba(233,235,238,.7);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(66px, 10%, 87px);
+  min-width: 0;
+  min-height: 290px;
+  overflow: hidden;
+  color: #f4f4f4;
+  background: #0b0d13;
+  border: 1px solid var(--ticket-border);
+  box-shadow: 5px 6px 0 rgba(0,0,0,.86);
+  isolation: isolate;
+}
+.billboard__ticket::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 10%, rgba(255,255,255,.18) 37%, transparent 48%);
+  opacity: 0;
+  transform: translateX(-75%);
+  transition: transform 530ms ease, opacity 530ms ease;
+}
+.billboard__ticket:hover::after { transform: translateX(85%); opacity: .5; }
+.billboard__ticket-core {
+  display: grid;
+  grid-template-columns: clamp(130px, 33%, 235px) minmax(0, 1fr);
+  min-width: 0;
+}
+.billboard__art {
+  position: relative;
+  margin: 0;
+  min-height: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #111217;
+  border-right: 2px solid var(--ticket-accent);
+}
+.billboard__art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  object-position: center;
+  background: #080808;
+}
+.billboard__art-mark {
+  position: absolute;
+  z-index: 1;
+  left: 7px;
+  top: 8px;
+  background: var(--ticket-accent);
+  color: #060606;
+  padding: 4px 6px;
+  font: 900 9px/1 var(--font-mono);
+  transform: rotate(-3deg);
+}
+.billboard__details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 7px;
+  padding: clamp(13px, 1.65vw, 22px);
+}
+.billboard__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--ticket-accent);
+  font: 900 9px/1.2 var(--font-mono);
+  letter-spacing: .08em;
+}
+.billboard__ticket-number { color: rgba(255,255,255,.48); white-space: nowrap; }
+.billboard__details h3 {
+  margin: 6px 0 0;
+  color: #fff;
+  font: 1000 clamp(22px, 2.25vw, 35px)/.98 Impact, 'Arial Black', sans-serif;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
+.billboard__subtitle {
+  color: #f3f0e8;
+  margin: 0;
+  font: 700 clamp(11px, 1.05vw, 15px)/1.35 var(--font-body);
+}
+.billboard__organizer {
+  margin: 0 0 5px;
+  font: 800 9px/1.2 var(--font-mono);
+  color: #b5b4b9;
+  letter-spacing: .015em;
+}
+.billboard__facts {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 5px;
+}
+.billboard__facts > div {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 5px;
+  padding: 7px 8px;
+  border: 1px solid rgba(243,239,233,.34);
+  background: rgba(0,0,0,.25);
+}
+.billboard__facts span {
+  color: var(--ticket-accent);
+  font: 900 9px/1 var(--font-mono);
+}
+.billboard__facts strong {
+  color: #f8f7f4;
+  font: 900 clamp(10px, .95vw, 12px)/1.2 var(--font-mono);
+}
+.billboard__venue {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #f1efe9;
+  font: 700 11px/1.35 var(--font-body);
+  margin-top: 3px;
+}
+.billboard__venue .icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: var(--ticket-accent);
+}
+.billboard__purchase {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 13px;
+  border-top: 1px dashed rgba(240,243,241,.35);
+}
+.billboard__price { display: grid; gap: 2px; }
+.billboard__price small { color: #d2d0d0; font: 800 9px/1.2 var(--font-mono); }
+.billboard__price strong {
+  color: var(--ticket-accent);
+  font: 1000 31px/.9 Impact, 'Arial Black', sans-serif;
+}
+.billboard__price strong span { font-size: 17px; }
+.billboard__purchase-link {
+  position: relative;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  max-width: 100%;
+  background: var(--ticket-accent);
+  color: #080808;
+  border: 2px solid #060606;
+  text-decoration: none;
+  font: 1000 10px/1.2 var(--font-mono);
+  box-shadow: 3px 3px 0 rgba(0,0,0,.8);
+  transition: background 140ms ease, transform 140ms ease;
+}
+.billboard__purchase-link .icon { width: 16px; height: 16px; flex: none; }
+.billboard__purchase-link:hover { background: #fff; transform: translateY(-2px); }
+.billboard__purchase-link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Stub sin QR/barcode falso: perforación meramente decorativa */
+.billboard__stub {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 5px 13px;
+  background: linear-gradient(160deg, #151923, #060810);
+  border-left: 2px dashed var(--ticket-accent);
+}
+.billboard__stub::before,
+.billboard__stub::after {
+  content: '';
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  left: -8px;
+  border-radius: 50%;
+  background: #090a0b;
+  box-shadow: 0 0 0 1px rgba(250,250,250,.1);
+}
+.billboard__stub::before { top: -7px; }
+.billboard__stub::after { bottom: -7px; }
+.billboard__stub-side {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: #ddd;
+  font: 900 9px/1 var(--font-mono);
+  white-space: nowrap;
+  letter-spacing: .1em;
+}
+.billboard__stub-date {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: #f6f5f4;
+}
+.billboard__stub-date strong { font: 1000 38px/.9 Impact, sans-serif; color: var(--ticket-accent); }
+.billboard__stub-date > span { font: 800 9px/1 var(--font-mono); }
+.billboard__stub-label {
+  display: block;
+  max-width: 85px;
+  color: #d3d2d5;
+  text-align: center;
+  font: 800 7px/1.15 var(--font-mono);
+}
+.billboard__stub-cut {
+  color: var(--ticket-accent);
+  font: 1000 20px/1 var(--font-mono);
+  transform: rotate(90deg);
+}
+
+/* Variantes: tarjeta holográfica / póster neón / papel editorial */
+.billboard__ticket--holo {
+  --ticket-accent: #85eaff;
+  border-color: #92d5dd;
+  background:
+    linear-gradient(110deg, rgba(150,255,248,.12), transparent 40%, rgba(235,159,255,.1)),
+    #0b0d13;
+}
+.billboard__ticket--holo .billboard__stub {
+  background:
+    linear-gradient(165deg, rgba(255,160,221,.24), rgba(20,27,31,.1), rgba(61,222,237,.2)),
+    #11121a;
+}
+.billboard__ticket--holo .billboard__details::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 20%, rgba(187,249,255,.075) 50%, transparent 80%);
+  pointer-events: none;
+}
+.billboard__ticket--neon {
+  --ticket-accent: #f9d212;
+  --ticket-border: rgba(250,214,18,.85);
+  background:
+    radial-gradient(ellipse at 92% 15%, rgba(108,38,221,.20), transparent 50%),
+    #0b0b12;
+  box-shadow: 4px 5px 0 #050505, 0 0 16px rgba(127,69,220,.16);
+}
+.billboard__ticket--neon .billboard__stub {
+  background: linear-gradient(140deg, #202037, #090910);
+}
+.billboard__ticket--neon .billboard__art-mark { background: #fbd112; }
+.billboard__ticket--paper {
+  --ticket-accent: #f72a97;
+  --ticket-border: rgba(250,242,231,.78);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.015) 0 3px, transparent 3px 7px),
+    #181317;
+}
+.billboard__ticket--paper .billboard__stub { background: #211821; }
+.billboard__ticket--paper .billboard__art { background: #201411; }
+
+/* Pie editorial, datos externos verificables */
+.billboard__foot {
+  display: grid;
+  gap: 5px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(245,245,238,.25);
+  color: rgba(245,245,238,.72);
+  font: 800 9px/1.45 var(--font-mono);
+  letter-spacing: .03em;
+}
+
+/* Responsive: nunca ocultar fichas ni cortar sus afiches */
+@media (max-width: 1450px) {
+  .billboard__ticket { grid-template-columns: minmax(0, 1fr) 65px; }
+  .billboard__ticket-core { grid-template-columns: minmax(115px, 34%) minmax(0,1fr); }
+  .billboard__details { padding: 13px; }
+  .billboard__facts { flex-wrap: wrap; }
+  .billboard__facts > div { flex-basis: 90px; }
+}
+@media (max-width: 1100px) {
+  .billboard__ticket-core { grid-template-columns: minmax(110px, 31%) minmax(0,1fr); }
+  .billboard__details h3 { font-size: clamp(20px, 3vw, 28px); }
+}
+@media (max-width: 650px) {
+  .billboard { padding: 15px; gap: 15px; }
+  .billboard__ticket { grid-template-columns: minmax(0, 1fr) 57px; }
+  .billboard__ticket-core { grid-template-columns: minmax(0,1fr); }
+  .billboard__art {
+    width: 100%;
+    min-height: 0;
+    height: min(68vw, 340px);
+    border-right: 0;
+    border-bottom: 2px solid var(--ticket-accent);
+  }
+  .billboard__art img { max-height: none; }
+  .billboard__stub { gap: 13px; }
+  .billboard__stub-date strong { font-size: 32px; }
+  .billboard__stub-label { font-size: 6px; }
+  .billboard__facts { flex-wrap: nowrap; }
+  .billboard__facts > div { flex-basis: 0; }
+  .billboard__header { gap: 10px; }
+  .billboard__heading h2 { font-size: clamp(31px, 8vw, 48px); }
+  .billboard__heading p { font-size: 9px; }
+  .billboard__close { font-size: 0; }
+  .billboard__close .icon { width: 19px; height: 19px; }
+  .sidebar__link--cartelera { font-size: 13px; }
+}
+@media (max-width: 390px) {
+  .billboard__ticket { grid-template-columns: minmax(0,1fr) 49px; }
+  .billboard__stub-date strong { font-size: 27px; }
+  .billboard__stub-date > span { font-size: 7px; }
+  .billboard__details { padding: 11px; }
+  .billboard__facts { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .billboard__ticket::after,
+  .billboard__purchase-link { transition: none; }
+  .billboard__ticket:hover::after { opacity: 0; }
+}

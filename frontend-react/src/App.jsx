@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRadioData } from './hooks/useRadioData.js';
 import { useAudioStream } from './hooks/useAudioStream.js';
 import { useAudioAnalyser } from './hooks/useAudioAnalyser.js';
@@ -8,6 +8,7 @@ import { HeaderBanner } from './components/HeaderBanner.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { PlayerStage } from './components/PlayerStage.jsx';
 import { TrackSearchPanel } from './components/TrackSearchPanel.jsx';
+import { EventBillboard } from './components/EventBillboard.jsx';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
 import { NewShit } from './components/NewShit.jsx';
@@ -36,6 +37,54 @@ export default function App() {
   }, [meter.activate, audio.playTrack]);
   const [activeMood, setActiveMood] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [carteleraOpen, setCarteleraOpen] = useState(
+    () => typeof window !== 'undefined' && window.location.hash === '#cartelera'
+  );
+
+  useEffect(() => {
+    const syncCartelera = () => {
+      setCarteleraOpen(window.location.hash === '#cartelera');
+    };
+    window.addEventListener('hashchange', syncCartelera);
+    window.addEventListener('popstate', syncCartelera);
+    return () => {
+      window.removeEventListener('hashchange', syncCartelera);
+      window.removeEventListener('popstate', syncCartelera);
+    };
+  }, []);
+
+  const openCartelera = useCallback(() => {
+    setCarteleraOpen(true);
+    if (window.location.hash !== '#cartelera') {
+      window.history.pushState(null, '', '#cartelera');
+    }
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('cartelera')?.scrollIntoView({
+          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+            ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      });
+    });
+  }, []);
+
+  const closeCartelera = useCallback((returnToPlayer = false) => {
+    setCarteleraOpen(false);
+    if (window.location.hash === '#cartelera') {
+      window.history.replaceState(
+        null, '', window.location.pathname + window.location.search
+      );
+    }
+    if (returnToPlayer) {
+      window.requestAnimationFrame(() => {
+        document.getElementById('reproductor')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+  }, []);
 
   const openSearch = useCallback(() => {
     setSearchOpen(true);
@@ -84,6 +133,9 @@ export default function App() {
           onAir={Boolean(data.now?.playing)}
           elapsed={data.now?.track?.elapsed}
           onOpenSearch={openSearch}
+          onOpenCartelera={openCartelera}
+          onCloseCartelera={closeCartelera}
+          carteleraOpen={carteleraOpen}
           analyserRef={meter.analyserRef}
           listening={audio.listening}
         />
@@ -124,6 +176,10 @@ export default function App() {
               mode={audio.mode}
               selectedTrack={audio.selectedTrack}
             />
+          ) : null}
+
+          {carteleraOpen ? (
+            <EventBillboard onClose={() => closeCartelera(true)} />
           ) : null}
 
           <div className="content__grid">
