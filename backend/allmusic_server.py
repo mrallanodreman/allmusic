@@ -600,7 +600,7 @@ class AllMusicServer:
             logger.error(f"❌ Error en stream rapidapi: {str(e)}")
             return None
 
-    def resolve_ytdlp_url(self, video_id):
+    def resolve_ytdlp_url(self, video_id, timeout=30, extra_clients=True):
         """URL directa de audio resuelta por yt-dlp local, o '' si falla.
 
         El client forzado (web_embedded,tv,android) era un parche contra el
@@ -616,13 +616,12 @@ class AllMusicServer:
                 '--get-url', '--no-warnings', '--no-update',
                 '--no-cookies',
             ]
-            commands = [
-                base_cmd + [url],
-                base_cmd + ['--extractor-args', 'youtube:player_client=web_embedded,tv,android', url],
-            ]
+            commands = [base_cmd + [url]]
+            if extra_clients:
+                commands.append(base_cmd + ['--extractor-args', 'youtube:player_client=web_embedded,tv,android', url])
             for cmd in commands:
                 try:
-                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
                 except subprocess.TimeoutExpired:
                     logger.warning(f"⏱️ yt-dlp timeout para {video_id}; probando siguiente client")
                     continue
@@ -635,10 +634,10 @@ class AllMusicServer:
             logger.error(f"❌ resolve_ytdlp_url: {e}")
             return ''
 
-    def stream_via_ytdlp(self, video_id):
+    def stream_via_ytdlp(self, video_id, timeout=30, extra_clients=True):
         """Stream usando yt-dlp (sin cookies de navegador)"""
         try:
-            audio_url = self.resolve_ytdlp_url(video_id)
+            audio_url = self.resolve_ytdlp_url(video_id, timeout=timeout, extra_clients=extra_clients)
             if audio_url:
                 logger.info(f"✅ yt-dlp URL obtenida para {video_id}")
                 headers = {
@@ -737,9 +736,10 @@ def stream(video_id):
         if video_id.startswith('UC'):
             return jsonify({'error': 'ID de canal'}), 400
 
-        # El player legacy necesita primer byte rápido. En Railway, yt-dlp suele
-        # consumir 15-30 s antes de fallar; ?fast=1 salta esa penalización y usa
-        # directamente el proveedor estable/caché.
+        # El player necesita primer byte rápido. ?fast=1 acorta el timeout de
+        # yt-dlp, pero NO lo omite: RapidAPI está sin cuota y devolver un JSON
+        # 502 provoca el error de formato en el navegador ("The media
+        # resource ... was not suitable").
         fast_mode = request.args.get('fast') == '1'
 
         # Si ya existe un enlace resuelto, úsalo antes de volver a ejecutar yt-dlp.
@@ -753,13 +753,12 @@ def stream(video_id):
                 music_server.cache_pop(video_id)
 
         # PRIMARIO para clientes modernos: yt-dlp (YouTube directo, sin cookies).
-        if not fast_mode:
-            ytdlp_response = music_server.stream_via_ytdlp(video_id)
-            if ytdlp_response:
-                return ytdlp_response
-            logger.warning(f"⚠️ yt-dlp falló para {video_id}, fallback RapidAPI")
-        else:
-            logger.info(f"⚡ fast stream para {video_id}: omitiendo yt-dlp")
+        ytdlp_response = music_server.stream_via_ytdlp(
+            video_id, timeout=12 if fast_mode else 30
+        )
+        if ytdlp_response:
+            return ytdlp_response
+        logger.warning(f"⚠️ yt-dlp falló para {video_id}, fallback RapidAPI")
 
         # FALLBACK / FAST: RapidAPI + proxy residencial
         music_server._cache_prune()

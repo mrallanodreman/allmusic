@@ -77,8 +77,8 @@ export function searchTracks(query, { signal, limit = 12 } = {}) {
 
 const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 
-/* Stream local en el mismo origen. fast=1 reutiliza el cache y el proveedor
-   rápido del backend; evita generar URLs externas sin validar. */
+/* Stream local en el mismo origen. fast=1 reduce el timeout de yt-dlp en el
+   backend; evita generar URLs externas sin validar. */
 export function getTrackStreamUrl(videoId) {
   const id = normalizeText(videoId, 16);
   return YOUTUBE_VIDEO_ID.test(id) ? endpoint(`/stream/${encodeURIComponent(id)}?fast=1`) : null;
