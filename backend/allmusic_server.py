@@ -439,7 +439,8 @@ class AllMusicServer:
                 logger.warning(f"⚠️ No se pudo verificar duración: {e}")
 
             if not RAPIDAPI_KEYS:
-                return {'success': False, 'error': 'RAPIDAPI_KEY no configurada'}
+                fallback = self._convert_via_local_fallback(video_id)
+                return fallback or {'success': False, 'error': 'RAPIDAPI_KEY no configurada'}
 
             quota_errors = []
             for key_index, api_key in enumerate(RAPIDAPI_KEYS):
@@ -563,9 +564,16 @@ class AllMusicServer:
             if rng:
                 headers['Range'] = rng
 
-            response = requests.get(mp3_url, headers=headers, stream=True, timeout=(10, None))
+            # El proxy residencial requiere el mismo token que /convert.
+            # No enviar credenciales a URLs de otros proveedores ni seguir redirects autenticados.
+            fallback_prefix = YTFALLBACK_URL.rstrip('/') + '/stream/' if YTFALLBACK_URL else ''
+            is_fallback = bool(fallback_prefix and mp3_url.startswith(fallback_prefix))
+            if is_fallback and YTFALLBACK_TOKEN:
+                headers['X-Fallback-Token'] = YTFALLBACK_TOKEN
+            response = requests.get(mp3_url, headers=headers, stream=True, timeout=(10, 30), allow_redirects=not is_fallback)
             if response.status_code not in (200, 206):
-                logger.warning(f"⚠️ RapidAPI stream status {response.status_code} para {mp3_url}")
+                logger.warning(f"⚠️ RapidAPI stream status {response.status_code}")
+                response.close()
                 return None
 
             out_headers = {
@@ -576,7 +584,11 @@ class AllMusicServer:
             # Safari/iOS valida que el MIME coincida con el contenedor real.
             # Los fallbacks suelen entregar M4A con Content-Type video/mp4; marcarlo
             # como audio/mpeg hace que Safari legacy descarte el stream sin reproducir.
-            ctype = response.headers.get('Content-Type', 'audio/mpeg').split(';', 1)[0].strip().lower()
+            ctype = response.headers.get('Content-Type', 'application/octet-stream').split(';', 1)[0].strip().lower()
+            if ctype.startswith('text/') or ctype in ('application/json', 'application/problem+json', 'application/xml'):
+                logger.warning('Proveedor devolvió contenido no multimedia: %s', ctype)
+                response.close()
+                return None
             if ctype in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
                 ctype = 'audio/mp4'
             elif ctype in ('video/webm', 'application/webm'):
@@ -652,7 +664,11 @@ class AllMusicServer:
                     headers['Range'] = client_range
                 response = requests.get(audio_url, headers=headers, stream=True, timeout=(10, None))
                 if response.status_code in [200, 206]:
-                    upstream_type = response.headers.get('Content-Type', 'audio/mp4').split(';', 1)[0].strip().lower()
+                    upstream_type = response.headers.get('Content-Type', 'application/octet-stream').split(';', 1)[0].strip().lower()
+                    if upstream_type.startswith('text/') or upstream_type in ('application/json', 'application/problem+json', 'application/xml'):
+                        logger.warning('yt-dlp devolvió contenido no multimedia: %s', upstream_type)
+                        response.close()
+                        return None
                     if upstream_type in ('video/mp4', 'application/mp4', 'audio/x-m4a'):
                         upstream_type = 'audio/mp4'
                     elif upstream_type in ('video/webm', 'application/webm'):
@@ -675,6 +691,7 @@ class AllMusicServer:
                         headers=out_headers,
                         direct_passthrough=True,
                     )
+                response.close()
             logger.warning(f"⚠️ yt-dlp falló para {video_id}, usando fallback RapidAPI")
             return None
         except subprocess.TimeoutExpired:
