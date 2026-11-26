@@ -46,6 +46,16 @@ def test_articulo_es_html_indexable_con_canonical_y_schema(client):
     assert 'Escuchar APNEA' in html
 
 
+def test_articulo_de_vittorio_destaca_thats_the_deal(client):
+    r = client.get('/blog/vittorio-kultururbana-2026/')
+    assert r.status_code == 200
+    html = r.get_data(as_text=True)
+    assert '<h1>Vittorio: That&#x27;s the deal, La Antorcha y el cruce con KulturURBANA</h1>' in html
+    assert 'href="https://www.deezer.com/track/4311376602"' in html
+    assert 'rel="noopener noreferrer"' in html
+    assert 'Ukumari MC' in html
+
+
 def test_articulo_inexistente_da_404(client):
     assert client.get('/blog/no-existe/').status_code == 404
 

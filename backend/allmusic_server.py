@@ -1234,7 +1234,8 @@ def _blog_article_html(article):
     )
     track = ''
     if article.get('trackHref'):
-        track = ('<a class="listen-main" href="' + esc(article['trackHref']) + '">▶ Escuchar '
+        external = ' target="_blank" rel="noopener noreferrer"' if article['trackHref'].startswith('http') else ''
+        track = ('<a class="listen-main"' + external + ' href="' + esc(article['trackHref']) + '">▶ Escuchar '
                  + esc(article.get('trackTitle', '')) + '</a>')
     schema = {
         '@context': 'https://schema.org',

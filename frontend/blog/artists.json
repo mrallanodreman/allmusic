@@ -65,17 +65,17 @@
       "artist": "Vittorio",
       "fullName": "VITTORIO × LA ANTORCHA",
       "tag": "URBANO · ECUADOR",
-      "title": "Vittorio en Quito: de KulturURBANA 2026 a la rotación de MfMood",
-      "description": "El artista venezolano que compartió escenario con La Antorcha y Rayo Pluzz en Plaza Belmonte. Contexto de la presentación y cómo escuchar SÓLIDO en MfMood.",
+      "title": "Vittorio: That's the deal, La Antorcha y el cruce con KulturURBANA",
+      "description": "La canción That's the deal de Vittorio, con Ukumari MC e Iñaki The Common, salió en La Antorcha (2026). Contexto del álbum y del escenario de KulturURBANA en Quito.",
       "image": "/assets/newshit/vittorio.webp",
       "imageAlt": "Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito",
       "published": "2026-11-26",
       "updated": "2026-11-26",
       "readingMinutes": 4,
-      "trackTitle": "SÓLIDO",
-      "trackArtist": "VITTORIO",
-      "trackHref": "/cancion/vittorio/solido",
-      "intro": "La escena urbana de Quito tuvo un momento de cruce el 17 de noviembre de 2026: Vittorio, La Antorcha y Rayo Pluzz compartieron escenario en Plaza Belmonte, en el marco de KulturURBANA. Esta ficha reúne el contexto de esa presentación y el camino para escuchar a Vittorio dentro de MfMood.",
+      "trackTitle": "That's the deal (feat. Ukumari MC & Iñaki The Common)",
+      "trackArtist": "Vittorio",
+      "trackHref": "https://www.deezer.com/track/4311376602",
+      "intro": "La escena urbana de Quito tuvo un momento de cruce el 17 de noviembre de 2026: Vittorio, La Antorcha y Rayo Pluzz compartieron escenario en Plaza Belmonte, en el marco de KulturURBANA. Esta ficha reúne el contexto de esa presentación y el camino para escuchar That's the deal, el corte del álbum La Antorcha que MfMood destaca esta semana.",
       "sections": [
         {
           "heading": "Plaza Belmonte, 17 de noviembre",
@@ -92,16 +92,16 @@
           ]
         },
         {
-          "heading": "SÓLIDO en la rotación de MfMood",
+          "heading": "That's the deal, el corte que promocionamos",
           "paragraphs": [
-            "En la sección NEWSHIT de MfMood, Vittorio aparece con SÓLIDO. El tema se reproduce desde un archivo local del sitio, igual que APNEA, de modo que la tarjeta sigue funcionando cuando los servicios externos de conversión no responden. El botón de la carátula vuelve a la radio 24/7; el texto abre esta ficha.",
-            "La ficha de SÓLIDO permite además ver la letra cuando está disponible y seguir escuchando desde el reproductor, sin registro. Es la forma más corta de pasar de la crónica a la música."
+            "En la sección NEWSHIT de MfMood, Vittorio aparece con That's the deal, una colaboración con Ukumari MC e Iñaki The Common. El tema dura 2:55 y ocupa el séptimo lugar de La Antorcha, el álbum publicado el 27 de septiembre de 2026. La carátula vuelve a la radio 24/7; el texto abre esta ficha.",
+            "El botón de escuchar lleva a la ficha oficial del tema en Deezer, donde la pista está disponible completa. Aquí no la alojamos ni la convertimos: preferimos enlazar la fuente legítima y dejar que MfMood aporte el contexto, la crónica y el acceso directo."
           ]
         },
         {
           "heading": "Por qué lo documentamos",
           "paragraphs": [
-            "MfMood no solo ordena canciones: también conserva el contexto en el que se hicieron. Esta ficha existe para que una búsqueda sobre Vittorio, KulturURBANA o La Antorcha encuentre una descripción clara, enlaces útiles y una forma de escuchar inmediata.",
+            "MfMood no solo ordena canciones: también conserva el contexto en el que se hicieron. Esta ficha existe para que una búsqueda sobre Vittorio, That's the deal, KulturURBANA o La Antorcha encuentre una descripción clara, enlaces útiles y una forma de escuchar inmediata.",
             "La crónica fotográfica original pertenece a Edge Journal y sigue siendo la fuente de las imágenes del evento. Aquí solo la citamos como referencia; el texto y la selección de audio son propios."
           ]
         }
@@ -109,15 +109,19 @@
       "facts": [
         { "label": "Presentación", "value": "KulturURBANA 2026 · 17 nov 2026" },
         { "label": "Lugar", "value": "Plaza Belmonte, Quito" },
-        { "label": "Con", "value": "La Antorcha y Rayo Pluzz" },
-        { "label": "Tema en MfMood", "value": "SÓLIDO" }
+        { "label": "En vivo", "value": "La Antorcha y Rayo Pluzz" },
+        { "label": "Álbum", "value": "La Antorcha · 27 sep 2026" },
+        { "label": "Tema destacado", "value": "That's the deal · 2:55" },
+        { "label": "Con", "value": "Ukumari MC e Iñaki The Common" },
+        { "label": "Pista", "value": "7 de 13 · 40 min" }
       ],
       "listen": [
+        { "label": "That's the deal en Deezer", "url": "https://www.deezer.com/track/4311376602" },
+        { "label": "Álbum La Antorcha", "url": "https://www.deezer.com/album/1106782502" },
         { "label": "Perfil en Spotify", "url": "https://open.spotify.com/artist/68KQJLdGKglAFPQNeA3dt8" },
-        { "label": "Canal en YouTube", "url": "https://www.youtube.com/channel/UCpqhDQasMJgmhDlHAPND3CA" },
         { "label": "Crónica fotográfica", "url": "https://edgemarketing.tech/blog/vittorio-artista-venezolano-ecuador/" }
       ],
-      "credit": "Texto y selección musical: MfMood. Fotografías del evento: archivo de Edge Marketing Agency, SAM series."
+      "credit": "Texto y selección musical: MfMood. Datos del tema: Deezer. Fotografías del evento: archivo de Edge Marketing Agency, SAM series."
     }
   ]
 }
