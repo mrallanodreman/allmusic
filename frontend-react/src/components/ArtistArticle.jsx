@@ -111,7 +111,13 @@ export function ArtistArticle({ slug, onClose }) {
           <aside className="artist-article__listen">
             <h3>Escuchar ahora</h3>
             {article.trackHref ? (
-              <a className="artist-article__track" href={article.trackHref}>
+              <a
+                className="artist-article__track"
+                href={article.trackHref}
+                {...(article.trackHref.startsWith('http')
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
                 ▶ Escuchar {article.trackTitle}
               </a>
             ) : null}

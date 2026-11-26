@@ -1646,6 +1646,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .newshit__summary em {
   font: 800 9px/1 var(--font-mono); font-style: normal; letter-spacing: .06em; color: var(--yellow);
 }
+.newshit__promo {
+  justify-self: start; padding: 2px 5px; background: var(--yellow); color: var(--ink);
+  font: 800 8px/1 var(--font-mono); letter-spacing: .06em;
+}
 .newshit__mini {
   display: flex; align-items: center; gap: 8px; padding: 7px 8px;
   background: var(--paper-light); border: 2px solid var(--ink);
