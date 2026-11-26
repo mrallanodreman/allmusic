@@ -15,6 +15,7 @@ export default defineConfig({
       '/status': 'http://127.0.0.1:2426',
       // Mismo buscador y reproductor usados por AllMusic clásico.
       '/search': 'http://127.0.0.1:2426',
+      '/blog': 'http://127.0.0.1:2426',
       '/convert': 'http://127.0.0.1:2426',
       '/stream': 'http://127.0.0.1:2426',
     },

@@ -15,6 +15,7 @@ import { toPersonalTrack } from './lib/libraryApi.js';
 import { RequestBar } from './components/RequestBar.jsx';
 import { MoodBoard } from './components/MoodBoard.jsx';
 import { NewShit } from './components/NewShit.jsx';
+import { ArtistArticle } from './components/ArtistArticle.jsx';
 import { CommunityCarousel } from './components/CommunityCarousel.jsx';
 import { TopRequested } from './components/TopRequested.jsx';
 import { QueuePanel } from './components/QueuePanel.jsx';
@@ -41,6 +42,8 @@ export default function App() {
   const [personalQueue, setPersonalQueue] = useState([]);
   const [personalIndex, setPersonalIndex] = useState(0);
   const [historyVersion, setHistoryVersion] = useState(0);
+  // Artículo NEWSHIT abierto inline, justo debajo del reproductor principal.
+  const [articleSlug, setArticleSlug] = useState(null);
 
   const playOne = useCallback((item) => {
     const track = toPersonalTrack(item);
@@ -281,6 +284,8 @@ export default function App() {
             canNextPersonal={personalQueue.length > 1}
           />
 
+          <ArtistArticle slug={articleSlug} onClose={() => setArticleSlug(null)} />
+
           {searchOpen ? (
             <TrackSearchPanel
               onClose={closeSearch}
@@ -337,6 +342,7 @@ export default function App() {
             onToggle={handleToggleAudio}
             onPlayTrack={handlePlaySelection}
             onRadio={handleReturnRadio}
+            onOpenArticle={setArticleSlug}
             audioError={audio.error}
             analyserRef={meter.analyserRef}
           />

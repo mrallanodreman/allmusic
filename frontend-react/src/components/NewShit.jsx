@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icons.jsx';
 import { AudioReactiveMeter } from './AudioReactiveMeter.jsx';
+import { Equalizer } from './Equalizer.jsx';
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/newshit/${name}`;
 // safeUrl solo acepta https absoluto o rutas relativas seguras; dejamos la
@@ -14,6 +15,7 @@ const assetHref = (name) => `${new URL(asset(name), window.location.href).pathna
 const ARTISTS = [
   {
     name: 'Razimbrain',
+    slug: 'razimbrain-apnea-lxxi',
     fullName: 'Razimbrein, LA MENTE',
     tag: 'HIP-HOP · MÉXICO',
     id: '-BjoKWAuDVY',
@@ -29,6 +31,7 @@ const ARTISTS = [
   },
   {
     name: 'Vittorio',
+    slug: 'vittorio-kultururbana-2026',
     fullName: 'VITTORIO × LA ANTORCHA',
     tag: 'URBANO · ECUADOR',
     id: '6rzlzB2zq_0',
@@ -40,7 +43,7 @@ const ARTISTS = [
     image: asset('vittorio.webp'),
     alt: 'Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito',
     summary:
-      'Artista venezolano que compartió escenario con La Antorcha y Rayo Pluzz en KulturURBANA 2026, Plaza Belmonte, Quito. Crónica fotográfica publicada en el blog de edgemarketing.tech.',
+      'Artista venezolano que compartió escenario con La Antorcha y Rayo Pluzz en KulturURBANA 2026, Plaza Belmonte, Quito. La ficha completa, con contexto y audio, está en MfMood.',
   },
 ];
 
@@ -61,7 +64,7 @@ function useReducedMotion() {
   return reduce;
 }
 
-export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, onRadio, audioError, analyserRef }) {
+export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, onRadio, onOpenArticle, audioError, analyserRef }) {
   const [index, setIndex] = useState(0);
   const [hold, setHold] = useState(false);
   const [status, setStatus] = useState('');
@@ -91,6 +94,14 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
     if (mode !== 'radio' || !playing) onRadio();
     setStatus(`Radio desplegado · recomendado: ${artist.name}`);
   }, [artist.name, mode, onRadio, playing, reduceMotion]);
+
+  // El texto de la portada abre la ficha del artista justo debajo del reproductor.
+  // Si el componente se usa fuera de App, la versión permanente sigue funcionando.
+  const openArticle = useCallback(() => {
+    setStatus(`Abriendo ficha de ${artist.name}`);
+    if (onOpenArticle) onOpenArticle(artist.slug);
+    else window.location.assign(`/blog/${artist.slug}/`);
+  }, [artist.name, artist.slug, onOpenArticle]);
 
   const toggleTrack = useCallback(() => {
     if (isThisTrack) {
@@ -132,31 +143,40 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
 
       <div className="newshit__stage">
         <article className="newshit__card" key={artist.name}>
-          <button
-            type="button"
-            className="newshit__open"
-            onClick={openRadio}
-            aria-label={`Desplegar el radio y escuchar a ${artist.name}`}
-          >
-            <span className="newshit__sleeve-wrap">
-              <span className={`newshit__disc ${sounding ? 'newshit__disc--spin' : ''}`} aria-hidden="true">
-                <span className="newshit__disc-label">{artist.name}</span>
+          <div className="newshit__cover">
+            <button
+              type="button"
+              className="newshit__open"
+              onClick={openRadio}
+              aria-label={`Desplegar el radio y escuchar a ${artist.name}`}
+            >
+              <span className="newshit__sleeve-wrap">
+                <span className={`newshit__disc ${sounding ? 'newshit__disc--spin' : ''}`} aria-hidden="true">
+                  <span className="newshit__disc-label">{artist.name}</span>
+                </span>
+                <img
+                  className="newshit__sleeve"
+                  src={artist.image}
+                  alt={artist.alt}
+                  width="400"
+                  height="400"
+                  fetchPriority="high"
+                />
               </span>
-              <img
-                className="newshit__sleeve"
-                src={artist.image}
-                alt={artist.alt}
-                width="400"
-                height="400"
-                fetchPriority="high"
-              />
+            </button>
+            <button
+              type="button"
+              className="newshit__read"
+              onClick={openArticle}
+              aria-label={`Leer el artículo de ${artist.name} debajo del reproductor`}
+            >
               <span className="newshit__summary">
                 <strong>{artist.fullName}</strong>
                 <span>{artist.summary}</span>
-                <em>ABRIR RADIO →</em>
+                <em>LEER ARTÍCULO →</em>
               </span>
-            </span>
-          </button>
+            </button>
+          </div>
 
           <div className="newshit__mini">
             <button
@@ -178,6 +198,9 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
               ? <AudioReactiveMeter active={sounding} analyserRef={analyserRef} variant="compact" />
               : <Equalizer active={sounding} compact />}
           </div>
+          <button type="button" className="newshit__read-link" onClick={openArticle}>
+            Leer ficha de {artist.name} →
+          </button>
           {audioError && isThisTrack ? (
             <p className="newshit__error" role="alert">{audioError}</p>
           ) : null}

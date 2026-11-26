@@ -1582,15 +1582,26 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .newshit .section-head__hint { font-size: 9px; }
 .newshit__stage { display: grid; }
 .newshit__card { display: grid; gap: 12px; min-width: 0; }
+.newshit__cover { position: relative; width: min(62%, 180px); margin: 0 auto 0 0; }
 .newshit__open {
   display: block; width: 100%; padding: 0; border: 0; background: none;
   color: inherit; text-align: left; cursor: pointer;
 }
 .newshit__open:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 .newshit__sleeve-wrap {
-  position: relative; display: block; width: min(62%, 180px); aspect-ratio: 1;
-  margin: 0 auto 0 0; filter: drop-shadow(4px 5px 0 var(--ink));
+  position: relative; display: block; width: 100%; aspect-ratio: 1;
+  filter: drop-shadow(4px 5px 0 var(--ink));
 }
+/* Mitad inferior de la portada = ficha del artista; mitad superior = radio. */
+.newshit__read {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 48%;
+  padding: 0; border: 0; background: none; color: inherit; text-align: left;
+  cursor: pointer; opacity: 0; transform: translateY(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.newshit__read:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; opacity: 1; transform: none; }
+.newshit__cover:hover .newshit__read,
+.newshit__cover:focus-within .newshit__read { opacity: 1; transform: none; }
 .newshit__disc {
   position: absolute; z-index: 0; top: 8%; right: -42%; width: 84%; aspect-ratio: 1;
   border-radius: 50%; border: 3px solid var(--ink);
@@ -1625,8 +1636,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   opacity: 0; transform: translateY(6px);
   transition: opacity 180ms ease, transform 180ms ease;
 }
-.newshit__open:hover .newshit__summary,
-.newshit__open:focus-visible .newshit__summary { opacity: 1; transform: none; }
+.newshit__cover:hover .newshit__summary,
+.newshit__cover:focus-within .newshit__summary { opacity: 1; transform: none; }
+@media (hover: none) {
+  .newshit__read, .newshit__summary { opacity: 1; transform: none; }
+}
 .newshit__summary strong { font-family: var(--font-display); font-size: 13px; line-height: 1; }
 .newshit__summary > span { font-size: 9px; line-height: 1.35; }
 .newshit__summary em {
@@ -1661,6 +1675,13 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   margin: 6px 0 0; padding: 5px 7px; font: 700 9px/1.3 var(--font-mono);
   color: var(--ink); background: var(--yellow); border: 2px solid var(--ink);
 }
+.newshit__read-link {
+  justify-self: start; padding: 3px 0; border: 0; background: none;
+  color: var(--cyan); font: 800 9px/1.2 var(--font-mono); letter-spacing: .04em;
+  text-transform: uppercase; cursor: pointer;
+}
+.newshit__read-link:hover { color: var(--yellow); }
+.newshit__read-link:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .newshit__dots { display: flex; justify-content: center; gap: 7px; margin-top: 12px; }
 .newshit__dot {
   width: 10px; height: 10px; padding: 0; border: 2px solid var(--ink);
@@ -1678,6 +1699,49 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 @media (prefers-reduced-motion: no-preference) {
   .newshit__disc--spin { animation: newshit-spin 9s linear infinite; }
   .newshit__card { animation: newshit-in 380ms ease-out both; }
+}
+
+/* --- Artículo NEWSHIT abierto inline, debajo del reproductor --- */
+.artist-article { margin-top: 2px; padding: 18px 20px 20px; }
+.artist-article__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.artist-article__kicker { font: 700 10px/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--magenta); margin: 0; }
+.artist-article__close {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center;
+  border: 2px solid var(--ink); background: var(--paper-light); color: var(--ink);
+  font: 800 12px/1 var(--font-mono); cursor: pointer;
+}
+.artist-article__close:hover { background: var(--yellow); }
+.artist-article__close:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.artist-article__title { font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--paper); margin: 0 0 8px; }
+.artist-article__lede { color: var(--paper-light); font-size: 13px; line-height: 1.5; margin: 0 0 16px; }
+.artist-article__layout { display: grid; grid-template-columns: minmax(120px, 190px) 1fr; gap: 16px; align-items: start; }
+.artist-article__image { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border: 3px solid var(--ink); transform: rotate(-1deg); }
+.artist-article__intro p { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: #d8dbe1; }
+.artist-article__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.artist-article__facts div { background: var(--paper-light); color: var(--ink); border-left: 3px solid var(--magenta); padding: 6px 8px; }
+.artist-article__facts dt { font: 800 8px/1.2 var(--font-mono); text-transform: uppercase; color: #8a223c; }
+.artist-article__facts dd { margin: 2px 0 0; font-size: 11px; line-height: 1.3; }
+.artist-article__section { margin-top: 18px; }
+.artist-article__section h3, .artist-article__listen h3 {
+  font: 800 12px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em;
+  color: var(--yellow); margin: 0 0 6px;
+}
+.artist-article__section p { margin: 0 0 8px; font-size: 12px; line-height: 1.65; color: #d8dbe1; }
+.artist-article__listen { margin-top: 18px; padding: 12px; border: 2px dashed var(--paper-light); }
+.artist-article__track {
+  display: inline-block; margin-bottom: 8px; padding: 7px 12px; background: var(--yellow);
+  color: var(--ink) !important; font: 800 11px/1 var(--font-mono); text-decoration: none;
+}
+.artist-article__listen ul { margin: 0; padding-left: 16px; font-size: 11px; }
+.artist-article__listen li { margin: 3px 0; }
+.artist-article__listen a, .artist-article__permalink, .artist-article__error a { color: var(--cyan); }
+.artist-article__credit { margin: 16px 0 8px; color: #969da8; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.artist-article__permalink { font: 800 10px/1.3 var(--font-mono); }
+.artist-article__error, .artist-article__loading { font-size: 12px; padding: 8px; border: 2px solid var(--magenta); }
+@media (max-width: 640px) {
+  .artist-article { padding: 14px 12px 16px; }
+  .artist-article__layout { grid-template-columns: 1fr; }
+  .artist-article__title { font-size: 19px; }
 }
 
 /* --- Ranking / cola / historial: papeles recortados y pegados --- */
