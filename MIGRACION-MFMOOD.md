@@ -338,3 +338,10 @@ Sus resultados están fusionados en este archivo. Revisión adversarial adiciona
 - [x] **Alta en AdSense ejecutada (2026-11-26):** sesión ya autenticada en BrowserOS; sitio `mfmood.com` añadido al publisher `pub-3871344948149274`, verificado por `ads.txt` (el snippet coincide con `frontend/ads.txt`) y **revisión solicitada**. Estado: `Debe revisarse`/`Preparando`. Auto Ads está **DESACTIVADO** hasta aprobación (el toggle no persiste mientras el sitio no está aprobado); el script y el slot manual ya están desplegados, así que la aprobación solo activa la entrega. El flag viejo "Contenido de poco valor" sigue en `edgemarketing.art`, no en `mfmood.com`.
 - [ ] Tras aprobación de Google: confirmar que Auto Ads queda `ACTIVADO` y revisar GSC/GA4 con el dominio nuevo.
 - [ ] Tras el deploy: comprobar en el HTML servido canonical `https://mfmood.com/`, script de AdSense, `ads.txt` 200 y consola sin errores CSP.
+
+## Fase 5c — Google Search Console (2026-11-26)
+
+- [x] Alta y verificación de `mfmood.com` como **propiedad de dominio** (`sc-domain:mfmood.com`, no prefijo de URL). Verificación por registro TXT `google-site-verification` en la zona Cloudflare `8976ef1c97d40e36737da522b7c9c9a7` (registro ID `7efc9400025f79cb40a20a4225ccd634`, DNS-only, visible en 1.1.1.1). El selector de propiedades ya lista `sc-domain:mfmood.com` y abre el panel completo.
+- [x] Sitemap enviado: `https://mfmood.com/sitemap.xml` → estado **Correcto**, 8 páginas descubiertas, 0 vídeos (lectura del 26-nov-2026).
+- [x] Indexación solicitada para `https://mfmood.com/` desde Inspección de URLs ("Se ha solicitado la indexación"); Google aún no reconoce la URL como indexada, es normal en un dominio nuevo.
+- [ ] Verificar en los próximos días que `https://mfmood.com/` aparece como indexada y revisar consultas/impresiones en GSC y tráfico en GA4 `G-39LMF2SGY4`.
