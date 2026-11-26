@@ -51,8 +51,9 @@ def test_articulo_de_vittorio_destaca_thats_the_deal(client):
     assert r.status_code == 200
     html = r.get_data(as_text=True)
     assert '<h1>Vittorio: That&#x27;s the deal, La Antorcha y el cruce con KulturURBANA</h1>' in html
-    assert 'href="https://www.deezer.com/track/4311376602"' in html
-    assert 'rel="noopener noreferrer"' in html
+    assert 'href="/cancion/vittorio/thats-the-deal"' in html
+    assert 'https://www.youtube.com/watch?v=tVp4r66lejw' in html
+    assert 'https://www.deezer.com/track/4311376602' in html
     assert 'Ukumari MC' in html
 
 

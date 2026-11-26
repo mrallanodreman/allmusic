@@ -74,7 +74,7 @@
       "readingMinutes": 4,
       "trackTitle": "That's the deal (feat. Ukumari MC & Iñaki The Common)",
       "trackArtist": "Vittorio",
-      "trackHref": "https://www.deezer.com/track/4311376602",
+      "trackHref": "/cancion/vittorio/thats-the-deal",
       "intro": "La escena urbana de Quito tuvo un momento de cruce el 17 de noviembre de 2026: Vittorio, La Antorcha y Rayo Pluzz compartieron escenario en Plaza Belmonte, en el marco de KulturURBANA. Esta ficha reúne el contexto de esa presentación y el camino para escuchar That's the deal, el corte del álbum La Antorcha que MfMood destaca esta semana.",
       "sections": [
         {
@@ -95,7 +95,7 @@
           "heading": "That's the deal, el corte que promocionamos",
           "paragraphs": [
             "En la sección NEWSHIT de MfMood, Vittorio aparece con That's the deal, una colaboración con Ukumari MC e Iñaki The Common. El tema dura 2:55 y ocupa el séptimo lugar de La Antorcha, el álbum publicado el 27 de septiembre de 2026. La carátula vuelve a la radio 24/7; el texto abre esta ficha.",
-            "El botón de escuchar lleva a la ficha oficial del tema en Deezer, donde la pista está disponible completa. Aquí no la alojamos ni la convertimos: preferimos enlazar la fuente legítima y dejar que MfMood aporte el contexto, la crónica y el acceso directo."
+            "El botón de escuchar reproduce el tema dentro de MfMood, en el mismo reproductor del sitio. El video oficial en YouTube y la ficha de Deezer quedan como referencias, para quien quiera ver la fuente original o seguir al artista fuera de la radio."
           ]
         },
         {
@@ -116,7 +116,8 @@
         { "label": "Pista", "value": "7 de 13 · 40 min" }
       ],
       "listen": [
-        { "label": "That's the deal en Deezer", "url": "https://www.deezer.com/track/4311376602" },
+        { "label": "Video oficial en YouTube", "url": "https://www.youtube.com/watch?v=tVp4r66lejw" },
+        { "label": "Ficha en Deezer", "url": "https://www.deezer.com/track/4311376602" },
         { "label": "Álbum La Antorcha", "url": "https://www.deezer.com/album/1106782502" },
         { "label": "Perfil en Spotify", "url": "https://open.spotify.com/artist/68KQJLdGKglAFPQNeA3dt8" },
         { "label": "Crónica fotográfica", "url": "https://edgemarketing.tech/blog/vittorio-artista-venezolano-ecuador/" }
