@@ -345,3 +345,11 @@ Sus resultados están fusionados en este archivo. Revisión adversarial adiciona
 - [x] Sitemap enviado: `https://mfmood.com/sitemap.xml` → estado **Correcto**, 8 páginas descubiertas, 0 vídeos (lectura del 26-nov-2026).
 - [x] Indexación solicitada para `https://mfmood.com/` desde Inspección de URLs ("Se ha solicitado la indexación"); Google aún no reconoce la URL como indexada, es normal en un dominio nuevo.
 - [ ] Verificar en los próximos días que `https://mfmood.com/` aparece como indexada y revisar consultas/impresiones en GSC y tráfico en GA4 `G-39LMF2SGY4`.
+
+## Fase 5d — Blog SEO de artistas en NEWSHIT (2026-11-26)
+
+- [x] Fichas indexables en `mfmood.com`: `/blog/razimbrain-apnea-lxxi/` y `/blog/vittorio-kultururbana-2026/`, servidas como HTML real por `backend/allmusic_server.py` con canonical propio, `Article` + `BreadcrumbList` en JSON-LD, Open Graph y `lang="es"`. La fuente única es `frontend/blog/artists.json`; la UI y la versión permanente no divergen.
+- [x] El texto de la tarjeta NEWSHIT abre la ficha **inline justo debajo del reproductor** (`ArtistArticle.jsx`), sin salir de la portada. La carátula sigue llevando al radio 24/7 y el artículo conserva un enlace permanente para compartir. En pantallas táctiles el texto de la ficha se muestra siempre.
+- [x] `sitemap.xml` incluye las dos URLs nuevas (10 en total). Sitemap enviado a GSC antes de este cambio: volver a enviarlo tras el deploy para que descubra las fichas.
+- [x] Verificación local: `pytest` 17/17, `npm run build` OK, JSON válido. Commits `7e0b51b` (backend/datos/sitemap) y `9818e5b` (UI) pusheados a `master`.
+- [ ] Tras el deploy: confirmar `/blog/artists.json` y las dos fichas 200, volver a enviar el sitemap en GSC y solicitar indexación de las fichas.
