@@ -352,4 +352,5 @@ Sus resultados están fusionados en este archivo. Revisión adversarial adiciona
 - [x] El texto de la tarjeta NEWSHIT abre la ficha **inline justo debajo del reproductor** (`ArtistArticle.jsx`), sin salir de la portada. La carátula sigue llevando al radio 24/7 y el artículo conserva un enlace permanente para compartir. En pantallas táctiles el texto de la ficha se muestra siempre.
 - [x] `sitemap.xml` incluye las dos URLs nuevas (10 en total). Sitemap enviado a GSC antes de este cambio: volver a enviarlo tras el deploy para que descubra las fichas.
 - [x] Verificación local: `pytest` 17/17, `npm run build` OK, JSON válido. Commits `7e0b51b` (backend/datos/sitemap) y `9818e5b` (UI) pusheados a `master`.
-- [ ] Tras el deploy: confirmar `/blog/artists.json` y las dos fichas 200, volver a enviar el sitemap en GSC y solicitar indexación de las fichas.
+- [x] Tras el deploy: `/blog/artists.json` y las dos fichas devuelven 200; canonical, JSON-LD `Article` y enlace de escucha verificados en HTML público. El bundle servido es `index-CJ0dIQYy.js`, el mismo del build local con la UI inline.
+- [ ] Volver a enviar `https://mfmood.com/sitemap.xml` en GSC (ahora 10 URLs) y solicitar indexación de las dos fichas.
