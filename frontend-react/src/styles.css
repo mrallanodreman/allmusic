@@ -3755,3 +3755,13 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .cookie-consent button:first-child { background: #f4d500; color: #090a0c; }
 .cookie-consent button:last-child { background: transparent; color: #f7f1e8; border: 1px solid #f7f1e8; }
+
+/* === UNIDAD PUBLICITARIA EN EL RAIL === */
+.ad-slot {
+  min-height: 90px;
+  margin: 4px 0;
+  padding: 6px;
+  border: 1px dashed rgba(244, 213, 0, .18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .02);
+}
