@@ -3,7 +3,7 @@
 AllMusic Server - Railway Edition
 yt-dlp + YouTube MP3 API - Adaptado para Railway
 """
-from flask import Flask, jsonify, request, Response, send_from_directory, redirect, stream_with_context
+from flask import Flask, jsonify, request, Response, send_from_directory, redirect, stream_with_context, abort
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -1151,6 +1151,188 @@ def cancion(artist_slug, title_slug):
     lyrics = _fetch_lyrics(artist, title)
     html = _song_page_html(artist, title, video, lyrics, video_ids)
     return Response(html, mimetype='text/html')
+
+
+# ── BLOG SEO DE ARTISTAS ───────────────────────────────────────────────────────
+# Los artículos se sirven como HTML real (indexable sin JS) y como JSON para la
+# tarjeta NEWSHIT de la UI React. Una sola fuente: frontend/blog/artists.json.
+BLOG_DIR = os.path.join(FRONTEND_DIR, 'blog')
+BLOG_DATA_PATH = os.path.join(BLOG_DIR, 'artists.json')
+
+
+def _load_blog_data():
+    try:
+        with open(BLOG_DATA_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, ValueError) as e:
+        logger.warning(f"⚠️ No se pudo leer el blog de artistas: {e}")
+        return {'articles': []}
+
+
+def _find_article(slug):
+    for article in _load_blog_data().get('articles', []):
+        if article.get('slug') == slug:
+            return article
+    return None
+
+
+_BLOG_CSS = """\
+*{margin:0;box-sizing:border-box}
+body{background:#0f1117;color:#e6e6e6;font:16px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 72px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:26px}
+.logo{font-size:20px;font-weight:800;color:#f3edda;text-decoration:none}
+.logo span{color:#ffd23f}
+header nav{display:flex;gap:14px;font-size:13px}
+header nav a{color:#8ecbff;text-decoration:none}
+.kicker{font:700 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:#ffd23f;text-transform:uppercase}
+h1{font-size:30px;line-height:1.15;margin:8px 0 10px;color:#fff}
+.lede{font-size:17px;color:#c8ccd4;margin-bottom:18px}
+figure{margin:20px 0}
+figure img{display:block;width:100%;height:auto;border:2px solid #f3edda;aspect-ratio:16/9;object-fit:cover}
+figcaption{font-size:12px;color:#969da8;margin-top:6px}
+.meta{font:700 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#969da8;margin-bottom:20px}
+article section{margin:26px 0}
+h2{font-size:20px;color:#fff;margin-bottom:8px}
+p{margin-bottom:12px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:22px 0}
+.facts>div{background:#1a1e27;border-left:3px solid #ff4d6d;padding:10px 12px}
+dt{font:700 10px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;color:#ff8fa3}
+dd{margin-top:3px;font-size:14px;color:#f3edda}
+.listen{background:#1a1e27;border:2px solid #2a3040;padding:16px;margin:26px 0}
+.listen a{color:#8ecbff}
+.listen-main{display:inline-block;background:#ffd23f;color:#0f1117!important;font-weight:800;text-decoration:none;padding:10px 16px;margin-bottom:12px}
+.listen ul{padding-left:18px;font-size:14px}
+.listen li{margin:4px 0}
+.credit,.footer{font-size:12px;color:#969da8;border-top:1px solid #2a3040;padding-top:14px;margin-top:30px}
+.footer a{color:#8ecbff;text-decoration:none}
+@media(max-width:600px){h1{font-size:25px}.wrap{padding:18px 14px 56px}}
+"""
+
+
+def _blog_article_html(article):
+    import html as _html
+    esc = _html.escape
+    slug = article['slug']
+    canon = f"https://mfmood.com/blog/{slug}/"
+    image = "https://mfmood.com" + article.get('image', '')
+    modified = article.get('updated') or article.get('published', '')
+    sections = ''.join(
+        '<section><h2>' + esc(section.get('heading', '')) + '</h2>'
+        + ''.join('<p>' + esc(p) + '</p>' for p in section.get('paragraphs', []))
+        + '</section>'
+        for section in article.get('sections', [])
+    )
+    facts = '<dl class="facts">' + ''.join(
+        '<div><dt>' + esc(f.get('label', '')) + '</dt><dd>' + esc(f.get('value', '')) + '</dd></div>'
+        for f in article.get('facts', [])
+    ) + '</dl>'
+    links = ''.join(
+        '<li><a href="' + esc(link.get('url', '')) + '" rel="noopener noreferrer">'
+        + esc(link.get('label', '')) + '</a></li>'
+        for link in article.get('listen', [])
+    )
+    track = ''
+    if article.get('trackHref'):
+        track = ('<a class="listen-main" href="' + esc(article['trackHref']) + '">▶ Escuchar '
+                 + esc(article.get('trackTitle', '')) + '</a>')
+    schema = {
+        '@context': 'https://schema.org',
+        '@graph': [
+            {
+                '@type': 'Article',
+                '@id': canon + '#article',
+                'headline': article.get('title', ''),
+                'description': article.get('description', ''),
+                'image': image,
+                'datePublished': article.get('published', ''),
+                'dateModified': modified,
+                'inLanguage': 'es',
+                'author': {'@type': 'Organization', 'name': 'MfMood', 'url': 'https://mfmood.com/'},
+                'publisher': {'@type': 'Organization', 'name': 'MfMood', 'url': 'https://mfmood.com/'},
+                'mainEntityOfPage': canon,
+                'about': {'@type': 'MusicGroup', 'name': article.get('artist', '')},
+            },
+            {
+                '@type': 'BreadcrumbList',
+                'itemListElement': [
+                    {'@type': 'ListItem', 'position': 1, 'name': 'MfMood', 'item': 'https://mfmood.com/'},
+                    {'@type': 'ListItem', 'position': 2, 'name': 'NEWSHIT', 'item': 'https://mfmood.com/#newshit'},
+                    {'@type': 'ListItem', 'position': 3, 'name': article.get('title', ''), 'item': canon},
+                ],
+            },
+        ],
+    }
+    schema_json = json.dumps(schema, ensure_ascii=False).replace('</', '<\\/')
+    title = esc(article.get('title', ''))
+    desc = esc(article.get('description', ''))
+    tag = esc(article.get('tag', ''))
+    minutes = esc(str(article.get('readingMinutes', '')))
+    credit = esc(article.get('credit', ''))
+    return f'''<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title} | MfMood</title>
+<meta name="description" content="{desc}">
+<link rel="canonical" href="{canon}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{desc}">
+<meta property="og:image" content="{image}">
+<meta property="og:url" content="{canon}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<script type="application/ld+json">
+{schema_json}
+</script>
+<style>{_BLOG_CSS}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<a class="logo" href="/">Mf<span>Mood</span></a>
+<nav><a href="/#reproductor">Radio 24/7</a><a href="/#newshit">NEWSHIT</a></nav>
+</header>
+<article>
+<p class="kicker">{tag} · {minutes} min de lectura</p>
+<h1>{title}</h1>
+<p class="lede">{desc}</p>
+<figure><img src="{esc(article.get('image', ''))}" alt="{esc(article.get('imageAlt', ''))}" width="1200" height="675"><figcaption>{esc(article.get('imageAlt', ''))}</figcaption></figure>
+<p class="meta">Publicado el {esc(article.get('published', ''))} · Actualizado el {esc(modified)}</p>
+<p>{esc(article.get('intro', ''))}</p>
+{facts}
+{sections}
+<aside class="listen">
+<h2>Escuchar ahora</h2>
+{track}
+<ul>{links}</ul>
+</aside>
+<p class="credit">{credit}</p>
+</article>
+<div class="footer"><p><a href="/">Inicio</a> · <a href="/#reproductor">Reproductor</a> · <a href="/dmca.html">DMCA</a> · <a href="/privacidad.html">Privacidad</a></p><p>MfMood © {datetime.date.today().year} · Música y contexto, sin registro.</p></div>
+</div>
+</body>
+</html>'''
+
+
+@app.route('/blog/artists.json')
+def blog_articles_json():
+    """Datos compartidos con la tarjeta NEWSHIT de la UI React."""
+    return Response(
+        json.dumps(_load_blog_data(), ensure_ascii=False),
+        mimetype='application/json',
+    )
+
+
+@app.route('/blog/<slug>')
+@app.route('/blog/<slug>/')
+def blog_article(slug):
+    article = _find_article(slug)
+    if not article:
+        abort(404)
+    return Response(_blog_article_html(article), mimetype='text/html')
 
 
 # ── FRONTEND ───────────────────────────────────────────────────────────────────
