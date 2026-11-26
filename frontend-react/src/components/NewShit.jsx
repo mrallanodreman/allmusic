@@ -35,16 +35,15 @@ const ARTISTS = [
     promo: true,
     fullName: 'VITTORIO × LA ANTORCHA',
     tag: 'URBANO · ECUADOR',
-    id: '6rzlzB2zq_0',
+    id: 'tVp4r66lejw',
     title: "That's the deal",
     artist: 'Vittorio feat. Ukumari MC & Iñaki The Common',
     duration: 175,
-    externalUrl: 'https://www.deezer.com/track/4311376602',
     thumbnail: assetHref('thats-the-deal-cover.jpg'),
     image: asset('vittorio.webp'),
     alt: 'Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito',
     summary:
-      "That's the deal, con Ukumari MC e Iñaki The Common, es el corte que destacamos de La Antorcha (2026). El texto abre la ficha completa; el botón de escuchar lleva al tema oficial.",
+      "That's the deal, con Ukumari MC e Iñaki The Common, es el corte que destacamos de La Antorcha (2026). El texto abre la ficha completa y el play lo reproduce aquí mismo.",
   },
 ];
 
@@ -75,7 +74,9 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
   const playingRecommended = mode === 'personal' && RECOMMENDED_IDS.has(selectedTrack?.id);
   const sounding = isThisTrack && playing;
   const metaTitle = artist.promo || isThisTrack ? artist.title : artist.name;
-  const metaSub = artist.promo ? 'EN PROMO · DEEZER' : isThisTrack ? `${artist.artist} · SONANDO` : artist.tag;
+  const metaSub = artist.promo
+    ? (isThisTrack ? 'EN PROMO · SONANDO' : 'EN PROMO · MFMood')
+    : isThisTrack ? `${artist.artist} · SONANDO` : artist.tag;
 
   const openRadio = useCallback(() => {
     const radio = document.getElementById('reproductor');
@@ -94,12 +95,6 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
   }, [artist.name, artist.slug, onOpenArticle]);
 
   const toggleTrack = useCallback(() => {
-    // El tema promocionado no se aloja aquí: se abre en su ficha oficial.
-    if (artist.externalUrl) {
-      window.open(artist.externalUrl, '_blank', 'noopener,noreferrer');
-      setStatus(`Abriendo ${artist.title} en Deezer`);
-      return;
-    }
     if (isThisTrack) {
       onToggle();
       setStatus(playing ? `${artist.title} en pausa` : `Reanudando ${artist.title}`);
@@ -112,8 +107,8 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
   const change = useCallback((next) => {
     const item = ARTISTS[next];
     setIndex(next);
-    if (playingRecommended && !item.externalUrl) {
-      // Los puntos funcionan como cambio de pista mientras suena un recomendado local.
+    if (playingRecommended) {
+      // Los puntos funcionan como cambio de pista mientras suena un recomendado.
       onPlayTrack(item);
       setStatus(`Sonando ahora: ${item.title} · ${item.artist}`);
     } else {
@@ -171,11 +166,9 @@ export function NewShit({ playing, mode, selectedTrack, onToggle, onPlayTrack, o
               type="button"
               className={`newshit__play${sounding ? ' is-playing' : ''}`}
               onClick={toggleTrack}
-              aria-label={artist.externalUrl
-                ? `Abrir ${artist.title} en Deezer`
-                : sounding
-                  ? `Pausar ${artist.title}`
-                  : `Escuchar ${artist.title} de ${artist.name}`}
+              aria-label={sounding
+                ? `Pausar ${artist.title}`
+                : `Escuchar ${artist.title} de ${artist.name}`}
             >
               <Icon name={sounding ? 'pause' : 'play'} />
             </button>
