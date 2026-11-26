@@ -54,6 +54,8 @@ def test_articulo_de_vittorio_destaca_thats_the_deal(client):
     assert 'href="/cancion/vittorio/thats-the-deal"' in html
     assert 'https://www.youtube.com/watch?v=tVp4r66lejw' in html
     assert 'https://www.deezer.com/track/4311376602' in html
+    assert 'https://mfmood.com/assets/newshit/la-antorcha-cover.jpg' in html
+    assert 'Portada del álbum La Antorcha' in html
     assert 'Ukumari MC' in html
 
 

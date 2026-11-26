@@ -67,8 +67,8 @@
       "tag": "URBANO · ECUADOR",
       "title": "Vittorio: That's the deal, La Antorcha y el cruce con KulturURBANA",
       "description": "La canción That's the deal de Vittorio, con Ukumari MC e Iñaki The Common, salió en La Antorcha (2026). Contexto del álbum y del escenario de KulturURBANA en Quito.",
-      "image": "/assets/newshit/vittorio.webp",
-      "imageAlt": "Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito",
+      "image": "/assets/newshit/la-antorcha-cover.jpg",
+      "imageAlt": "Portada del álbum La Antorcha, de Vittorio",
       "published": "2026-11-26",
       "updated": "2026-11-26",
       "readingMinutes": 4,
@@ -122,7 +122,7 @@
         { "label": "Perfil en Spotify", "url": "https://open.spotify.com/artist/68KQJLdGKglAFPQNeA3dt8" },
         { "label": "Crónica fotográfica", "url": "https://edgemarketing.tech/blog/vittorio-artista-venezolano-ecuador/" }
       ],
-      "credit": "Texto y selección musical: MfMood. Datos del tema: Deezer. Fotografías del evento: archivo de Edge Marketing Agency, SAM series."
+      "credit": "Texto y selección musical: MfMood. Portada y datos del tema: La Antorcha, El Nido Inc (vía Deezer). Crónica del evento: archivo de Edge Marketing Agency, SAM series."
     }
   ]
 }

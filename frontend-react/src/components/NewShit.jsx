@@ -39,9 +39,9 @@ const ARTISTS = [
     title: "That's the deal",
     artist: 'Vittorio feat. Ukumari MC & Iñaki The Common',
     duration: 175,
-    thumbnail: assetHref('thats-the-deal-cover.jpg'),
-    image: asset('vittorio.webp'),
-    alt: 'Vittorio actuando junto a La Antorcha en KulturURBANA 2026, Quito',
+    thumbnail: assetHref('la-antorcha-cover.jpg'),
+    image: asset('la-antorcha-cover.jpg'),
+    alt: 'Portada del álbum La Antorcha, de Vittorio',
     summary:
       "That's the deal, con Ukumari MC e Iñaki The Common, es el corte que destacamos de La Antorcha (2026). El texto abre la ficha completa y el play lo reproduce aquí mismo.",
   },
