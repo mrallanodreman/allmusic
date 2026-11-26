@@ -238,9 +238,9 @@ export function MyMusicPanel({ onPlay }) {
   return (
     <section className="music-workspace artist-workspace" id="mymusic" aria-labelledby="mymusic-heading">
       <header className="music-workspace__header">
-        <span className="music-workspace__edition">ALLMUSIC / EDICIÓN ARTISTAS</span>
+        <span className="music-workspace__edition">MFMOOD / EDICIÓN ARTISTAS</span>
         <h2 id="mymusic-heading">TU <em>MÚSICA</em></h2>
-        <p>Tu discografía, tus archivos y tu identidad artística. Recuperamos las mismas cuentas del AllMusic clásico.</p>
+        <p>Tu discografía, tus archivos y tu identidad artística. Recuperamos las mismas cuentas del archivo clásico.</p>
       </header>
 
       {message ? <p className="music-workspace__notice" role="status">{message}</p> : null}

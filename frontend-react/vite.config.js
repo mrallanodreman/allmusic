@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // Ruta pública estable: /allmusic y /allmusic/ comparten los mismos assets.
-  // Evita que ./assets se resuelva erróneamente como /assets si falta la barra.
-  base: '/allmusic/',
+  // Canonical público: https://mfmood.com/ (root). El backend mantiene
+  // /allmusic/* como alias legacy para no romper enlaces antiguos.
+  base: '/',
   // Los PNG viven una sola vez en public/ (raíz del repo) y se copian al build.
   publicDir: '../public',
   build: { outDir: 'dist', emptyOutDir: true },

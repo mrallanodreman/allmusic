@@ -1000,8 +1000,8 @@ def _search_videos(artist, title):
 
 def _song_page_html(artist, title, video, lyrics, video_ids):
     canon = f"https://mfmood.com/cancion/{quote(artist.lower().replace(' ', '-'))}/{quote(title.lower().replace(' ', '-'))}"
-    page_title = f"{artist} - {title} (Letra) | AllMusic"
-    desc = f"Escucha gratis {artist} - {title} en AllMusic. Letra completa y reproductor sin registro. 🎧"
+    page_title = f"{artist} - {title} (Letra) | MfMood"
+    desc = f"Escucha gratis {artist} - {title} en MfMood. Letra completa y reproductor sin registro. 🎧"
     thumb = video.get('thumbnail', '')
     video_id = video['id']
     uploader = video.get('uploader', 'YouTube')
@@ -1103,7 +1103,7 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
 
   <footer>
     <p><a href="/">Inicio</a> · <a href="/terminos.html">Términos</a> · <a href="/privacidad.html">Privacidad</a> · <a href="/dmca.html">DMCA</a></p>
-    <p>AllMusic © {datetime.date.today().year} · Reproduce música de YouTube sin registro</p>
+    <p>MfMood © {datetime.date.today().year} · Reproduce música de YouTube sin registro</p>
   </footer>
 </div>
 
@@ -2832,7 +2832,7 @@ def _radio_pick_next(state):
                 'duration': min(item.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
                 'link': conv.get('link'),
                 'started_at': time.time(),
-                'suggested_by': 'AllMusic AI Radio',
+                'suggested_by': 'MfMood AI Radio',
                 'reason': f'top pedidos #{idx+1} ({item.get("request_count")} pedidos)',
             }
 
@@ -2859,7 +2859,7 @@ def _radio_pick_next(state):
                 'duration': min(candidate.get('duration') or conv.get('duration') or RADIO_FALLBACK_TRACK_SECONDS, RADIO_MAX_TRACK_SECONDS),
                 'link': conv.get('link'),
                 'started_at': time.time(),
-                'suggested_by': 'AllMusic AI Radio',
+                'suggested_by': 'MfMood AI Radio',
                 'mood': query,
                 'reason': f'rotación automática: {query}',
             }

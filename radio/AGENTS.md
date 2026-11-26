@@ -1,6 +1,6 @@
-# AGENTS.md — Radio continua AllMusic → Atico (persistente)
+# AGENTS.md — Radio continua MfMood → Atico (persistente)
 
-Configuración definitiva y operacional desde **2026-08-30**. La radio de AllMusic
+Configuración definitiva y operacional desde **2026-08-30**. La radio de MfMood
 suena de forma continua y estable en la bocina **Atico** (Google Nest Mini) y
 sobrevive reinicios (todos los servicios user systemd están `enabled`).
 

@@ -80,7 +80,7 @@ GH_CONFIG_DIR=/home/pctorre/.config/gh gh api \
 `https://edgemarketing.tech/allmusic/*` da 403 de Cloudflare desde este entorno;
 usar la IP interna para verificar. **Sin barra final**: `/allmusic/radio` sirve
 el React (`id="root"` y `assets/index-*.js`); `/allmusic/radio/` cae en el
-catch-all del sitio legacy y muestra el HTML grande de AllMusic PRO.
+catch-all del sitio legacy y muestra el HTML grande de MfMood PRO.
 
 ## Notas para la próxima IA
 

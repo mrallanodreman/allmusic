@@ -21,6 +21,7 @@ import { QueuePanel } from './components/QueuePanel.jsx';
 import { MostLikedPanel } from './components/MostLikedPanel.jsx';
 import { HistoryPanel } from './components/HistoryPanel.jsx';
 import { NowPlayingBar } from './components/NowPlayingBar.jsx';
+import { CookieConsent } from './components/CookieConsent.jsx';
 
 export default function App() {
   const data = useRadioData();
@@ -364,6 +365,7 @@ export default function App() {
         canNextPersonal={personalQueue.length > 1}
       />
       <audio ref={audio.audioRef} preload="none" />
+      <CookieConsent />
     </div>
   );
 }

@@ -1,8 +1,8 @@
-# AllMusic
+# MfMood
 
-Proyecto único de AllMusic: plataforma web, mini-app de escritorio y radio 24/7
+Proyecto único de MfMood: plataforma web, mini-app de escritorio y radio 24/7
 que suena en el Atico. Antes esto vivía en tres sitios (web en `allmusic-backend`,
-app en el repo público `AllMusic2.0` y la radio sin versionar en disco); ahora todo
+app en el repo público `MfMood2.0` y la radio sin versionar en disco); ahora todo
 está aquí y este repo es la fuente de verdad.
 
 > 🙋 ¿Eres colaborador? Antes de tocar infra lee el
@@ -12,10 +12,10 @@ está aquí y este repo es la fuente de verdad.
 
 | ruta | qué es | dónde corre |
 |---|---|---|
-| `backend/allmusic_server.py` | API AllMusic (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4/.5:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
+| `backend/allmusic_server.py` | API MfMood (búsqueda, conversión, cola de radio) | web pública: túnel Cloudflare → warmachine `192.168.1.4/.5:2426` (contenedor Coolify `radio`); copia local en VAIO (`allmusic-radio.service`, `:2426`) |
 | `backend/radio-live.py` | motor de la radio: lee la cola y transcodifica a MP3 192kbps/44.1kHz | master activo: `allmusic-radio-live.service` en el VAIO (`:2427`) |
 | `frontend/` | sitio web + assets de la radio (C24, moods, artistas) | servido por el backend |
-| `frontend-react/` | AllMusic principal: Radio IA, biblioteca, playlists, cuentas de artistas y cartelera | `/allmusic/` (también `/radio`), build de Vite dentro del contenedor Coolify |
+| `frontend-react/` | MfMood principal: Radio IA, biblioteca, playlists, cuentas de artistas y cartelera | `/allmusic/` (también `/radio`), build de Vite dentro del contenedor Coolify |
 | `docs/AI_HANDOFF_RADIO.md` | handoff del estado final de la UI y cómo verificar el deploy | — |
 | `desktop/allmusic2.py` | mini-player GTK de escritorio (oculto con F9 / launcher) | en el PC del usuario, contra la API |
 | `radio/atico-player.py` | manda el stream a `media_player.atico_2` vía Home Assistant | `atico-player.service` (solo VAIO) |
@@ -46,7 +46,7 @@ Si GitHub devuelve 200 pero no se despliega, revisar el audit de Coolify:
 `webhook.deployment.queued` = ok. Comprobar con
 `GET /repos/mrallanodreman/allmusic/hooks/693647409/deliveries`.
 
-Desde la migración a la UI principal (22-nov-2026), **AllMusic es una sola web React**:
+Desde la migración a la UI principal (22-nov-2026), **MfMood es una sola web React**:
 `/allmusic/` carga directamente la cabina Canal 24 con playlists, Tu Música
 (autenticación y uploads de artistas), descubrimiento y cartelera; ya no es un
 iframe dentro del sitio clásico. `/radio` conserva el mismo build como alias.
@@ -58,7 +58,7 @@ continúan sin cambios de estructura. El token de artistas se recupera desde
 Los checkouts del sitio EdgeMarketing que definen `ALLMUSIC_UPSTREAM` apuntando a
 `allmusic-server-production.up.railway.app` **no están en la ruta pública de
 `/allmusic`**: ese túnel va directo al backend de Coolify. Railway está retirado;
-no hace falta editar esos checkouts para publicar cambios de AllMusic.
+no hace falta editar esos checkouts para publicar cambios de MfMood.
 
 Verificación tras un push: el audit debe mostrar `webhook.deployment.queued` y
 `curl http://192.168.1.5:2426/allmusic/radio` debe servir `id="root"` y `assets/index-*.js`.
@@ -136,7 +136,7 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 - El Terminal usa WebSocket; **primero intentar por IP directa** de warmachine: `http://192.168.1.4:8000` (sin Cloudflare de por medio).
 - Verificado 2026-10-08 en la zona `edgemarketing.art`: **WebSockets: on** y **SSL/TLS: full** ya estaban. No subir a `Full (strict)`: el origen (warmachine) sirve el certificado *default* de Traefik (self-signed) y strict rompería el sitio con 526.
 - Stack de realtime de Coolify (soketi `:6001`) verificado vivo — el WS no lo bloquea nada en infra.
-- Si aun así falla vía Cloudflare, no es el código de AllMusic: revisar en la consola de Coolify los **permisos del usuario/miembro** sobre el recurso `radio` (rol) antes de tocar el backend.
+- Si aun así falla vía Cloudflare, no es el código de MfMood: revisar en la consola de Coolify los **permisos del usuario/miembro** sobre el recurso `radio` (rol) antes de tocar el backend.
 
 ## Runtime vs repo
 
@@ -179,7 +179,7 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 - Este entorno tampoco resuelve `edgemarketing.art`; las verificaciones públicas
   hay que hacerlas desde otra red. Las URL internas sí son verificables.
 - El servicio `allmusic-server` de Railway no tiene despliegues activos.
-- El repo público `mrallanodreman/AllMusic2.0` queda como puntero a este monorepo.
+- El repo público `mrallanodreman/MfMood2.0` queda como puntero a este monorepo.
 
 ## 🚨 Reporte de errores y permisos (para colaboradores)
 

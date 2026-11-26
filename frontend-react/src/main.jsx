@@ -8,7 +8,7 @@ import './styles.css';
  * El usuario debe ver una salida recuperable, nunca una página blanca.
  * No expone el stacktrace al navegador del visitante.
  */
-class AllMusicErrorBoundary extends React.Component {
+class MfMoodErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false };
@@ -24,7 +24,7 @@ class AllMusicErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[AllMusic] Error al iniciar la interfaz:', error, info.componentStack);
+    console.error('[MfMood] Error al iniciar la interfaz:', error, info.componentStack);
     document.getElementById('allmusic-boot')?.remove();
   }
 
@@ -49,7 +49,7 @@ class AllMusicErrorBoundary extends React.Component {
                 style={{ background: '#f4d500', color: '#090a0c', border: 0, padding: 13, fontWeight: 900 }}>
                 REINTENTAR
               </button>
-              <a href="/allmusic/classic"
+              <a href="/classic"
                 style={{ background: '#f7f1e8', color: '#090a0c', padding: 13, textDecoration: 'none', fontWeight: 900 }}>
                 SITIO CLÁSICO
               </a>
@@ -64,8 +64,8 @@ class AllMusicErrorBoundary extends React.Component {
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AllMusicErrorBoundary>
+    <MfMoodErrorBoundary>
       <App />
-    </AllMusicErrorBoundary>
+    </MfMoodErrorBoundary>
   </React.StrictMode>
 );

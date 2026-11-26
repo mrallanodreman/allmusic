@@ -141,9 +141,9 @@ export function LibraryPanel({ onPlay, onPlayQueue, selectedTrack, historyVersio
   return (
     <section id="playlists" className="music-workspace" aria-labelledby="library-heading">
       <header className="music-workspace__header">
-        <span className="music-workspace__edition">ALLMUSIC / ARCHIVOS DE LA CABINA</span>
+        <span className="music-workspace__edition">MFMOOD / ARCHIVOS DE LA CABINA</span>
         <h2 id="library-heading">TU <em>BIBLIOTECA</em></h2>
-        <p>Playlists del AllMusic original, descubrimiento independiente e historial personal. Todo con el reproductor de Canal 24.</p>
+        <p>Playlists del archivo original, descubrimiento independiente e historial personal. Todo con el reproductor de Canal 24.</p>
       </header>
 
       <div className="music-workspace__tabs" role="group" aria-label="Secciones de biblioteca">
@@ -217,7 +217,7 @@ export function LibraryPanel({ onPlay, onPlayQueue, selectedTrack, historyVersio
             <input id="community-search" placeholder="Buscá por artista o canción" value={query} onChange={e => setQuery(e.target.value)} maxLength={100} />
             <button type="submit" disabled={loading}>BUSCAR</button>
           </form>
-          <p className="music-workspace__caption">Canciones originales subidas por artistas de AllMusic.</p>
+          <p className="music-workspace__caption">Canciones originales subidas por artistas de MfMood.</p>
           <div className="music-workspace__track-list">
             {publicTracks.map(track => (
               <div className="music-workspace__track" key={track.id}>

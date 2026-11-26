@@ -49,7 +49,7 @@ async function request(path, { method = 'GET', data, form, token, signal } = {})
 // Biblioteca compartida, compatible con las listas del sitio antiguo.
 export const listPlaylists = (signal) => request('/playlists', { signal });
 export const createPlaylist = (name, owner) => request('/playlists', {
-  method: 'POST', data: { name: normalizeText(name, 100), created_by: normalizeText(owner, 40) || 'AllMusic' },
+  method: 'POST', data: { name: normalizeText(name, 100), created_by: normalizeText(owner, 40) || 'MfMood' },
 });
 export const removePlaylist = (id) => request(`/playlists/${encodeURIComponent(id)}`, { method: 'DELETE' });
 export const addPlaylistTrack = (id, track) => request(

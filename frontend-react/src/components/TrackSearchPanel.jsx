@@ -110,7 +110,7 @@ export function TrackSearchPanel({ onClose, onSelect, onRadio, mode, selectedTra
       </div>
 
       {error ? <p className="personal-search__message personal-search__message--error" role="alert">{error}</p> : null}
-      {busy ? <p className="personal-search__message" role="status">Buscando canciones en AllMusic…</p> : null}
+      {busy ? <p className="personal-search__message" role="status">Buscando canciones en MfMood…</p> : null}
       {searched && !busy && !error && results.length === 0 ? (
         <p className="personal-search__message" role="status">
           No encontramos resultados. Probá con otro título o artista.

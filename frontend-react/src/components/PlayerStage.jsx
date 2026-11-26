@@ -60,7 +60,7 @@ export function PlayerStage({
 
   const stateLabel = personal ? 'MODO PERSONAL' : live ? 'EN VIVO' : 'EN ESPERA';
   const signalLabel = audioError || (personal
-    ? `ALLMUSIC · ${playing ? 'ESCUCHA PERSONAL' : 'LISTO PARA ESCUCHAR'}`
+    ? `MFMOOD · ${playing ? 'ESCUCHA PERSONAL' : 'LISTO PARA ESCUCHAR'}`
     : advancing ? 'SOLICITANDO SIGUIENTE TEMA…'
       : `CANAL 24 · ${live ? 'TRANSMISIÓN CONTINUA' : 'SEÑAL EN ESPERA'}`);
 
@@ -85,7 +85,7 @@ export function PlayerStage({
           </div>
           <div className="stage__badges">
             <span className="stage__station-label">
-              {personal ? 'ALLMUSIC' : 'IA RADIO'}
+              {personal ? 'MFMOOD' : 'IA RADIO'}
               <small>{personal ? 'ESCUCHA PERSONAL' : 'SEÑAL 24/7'}</small>
             </span>
             <span className={`stage__rec-sticker${live && !personal ? ' stage__rec-sticker--live' : ''}`} aria-label={live && !personal ? 'Transmisión en directo' : 'Cabina en espera'}>
@@ -110,7 +110,7 @@ export function PlayerStage({
               )}
             </div>
             <figcaption className="stage__cover-caption">
-              <span>{personal ? 'ALLMUSIC' : 'CANAL 24'}</span>
+              <span>{personal ? 'MFMOOD' : 'CANAL 24'}</span>
               <span>{stateLabel}</span>
             </figcaption>
           </figure>
@@ -125,7 +125,7 @@ export function PlayerStage({
             <p className="stage__track" title={title}>{title}</p>
             <p className="stage__artist" title={artist}>{artist}</p>
             <div className="stage__tags" aria-label="Modo de reproducción">
-              <span>{personal ? 'ALLMUSIC' : 'CANAL 24'}</span>
+              <span>{personal ? 'MFMOOD' : 'CANAL 24'}</span>
               <span>{personal ? 'A TU GUSTO' : 'RADIO IA'}</span>
               <span>{personal ? 'SOLO PARA VOS' : '24/7'}</span>
             </div>

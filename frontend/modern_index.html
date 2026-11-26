@@ -5,24 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-3871344948149274">
     <base href="/">
-    <title>AllMusic — Sube tu música, escúchala donde sea</title>
-    <meta name="description" content="AllMusic: tu biblioteca de música personal. Sube tus archivos, escúchalos en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
+    <title>MfMood — Sube tu música, escúchala donde sea</title>
+    <meta name="description" content="MfMood: tu biblioteca de música personal. Sube tus archivos, escúchalos en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#0d0d1a">
-    <meta name="application-name" content="AllMusic">
+    <meta name="application-name" content="MfMood">
     <link rel="canonical" href="https://mfmood.com/">
     <link rel="icon" type="image/png" href="assets/buena-musica-logo.png">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="AllMusic">
-    <meta property="og:title" content="AllMusic — Sube tu música, escúchala donde sea">
+    <meta property="og:site_name" content="MfMood">
+    <meta property="og:title" content="MfMood — Sube tu música, escúchala donde sea">
     <meta property="og:description" content="Sube tu música, guárdala en una sola biblioteca y escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
     <meta property="og:url" content="https://mfmood.com/">
     <meta property="og:image" content="https://mfmood.com/assets/allmusic-logo.svg">
     <meta property="og:locale" content="es_EC">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="AllMusic — Sube tu música, escúchala donde sea">
+    <meta name="twitter:title" content="MfMood — Sube tu música, escúchala donde sea">
     <meta name="twitter:description" content="Sube tu música, escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
     <meta name="twitter:image" content="https://mfmood.com/assets/allmusic-logo.svg">
     <!-- JSON-LD -->
@@ -30,7 +30,7 @@
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "AllMusic",
+        "name": "MfMood",
         "url": "https://mfmood.com/",
         "applicationCategory": "MusicApplication",
         "operatingSystem": "Any",
@@ -2319,7 +2319,7 @@ body.radio-active .radio-integrated-frame{
             <!-- C24 keeps one source of truth: the exact mockup artboard and its local PNG fallback live in radio.html. -->
             <!-- Radio IA: carga la UI React servida en /radio. Si el build no existe,
                  la ruta /radio cae al dashboard legacy, así que la pestaña nunca queda vacía. -->
-            <iframe class="radio-integrated-frame" src="./radio?embedded=1" title="AllMusic IA Radio · En vivo" data-cover-fallback="./assets/radio/radio-now-cover.png"></iframe>
+            <iframe class="radio-integrated-frame" src="./radio?embedded=1" title="MfMood IA Radio · En vivo" data-cover-fallback="./assets/radio/radio-now-cover.png"></iframe>
             <div class="radio-ticker" aria-label="Estado de la transmisión">
                 <span class="radio-ticker-label">NOW PLAYING</span>
                 <span class="radio-ticker-copy" id="radioTicker">ALLMUSIC RADIO · SEÑAL CONTINUA</span>
@@ -2449,7 +2449,7 @@ body.radio-active .radio-integrated-frame{
             <div class="art-dot"></div>
         </div>
 
-        <div class="track-title-main"  id="trackTitle">AllMusic</div>
+        <div class="track-title-main"  id="trackTitle">MfMood</div>
         <div class="track-artist-main" id="trackArtist">Your files. One library. Everywhere.</div>
 
         <div class="track-meta">
@@ -2532,9 +2532,9 @@ body.radio-active .radio-integrated-frame{
 <audio id="audio"></audio>
 
 <div class="app-footer">
-    AllMusic · Sube tu música y escúchala donde sea
+    MfMood · Sube tu música y escúchala donde sea
     · <a href="/radio">IA Radio</a> · <a href="about.html">Acerca de</a> · <a href="privacidad.html">Privacidad</a> · <a href="terminos.html">Términos</a> · <a href="cookies.html">Cookies</a> · <a href="dmca.html">DMCA</a>
-    <br>© 2026 AllMusic — Edge Marketing Agency, Quito, Ecuador
+    <br>© 2026 MfMood — Edge Marketing Agency, Quito, Ecuador
 </div>
 
 <script>
@@ -2766,7 +2766,7 @@ function playPlaylistAll(){
 let _modalTrack=null;
 function openAddToPlaylist(){
     const title=document.getElementById('trackTitle').textContent;
-    if(!title||title==='AllMusic'){alert('Primero reproduce una canción.');return;}
+    if(!title||title==='MfMood'){alert('Primero reproduce una canción.');return;}
     const artist=document.getElementById('trackArtist').textContent;
     const thumb=(document.getElementById('artImg').style.display!=='none'?document.getElementById('artImg').src:'')||'';
     const src=audio.src?audio.src.replace(location.origin+'/',''):
@@ -3040,7 +3040,7 @@ function renderRadioTopRequested(list){
             '<img src="'+radioTopThumb(item)+'" alt="" loading="lazy">' +
             '<span class="radio-requested-info">' +
                 '<b>'+$(item.title||'Sin título')+'</b>' +
-                '<small>'+$(item.artist||'AllMusic')+'</small>' +
+                '<small>'+$(item.artist||'MfMood')+'</small>' +
                 '<span class="radio-requested-meter" aria-hidden="true"><i style="width:'+width+'%"></i></span>' +
             '</span>' +
             '<span class="radio-requested-count"><b>'+count+'</b><small>PEDIDOS</small></span>' +
@@ -3073,7 +3073,7 @@ function renderRadioMood(d){
         detail='Amplificadores encendidos y clásicos con voltaje de radio.';
     }else if(/k-pop/.test(source)){
         label='K-POP MODE';
-        detail='Pop de alto voltaje en la rotación de AllMusic.';
+        detail='Pop de alto voltaje en la rotación de MfMood.';
     }
     const value=document.getElementById('radioMoodValue');
     const copy=document.getElementById('radioMoodDetail');
@@ -3093,7 +3093,7 @@ async function radioSuggest(event){
     if(button)button.disabled=true;
     if(status)status.textContent='Buscando la señal…';
     try{
-        const result=await rApi(RADIO_API_BASE+'/suggest',{method:'POST',body:JSON.stringify({query,agent:'panel AllMusic',reason:'pedido desde la radio'})});
+        const result=await rApi(RADIO_API_BASE+'/suggest',{method:'POST',body:JSON.stringify({query,agent:'panel MfMood',reason:'pedido desde la radio'})});
         if(input)input.value='';
         const eta=result.eta_minutes!=null?(' · aprox. '+(result.eta_minutes<1?'menos de 1 min':result.eta_minutes+' min')):'';
         if(status)status.textContent='Pedido recibido · posición '+(result.position||'en cola')+eta;
@@ -3131,7 +3131,7 @@ function renderRadio(d){
         document.getElementById('radioArt').innerHTML='<img src="'+radioThumb(t)+'" alt="">';
         document.getElementById('radioTitle').textContent=t.title||'—';
         document.getElementById('radioArtist').textContent=t.artist||t.uploader||'';
-        radioSetTicker((t.title||'AllMusic Radio')+' // '+(t.artist||t.uploader||'AllMusic'));
+        radioSetTicker((t.title||'MfMood Radio')+' // '+(t.artist||t.uploader||'MfMood'));
         _nowElapsed=t.elapsed||0;
         window._nowDur=t.duration||1;
         document.getElementById('radioElapsed').textContent=Rfmt(_nowElapsed);
@@ -3200,14 +3200,14 @@ function radioTunePlayer(t){
     _radioListeningVideoId=t.video_id||null;
     localStorage.setItem(LS_RADIO_LISTENING,'1');
     curList='ia-radio';curVideoId=null;
-    setInfo(t.title,t.artist||t.uploader||'AllMusic IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
+    setInfo(t.title,t.artist||t.uploader||'MfMood IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
     radioConnectStream();
 }
 function radioSyncPlayer(t){
     if(!_radioListening||!t)return;
     if(_radioListeningVideoId!==t.video_id){
         _radioListeningVideoId=t.video_id||null;
-        setInfo(t.title,t.artist||t.uploader||'AllMusic IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
+        setInfo(t.title,t.artist||t.uploader||'MfMood IA Radio',radioThumb(t),'IA Radio 24/7','—',Rfmt(t.duration),'En vivo',null);
     }
 }
 function radioListenLive(){

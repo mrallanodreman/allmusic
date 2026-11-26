@@ -8,7 +8,7 @@ const asset = (name) => `${import.meta.env.BASE_URL}assets/newshit/${name}`;
 // El query de versión evita que un 404 viejo quede cacheado por el CDN.
 const assetHref = (name) => `${new URL(asset(name), window.location.href).pathname}?v=2`;
 
-// Cada recomendado lleva un tema real del catálogo de AllMusic. El audio y la
+// Cada recomendado lleva un tema real del catálogo de MfMood. El audio y la
 // carátula son assets locales: suenan aunque el proveedor de conversión del
 // backend esté sin cuota. El ID de YouTube queda como identificador editorial.
 const ARTISTS = [

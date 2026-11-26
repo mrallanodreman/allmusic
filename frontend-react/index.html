@@ -4,28 +4,67 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <meta name="description" content="AllMusic · Canal 24: radio IA en vivo, música a elección, playlists, artistas independientes y cartelera de conciertos en Quito." />
+    <meta name="description" content="MfMood · Canal 24: radio IA en vivo, música a elección, playlists, artistas independientes y cartelera de conciertos en Quito." />
     <meta name="theme-color" content="#0a0b0d" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <link rel="canonical" href="https://edgemarketing.tech/allmusic/" />
+    <link rel="canonical" href="https://mfmood.com/" />
+    <meta name="google-adsense-account" content="ca-pub-3871344948149274" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AllMusic · Canal 24" />
-    <meta property="og:title" content="AllMusic · Radio IA, tu música y cartelera" />
-    <meta property="og:description" content="La nueva cabina musical de AllMusic: radio 24/7, playlists, música independiente y conciertos." />
-    <meta property="og:url" content="https://edgemarketing.tech/allmusic/" />
-    <link rel="icon" type="image/png" href="./assets/radio-ui/buena-musica-logo.png" />
-    <title>AllMusic · Canal 24 | Radio IA, Playlists, Tu Música</title>
+    <meta property="og:site_name" content="MfMood · Canal 24" />
+    <meta property="og:title" content="MfMood · Radio IA, tu música y cartelera" />
+    <meta property="og:description" content="La cabina musical de MfMood: radio 24/7, playlists, música independiente y conciertos." />
+    <meta property="og:url" content="https://mfmood.com/" />
+    <meta property="og:image" content="https://mfmood.com/assets/allmusic-logo.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@edgemarketing" />
+    <meta name="twitter:title" content="MfMood · Canal 24 | Radio IA" />
+    <meta name="twitter:description" content="Radio IA 24/7, playlists, artistas independientes y cartelera en Quito." />
+    <meta name="twitter:image" content="https://mfmood.com/assets/allmusic-logo.svg" />
+    <link rel="icon" type="image/png" href="/assets/radio-ui/buena-musica-logo.png" />
+    <title>MfMood · Canal 24 | Radio IA, Playlists, Tu Música</title>
+    <!-- Google Consent Mode v2 — defaults ANTES de GTM/GA/AdSense -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      var _mfConsent = localStorage.getItem('am_cookie_consent');
+      gtag('consent', 'default', {
+        ad_storage:         _mfConsent === 'all' ? 'granted' : 'denied',
+        analytics_storage:  _mfConsent === 'all' ? 'granted' : 'denied',
+        ad_user_data:       _mfConsent === 'all' ? 'granted' : 'denied',
+        ad_personalization: _mfConsent === 'all' ? 'granted' : 'denied',
+        wait_for_update: 1500
+      });
+    </script>
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5WFHF7PH');</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39LMF2SGY4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-39LMF2SGY4');
+    </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3871344948149274" crossorigin="anonymous"></script>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@graph":[
+        {"@type":"WebSite","@id":"https://mfmood.com/#website","url":"https://mfmood.com/","name":"MfMood · Canal 24","inLanguage":"es","publisher":{"@id":"https://mfmood.com/#organization"}},
+        {"@type":"Organization","@id":"https://mfmood.com/#organization","name":"MfMood","url":"https://mfmood.com/"}
+      ]}
+    </script>
   </head>
   <body style="margin:0;background:#090a0c">
     <div id="root"></div>
     <!-- Respaldo visible si la hoja de estilos o el módulo JS no llegan. -->
     <div id="allmusic-boot" role="status" style="font-family:Arial,sans-serif;position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;background:#090a0c;color:#f7f1e8;text-align:center;padding:25px;z-index:2">
-      <strong style="font-size:clamp(36px,8vw,64px);font-weight:900;letter-spacing:-.045em">CANAL <span style="color:#f41689">24</span> / ALLMUSIC</strong>
+      <strong style="font-size:clamp(36px,8vw,64px);font-weight:900;letter-spacing:-.045em">CANAL <span style="color:#f41689">24</span> / MFMOOD</strong>
       <span style="font:700 13px monospace;letter-spacing:.15em;color:#f4d500">CARGANDO LA CABINA…</span>
       <p style="font-size:12px;line-height:1.6;max-width:400px;margin:0;color:#c8c5c0">Si el reproductor no aparece, podés utilizar la versión anterior sin perder tu música.</p>
-      <a href="/allmusic/classic" style="display:inline-block;padding:12px 16px;font:900 12px monospace;background:#f4d500;color:#090a0c;text-decoration:none">ABRIR VERSIÓN CLÁSICA</a>
+      <a href="/classic" style="display:inline-block;padding:12px 16px;font:900 12px monospace;background:#f4d500;color:#090a0c;text-decoration:none">ABRIR VERSIÓN CLÁSICA</a>
     </div>
-    <noscript style="color:#f7f1e8">Para utilizar AllMusic se necesita JavaScript. <a href="/allmusic/classic">Abrir sitio clásico</a>.</noscript>
+    <noscript style="color:#f7f1e8">Para utilizar MfMood se necesita JavaScript. <a href="/classic">Abrir sitio clásico</a>.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
