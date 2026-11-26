@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://edgemarketing.art/allmusic/sitemap.xml
+Sitemap: https://mfmood.com/sitemap.xml

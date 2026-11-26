@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 RADIO = os.environ.get('RADIO_URL', 'http://127.0.0.1:2426')
-MASTER_URL = os.environ.get('MASTER_URL', 'https://edgemarketing.art/allmusic')
+MASTER_URL = os.environ.get('MASTER_URL', 'https://mfmood.com')
 MODERATOR_KEY = os.environ.get('MODERATOR_KEY', '') or os.environ.get('ALLMUSIC_ADMIN_KEY', '')
 LIVE_STREAM_URL = os.environ.get('LIVE_STREAM_URL', 'https://mail.edgemarketing.art/radio/live.mp3')
 HA_URL = os.environ.get('HA_URL', 'http://127.0.0.1:8124')

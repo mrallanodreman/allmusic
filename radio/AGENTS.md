@@ -7,7 +7,7 @@ sobrevive reinicios (todos los servicios user systemd están `enabled`).
 ## Pipeline (flujo completo)
 
 ```
-Radio WEB (Railway, edgemarketing.art/allmusic)   <- fuente de verdad: cola de
+Radio WEB (Railway, mfmood.com)   <- fuente de verdad: cola de
     |                                               pedidos de oyentes + rotación
     v
 allmusic-radio-live.service  (master ffmpeg, :2427) -> MP3 continuo 192kbps/44.1kHz
@@ -23,7 +23,7 @@ atico-player.service (atico-player.py)  -> reproduce el master en media_player.a
 
 > **Atico y web suenan la MISMA radio/cola** (2026-08-30). El master local lidera
 > desde la web (Railway), donde viven las peticiones de los oyentes. Fuente primaria
-> `WEB_URL=https://edgemarketing.art/allmusic`, fallback `LOCAL_URL=http://127.0.0.1:2426`.
+> `WEB_URL=https://mfmood.com`, fallback `LOCAL_URL=http://127.0.0.1:2426`.
 
 ## Servicios (todos `enabled` = arrancan solos)
 
@@ -65,7 +65,7 @@ La cola de pedidos vive en el **backend de la web (Railway)**, no en la copia lo
 La gente pide en la web → entra a la cola web → `next_request` se expone → el master
 local la lee y suena en el Atico al turno (NUNCA interrumpe la canción actual).
 
-API canónica (Railway = edgemarketing.art/allmusic, y la copia local :2426 es idéntica):
+API canónica (Railway = mfmood.com, y la copia local :2426 es idéntica):
 - `POST /radio/suggest` `{query, reason?, agent?}` → encola un pedido (rate-limit 10/min), devuelve posición.
 - `GET  /radio/queue` → cola activa con `position` + `eta_seconds`/`eta_minutes` por canción.
 - `GET  /radio/now` → `next_request` (siguiente en cola) + `top_requested` (ranking 10 más pedidos) + `track` (lo que suena, con `link` para transcodificar).
@@ -74,13 +74,13 @@ API canónica (Railway = edgemarketing.art/allmusic, y la copia local :2426 es i
 El master (`radio-live.py`) lee `/radio/now` de la web cada 5s (expone en `/health`
 `next_request` + `request_count`) y, si hay pedido pendiente, hace `POST /radio/advance`.
 
-Verificar: `curl https://edgemarketing.art/allmusic/radio/queue` y `curl http://127.0.0.1:2427/health`.
+Verificar: `curl https://mfmood.com/radio/queue` y `curl http://127.0.0.1:2427/health`.
 
 ## Comandos de operación
 
 - Estado radio: `systemctl --user is-active allmusic-radio allmusic-radio-live atico-player`
 - Health master: `curl http://127.0.0.1:2427/health`
-- Cola pedidos: `curl https://edgemarketing.art/allmusic/radio/queue`
+- Cola pedidos: `curl https://mfmood.com/radio/queue`
 - Reiniciar reproducción: `systemctl --user restart atico-player.service`
 - Log: `journalctl --user -u atico-player.service -f`
 

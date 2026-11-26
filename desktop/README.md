@@ -78,7 +78,7 @@ Example:
 
 ```json
 {
-  "api_base": "https://edgemarketing.art/allmusic",
+  "api_base": "https://mfmood.com",
   "dl_dir": "/home/your-user/Downloads"
 }
 ```

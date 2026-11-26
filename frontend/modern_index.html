@@ -4,34 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-3871344948149274">
-    <base href="/allmusic/">
+    <base href="/">
     <title>AllMusic — Sube tu música, escúchala donde sea</title>
     <meta name="description" content="AllMusic: tu biblioteca de música personal. Sube tus archivos, escúchalos en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#0d0d1a">
     <meta name="application-name" content="AllMusic">
-    <link rel="canonical" href="https://edgemarketing.art/allmusic/">
+    <link rel="canonical" href="https://mfmood.com/">
     <link rel="icon" type="image/png" href="assets/buena-musica-logo.png">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="AllMusic">
     <meta property="og:title" content="AllMusic — Sube tu música, escúchala donde sea">
     <meta property="og:description" content="Sube tu música, guárdala en una sola biblioteca y escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
-    <meta property="og:url" content="https://edgemarketing.art/allmusic/">
-    <meta property="og:image" content="https://edgemarketing.art/allmusic/assets/allmusic-logo.svg">
+    <meta property="og:url" content="https://mfmood.com/">
+    <meta property="og:image" content="https://mfmood.com/assets/allmusic-logo.svg">
     <meta property="og:locale" content="es_EC">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="AllMusic — Sube tu música, escúchala donde sea">
     <meta name="twitter:description" content="Sube tu música, escúchala en cualquier dispositivo, incluso offline. Your files. One library. Everywhere.">
-    <meta name="twitter:image" content="https://edgemarketing.art/allmusic/assets/allmusic-logo.svg">
+    <meta name="twitter:image" content="https://mfmood.com/assets/allmusic-logo.svg">
     <!-- JSON-LD -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "AllMusic",
-        "url": "https://edgemarketing.art/allmusic/",
+        "url": "https://mfmood.com/",
         "applicationCategory": "MusicApplication",
         "operatingSystem": "Any",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -2769,7 +2769,7 @@ function openAddToPlaylist(){
     if(!title||title==='AllMusic'){alert('Primero reproduce una canción.');return;}
     const artist=document.getElementById('trackArtist').textContent;
     const thumb=(document.getElementById('artImg').style.display!=='none'?document.getElementById('artImg').src:'')||'';
-    const src=audio.src?audio.src.replace(location.origin+'/allmusic/',''):
+    const src=audio.src?audio.src.replace(location.origin+'/',''):
                curVideoId?'stream/'+curVideoId:'';
     if(!src){alert('Primero reproduce una canción.');return;}
     openAddToPlaylistTrack({title,artist,thumb,src,id:curVideoId});
@@ -3000,7 +3000,7 @@ let _radioResumeOnLoad=localStorage.getItem(LS_RADIO_LISTENING)==='1';
 let _radioReconnectTimer=null;
 let _radioReconnectAttempt=0;
 let _radioStreamGeneration=0;
-const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
+const RADIO_API_BASE='/radio';
 async function rApi(path,opts){const r=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d;}
 const $=s=>{const d=document.createElement('div');d.textContent=s;return d.textContent;};
 function radioThumb(t){return (t&&t.thumbnail&&t.thumbnail.startsWith('http'))?t.thumbnail:('https://i.ytimg.com/vi/'+((t&&t.video_id)||'')+'/hqdefault.jpg');}
@@ -3295,7 +3295,7 @@ async function discoverTracks(){
     const list=document.getElementById('discoverList');
     list.innerHTML='<div class="spinner"></div>';
     try{
-        const d=await(await fetch('/allmusic/tracks/public')).json();
+        const d=await(await fetch('/tracks/public')).json();
         discoverTracksCache=Array.isArray(d)?d:d.tracks||[];
         if(!discoverTracksCache.length){ list.innerHTML='<div class="empty">Aún no hay música subida por la comunidad</div>'; return; }
         list.innerHTML=discoverTracksCache.map((t,i)=>
@@ -3311,13 +3311,13 @@ async function discoverTracks(){
 }
 async function discoverPlay(i){
     const t=discoverTracksCache[i]; if(!t)return;
-    const src='/allmusic'+t.url;  // t.url = /tracks/<id>/audio
+    const src='/+t.url;  // t.url = /tracks/<id>/audio
     audio.src=src; audio.play();
     setInfo(t.title, t.artist_name||'','', '—','—','—', t.genre||'', null);
 }
 
 // ── Tu música (subida propia + biblioteca + premium) ──
-const MYAPI = '/allmusic/artists';
+const MYAPI = '/artists';
 let myToken = localStorage.getItem('am_artist_token') || '';
 let myPickedFile = null;
 

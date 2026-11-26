@@ -33,7 +33,7 @@ def _load_env():
                 cfg = json.load(f)
     except Exception:
         pass
-    API_BASE = os.environ.get('ALLMUSIC_API_BASE') or cfg.get('api_base', 'https://edgemarketing.art/allmusic')
+    API_BASE = os.environ.get('ALLMUSIC_API_BASE') or cfg.get('api_base', 'https://mfmood.com')
     DL_DIR = cfg.get('dl_dir', os.path.expanduser('~/Descargas'))
 
 _load_env()

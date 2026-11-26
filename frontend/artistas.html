@@ -6,7 +6,7 @@
 <title>AllMusic PRO — Portal Artistas</title>
 <meta name="description" content="Gestiona tu perfil artístico en AllMusic PRO. Sube tu música, organiza tus álbumes y comparte archivos con productores.">
 <meta name="robots" content="noindex">
-<link rel="icon" href="/allmusic/favicon.ico" type="image/x-icon">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
 <style>
   :root {
     --bg:     #0a0a14;
@@ -243,7 +243,7 @@
   <div class="dash-header">
     <span class="dash-header-logo">AllMusic PRO</span>
     <span class="dash-artist-name" id="headerArtistName">—</span>
-    <a href="/allmusic/" style="color:var(--muted);font-size:12px;text-decoration:none;margin-right:4px;">← App</a>
+    <a href="/" style="color:var(--muted);font-size:12px;text-decoration:none;margin-right:4px;">← App</a>
     <button class="btn-sm btn-danger-sm" onclick="doLogout()">Salir</button>
   </div>
 
@@ -341,7 +341,7 @@
 <div id="toast"></div>
 
 <script>
-const API = '/allmusic/artists';
+const API = '/artists';
 let _token   = localStorage.getItem('am_artist_token') || '';
 let _artist  = null;
 

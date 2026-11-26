@@ -47,6 +47,9 @@ CORS(app, origins=[
     'http://127.0.0.1:3000',
     'https://edgemarketing.art',
     'http://edgemarketing.art',
+    'https://allmusic.edgemarketing.tech',
+    'https://mfmood.com',
+    'https://www.mfmood.com',
 ])
 
 # Rate limiter
@@ -920,7 +923,7 @@ def status():
 
 
 # ── CANCIONES DINÁMICAS (SEO) ─────────────────────────────────────────────────
-# Página por canción "/allmusic/cancion/<artista>/<titulo>": busca en YouTube,
+# Página por canción "/cancion/<artista>/<titulo>": busca en YouTube,
 # muestra la letra (Lyrics.ovh) y reproduce con el link directo del CDN.
 # Debe definirse ANTES del catch-all /<path:filename>.
 
@@ -996,7 +999,7 @@ def _search_videos(artist, title):
 
 
 def _song_page_html(artist, title, video, lyrics, video_ids):
-    canon = f"https://edgemarketing.art/allmusic/cancion/{quote(artist.lower().replace(' ', '-'))}/{quote(title.lower().replace(' ', '-'))}"
+    canon = f"https://mfmood.com/cancion/{quote(artist.lower().replace(' ', '-'))}/{quote(title.lower().replace(' ', '-'))}"
     page_title = f"{artist} - {title} (Letra) | AllMusic"
     desc = f"Escucha gratis {artist} - {title} en AllMusic. Letra completa y reproductor sin registro. 🎧"
     thumb = video.get('thumbnail', '')
@@ -1020,7 +1023,7 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
     related_links = ''
     for r in related[:5]:
         rel_slug = (quote(r['title'].replace(' ', '-')[:60].lower())) if r.get('title') else ''
-        related_links += f'<li><a href="/allmusic/cancion/{quote(artist.lower().replace(" ", "-"))}/{rel_slug}">🎵 {_html.escape(r["title"])}</a></li>'
+        related_links += f'<li><a href="/cancion/{quote(artist.lower().replace(" ", "-"))}/{rel_slug}">🎵 {_html.escape(r["title"])}</a></li>'
     if not related_links:
         related_links = '<li>No hay sugerencias.</li>'
 
@@ -1075,10 +1078,10 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
 <body>
 <div class="wrap">
   <header>
-    <a class="logo" href="/allmusic/">🎧 All<span>Music</span></a>
+    <a class="logo" href="/">🎧 All<span>Music</span></a>
   </header>
   <h1>{artist} - {title}</h1>
-  <div class="sub">🎶 {lyrics_meta} · Escúchala gratis, sin registro · <a href="/allmusic/dmca.html" style="color:#8ecbff">DMCA</a></div>
+  <div class="sub">🎶 {lyrics_meta} · Escúchala gratis, sin registro · <a href="/dmca.html" style="color:#8ecbff">DMCA</a></div>
 
   <div class="card">
     <div class="player">
@@ -1099,7 +1102,7 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
   </div>
 
   <footer>
-    <p><a href="/allmusic/">Inicio</a> · <a href="/allmusic/terminos.html">Términos</a> · <a href="/allmusic/privacidad.html">Privacidad</a> · <a href="/allmusic/dmca.html">DMCA</a></p>
+    <p><a href="/">Inicio</a> · <a href="/terminos.html">Términos</a> · <a href="/privacidad.html">Privacidad</a> · <a href="/dmca.html">DMCA</a></p>
     <p>AllMusic © {datetime.date.today().year} · Reproduce música de YouTube sin registro</p>
   </footer>
 </div>
@@ -1116,7 +1119,7 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
     let played=false;
     for(const id of VIDEO_IDS){{
       try{{
-        const c=await (await fetch('/allmusic/convert/'+id)).json();
+        const c=await (await fetch('/convert/'+id)).json();
         if(c&&c.success&&c.link){{
           a.src=c.link;a.play();
           status.textContent='▶ Reproduciendo · {uploader}';
@@ -1139,10 +1142,10 @@ def _song_page_html(artist, title, video, lyrics, video_ids):
 def cancion(artist_slug, title_slug):
     artist, title = _song_meta_from_slug(artist_slug, title_slug)
     if not artist or not title:
-        return redirect('/allmusic/')
+        return redirect('/')
     videos = _search_videos(artist, title)
     if not videos:
-        return redirect('/allmusic/')
+        return redirect('/')
     video = videos[0]
     video_ids = [v['id'] for v in videos]
     lyrics = _fetch_lyrics(artist, title)
@@ -1224,7 +1227,7 @@ def frontend_files(filename):
     rel = filename
     if rel.startswith('allmusic/'):
         rel = rel[len('allmusic/'):]
-    # Sirve el archivo cuando llega con prefijo 'allmusic/' (p. ej. <base href="/allmusic/">)
+    # Sirve el archivo cuando llega con prefijo 'allmusic/' (p. ej. <base href="/">)
     rel_path = os.path.join(FRONTEND_DIR, rel)
     if os.path.exists(rel_path) and os.path.isfile(rel_path):
         return send_from_directory(FRONTEND_DIR, rel)

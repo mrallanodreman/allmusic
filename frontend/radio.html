@@ -759,9 +759,9 @@ a{color:inherit}
   <nav aria-label="Navegación de C24 Radio">
     <a class="hotspot hit-live" href="#live" aria-label="En vivo"></a>
     <a class="hotspot hit-history" href="#historyList" aria-label="Historial"></a>
-    <a class="hotspot hit-search" href="/allmusic/" aria-label="Buscar"></a>
-    <a class="hotspot hit-playlists" href="/allmusic/" aria-label="Playlists"></a>
-    <a class="hotspot hit-music" href="/allmusic/" aria-label="Tu música"></a>
+    <a class="hotspot hit-search" href="/" aria-label="Buscar"></a>
+    <a class="hotspot hit-playlists" href="/" aria-label="Playlists"></a>
+    <a class="hotspot hit-music" href="/" aria-label="Tu música"></a>
   </nav>
 
   <button class="hotspot hit-listen" id="btnListen" type="button" aria-label="Escuchar en vivo">Escuchar en vivo</button>
@@ -831,7 +831,7 @@ a{color:inherit}
   <div class="toast" id="toast"></div>
 </main>
 <script>
-const RADIO_API_BASE=location.pathname.startsWith('/allmusic')?'/allmusic/radio':'/radio';
+const RADIO_API_BASE='/radio';
 const fmt = s => { s=Math.max(0,Math.floor(s||0)); const m=Math.floor(s/60)%60,h=Math.floor(s/3600),x=s%60; return (h>0?h+':':'')+String(m).padStart(Math.max(2,h?2:1),'0')+':'+String(x).padStart(2,'0'); };
 const radioAudio=document.getElementById('radioAudio');
 const RADIO_FALLBACK='./assets/radio/radio-now-cover.png';

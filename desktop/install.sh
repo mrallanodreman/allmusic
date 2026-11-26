@@ -55,7 +55,7 @@ if [ ! -f "$CFG" ]; then
     mkdir -p "$HOME/.config/$APP_SLUG"
     cat > "$CFG" << CFG
 {
-    "api_base": "https://edgemarketing.art/allmusic",
+    "api_base": "https://mfmood.com",
     "dl_dir": "$HOME/Descargas"
 }
 CFG

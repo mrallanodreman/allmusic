@@ -66,7 +66,7 @@ Verificación tras un push: el audit debe mostrar `webhook.deployment.queued` y
 
 ## Migración de UI principal (noviembre 2026)
 
-**Entrada pública:** `https://edgemarketing.tech/allmusic/` → `backend/allmusic_server.py::index` → `frontend-react-dist/index.html`.
+**Entrada pública:** `https://mfmood.com/` → `backend/allmusic_server.py::index` → `frontend-react-dist/index.html`.
 El servidor conserva `/classic` para revertir visualmente sin cambiar datos y
 `/radio` como alias. Si falta el build React, se entrega el HTML clásico como
 fallback. El menú React dirige a `#playlists`, `#mymusic` y `#cartelera`.
@@ -90,7 +90,7 @@ tras el despliegue de Coolify.
 ## Pipeline de la radio
 
 ```
-Web (edgemarketing.tech/allmusic -> túnel CF -> Coolify :2426)  <- fuente de verdad: pedidos + rotación
+Web (mfmood.com -> túnel CF -> Coolify :2426)  <- fuente de verdad: pedidos + rotación
   v
 backend/radio-live.py (VAIO, ffmpeg, :2427) -> MP3 continuo
   v
@@ -153,7 +153,7 @@ Si el panel **Terminal/Exec** de Coolify muestra `Terminal websocket connection 
 
 ## Web
 
-- URL pública: <https://edgemarketing.art/allmusic>
+- URL pública: <https://mfmood.com>
 - La app de escritorio habla con la API por URL configurable
   (`desktop/config.example.json`).
 
