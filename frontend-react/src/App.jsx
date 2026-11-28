@@ -23,7 +23,6 @@ import { MostLikedPanel } from './components/MostLikedPanel.jsx';
 import { HistoryPanel } from './components/HistoryPanel.jsx';
 import { NowPlayingBar } from './components/NowPlayingBar.jsx';
 import { CookieConsent } from './components/CookieConsent.jsx';
-import { AdSlot } from './components/AdSlot.jsx';
 
 export default function App() {
   const data = useRadioData();
@@ -334,7 +333,6 @@ export default function App() {
             onSelect={handleMood}
             pending={data.pending}
           />
-          <AdSlot />
           <NewShit
             playing={audio.listening}
             mode={audio.mode}

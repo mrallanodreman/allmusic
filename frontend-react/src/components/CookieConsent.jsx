@@ -31,8 +31,7 @@ export function CookieConsent() {
   return (
     <section className="cookie-consent" role="dialog" aria-label="Preferencias de cookies">
       <p>
-        Usamos cookies propias y de terceros (Google Analytics y AdSense) para medir
-        la audiencia y mostrar publicidad que sostiene MfMood.
+        Usamos cookies propias y de terceros de Google Analytics para medir la audiencia.
       </p>
       <div className="cookie-consent__actions">
         <button type="button" onClick={() => setChoice('all')}>Aceptar todo</button>
